@@ -9,6 +9,7 @@ cmds = [
 
 [phases.build]
 cmds = [
+  "npm run build --workspace=@erp-sinaran/prisma",
   "npm run prisma:generate",
   "npx tsc"
 ]

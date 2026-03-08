@@ -5,6 +5,7 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
     "build:scripts": "tsc",
     "generate": "prisma generate",
     "db:push": "prisma db push",
