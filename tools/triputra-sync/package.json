@@ -1,0 +1,26 @@
+{
+  "name": "triputra-sync",
+  "version": "1.0.0",
+  "description": "TRIPUTRA weaving data sync tool for Sinaran ERP",
+  "main": "sync.js",
+  "scripts": {
+    "explore": "node explore.js",
+    "sync": "node sync.js"
+  },
+  "prisma": {
+    "schema": "../../packages/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "jsdom": "^24.1.1",
+    "puppeteer": "^24.37.5",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.19.2",
+    "@types/node": "^22.5.5",
+    "prisma": "^6.19.2"
+  }
+}

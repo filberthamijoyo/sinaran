@@ -1,0 +1,65 @@
+version: '3.8'
+
+# ============================================
+# ERP Sinaran - Docker Compose
+# Uses external Neon PostgreSQL database
+# ============================================
+
+services:
+  # ============================================
+  # Backend API
+  # ============================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: erp-sinaran-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      # Neon database connection - update with your credentials
+      DATABASE_URL: ${DATABASE_URL:-postgresql://neondb_owner:npg_c6JfMBL7Pjno@ep-plain-dust-a1bggj1v-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require}
+      FRONTEND_URL: http://localhost:3000
+      # Prisma engine mode
+      PRISMA_CLIENT_ENGINE_TYPE: binary
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - erp-network
+
+  # ============================================
+  # Frontend (Nginx)
+  # ============================================
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      target: runner
+    container_name: erp-sinaran-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3002:80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - erp-network
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  erp-network:
+    driver: bridge

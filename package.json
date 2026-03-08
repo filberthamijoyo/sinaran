@@ -1,0 +1,38 @@
+{
+  "name": "erp-sinaran",
+  "version": "1.0.0",
+  "description": "Yarn Quality ERP System for PT Triputra Textile Industry",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:frontend": "npm run start --workspace=apps/frontend",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "build": "npm run build --workspaces --if-present",
+    "build:packages": "npm run build --workspace=packages/prisma",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "build:api": "npm run build --workspace=apps/api",
+    "start": "npm run start --workspace=apps/api",
+    "seed": "cd apps/api && npx tsx ../../seed.ts",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:dev": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up",
+    "docker:dev:build": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml build",
+    "docker:logs": "docker-compose logs -f",
+    "docker:logs:api": "docker-compose logs -f api",
+    "docker:logs:frontend": "docker-compose logs -f frontend",
+    "docker:logs:db": "docker-compose logs -f db",
+    "docker:clean": "docker-compose down -v --rmi local",
+    "docker:rebuild": "docker-compose down -v --rmi local && docker-compose build --no-cache && docker-compose up -d"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0"
+  }
+}

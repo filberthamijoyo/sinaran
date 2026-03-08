@@ -1,0 +1,250 @@
+/* Shared DataGrid styles - replaces duplicate Indigo/InspectGray/Sacon CSS */
+
+.data-grid-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.data-grid-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.data-grid-page-title-group h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.data-grid-page-title-group p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.data-grid-page-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.data-grid-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: radial-gradient(circle at top left, rgba(6, 182, 212, 0.12), transparent 55%);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.data-grid-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 160px;
+}
+
+.data-grid-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.data-grid-filter-input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 0.85rem;
+}
+
+.data-grid-filter-input:focus {
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.25);
+}
+
+.data-grid-card {
+  background-color: white;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+
+.data-grid-header {
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.9);
+  background: linear-gradient(120deg, #075985, #0ea5e9);
+  color: white;
+}
+
+.data-grid-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.data-grid-meta {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.data-grid-container {
+  position: relative;
+  overflow: auto;
+  width: 100%;
+}
+
+.data-grid {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 3600px;
+  font-size: 0.9rem;
+}
+
+.data-grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #0f172a;
+  color: #e5e7eb;
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #4b5563;
+  white-space: nowrap;
+}
+
+/* Top grouped header row */
+.data-grid thead tr:first-child th {
+  top: 0;
+  z-index: 12;
+  background: #020617;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.data-grid-group-header {
+  border-right: 1px solid #1f2937;
+}
+
+/* Second row: individual column labels */
+.data-grid thead tr:nth-child(2) th {
+  top: 32px;
+  z-index: 11;
+}
+
+.data-grid thead th.data-grid-col-numeric {
+  text-align: right;
+}
+
+.data-grid tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.data-grid tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.data-grid tbody tr:hover {
+  background-color: #dbeafe;
+}
+
+.data-grid-cell {
+  padding: 4px 6px;
+  border-bottom: 1px solid #e5e7eb;
+  position: relative;
+  overflow: visible;
+}
+
+.data-grid-cell:has(.data-grid-input:focus) {
+  overflow: visible;
+}
+
+.data-grid-input {
+  width: 100%;
+  min-width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  background-color: transparent;
+  transition: border-color 0.08s ease, box-shadow 0.08s ease, background-color 0.08s ease;
+  box-sizing: border-box;
+}
+
+.data-grid-input::placeholder {
+  color: #9ca3af;
+}
+
+.data-grid-input:focus {
+  outline: none;
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+  min-width: 250px;
+  width: 250px;
+  position: relative;
+  z-index: 5;
+}
+
+.data-grid-input[data-active="true"] {
+  background-color: #f0f9ff;
+  border-color: #0ea5e9;
+}
+
+.data-grid-input.number {
+  text-align: right;
+}
+
+.data-grid-footer {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9fafb;
+  border-top: 1px solid rgba(229, 231, 235, 0.9);
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.data-grid-row-count {
+  font-weight: 500;
+}
+
+.data-grid-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.data-grid-hint {
+  opacity: 0.9;
+}
+
+.data-grid-kb {
+  font-weight: 600;
+  color: #111827;
+}
+
+@media (max-width: 768px) {
+  .data-grid-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

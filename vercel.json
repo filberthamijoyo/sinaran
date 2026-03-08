@@ -1,0 +1,8 @@
+{
+  "buildCommand": "npm run build:frontend",
+  "outputDirectory": "apps/frontend/build",
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/((?!static/).*)", "destination": "/index.html" }
+  ]
+}

@@ -1,0 +1,1046 @@
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../../node_modules/.prisma/client"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CountDescription {
+  code                  Int                    @id
+  name                  String                 @db.VarChar(255)
+  isActive              Boolean?               @default(true) @map("is_active")
+  createdAt             DateTime?              @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt             DateTime?              @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  indigoDivisionRecords IndigoDivisionRecord[]
+  productionRecords     ProductionRecord[]
+  yarnTests             YarnTest[]
+
+  @@index([name], map: "idx_count_descriptions_name")
+  @@map("count_descriptions")
+}
+
+model CountNe {
+  id                Int                @id @default(autoincrement())
+  value             Decimal            @unique @db.Decimal(10, 2)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  productionRecords ProductionRecord[]
+  yarnTests         YarnTest[]
+
+  @@index([value], map: "idx_count_ne_value")
+  @@map("count_ne")
+}
+
+model Lot {
+  id                Int                @id @default(autoincrement())
+  code              Int?               @unique
+  name              String             @unique @db.VarChar(100)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  blendId           Int?               @map("blend_id")
+  blend             Blend?             @relation(fields: [blendId], references: [id], onUpdate: NoAction)
+  productionRecords ProductionRecord[]
+  yarnTests         YarnTest[]
+
+  @@index([code], map: "idx_lots_code")
+  @@index([name], map: "idx_lots_name")
+  @@index([blendId], map: "idx_lots_blend_id")
+  @@map("lots")
+}
+
+model Spk {
+  id                Int                @id @default(autoincrement())
+  code              Int?               @unique
+  name              String             @unique @db.VarChar(100)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  productionRecords ProductionRecord[]
+  yarnTests         YarnTest[]
+
+  @@index([code], map: "idx_spks_code")
+  @@index([name], map: "idx_spks_name")
+  @@map("spks")
+}
+
+model YarnType {
+  id                Int                @id @default(autoincrement())
+  code              Int?               @unique
+  name              String             @unique @db.VarChar(100)
+  letterCode        String             @map("letter_code") @db.VarChar(10)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  productionRecords ProductionRecord[]
+  yarnTests         YarnTest[]
+
+  @@index([code], map: "idx_yarn_types_code")
+  @@index([name], map: "idx_yarn_types_name")
+  @@index([letterCode], map: "idx_yarn_types_letter_code")
+  @@map("yarn_types")
+}
+
+model Blend {
+  id                Int                @id @default(autoincrement())
+  name              String             @unique @db.VarChar(100)
+  letterCode        String             @map("letter_code") @db.VarChar(10)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  lots              Lot[]
+  productionRecords ProductionRecord[]
+  yarnTests         YarnTest[]
+
+  @@index([name], map: "idx_blends_name")
+  @@index([letterCode], map: "idx_blends_letter_code")
+  @@map("blends")
+}
+
+model SlubCode {
+  id                Int                @id @default(autoincrement())
+  code              String?            @unique @db.VarChar(50)
+  description       String?            @db.VarChar(255)
+  name              String?            @db.VarChar(100)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  productionRecords ProductionRecord[]
+  yarnTests         YarnTest[]
+
+  @@index([code], map: "idx_slub_codes_code")
+  @@map("slub_codes")
+}
+
+model Kp {
+  id                    Int                    @id @default(autoincrement())
+  code                  String                 @unique @db.VarChar(50)
+  name                  String                 @db.VarChar(100)
+  isActive              Boolean?               @default(true) @map("is_active")
+  createdAt             DateTime?              @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt             DateTime?              @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  indigoDivisionRecords IndigoDivisionRecord[]
+
+  @@index([code], map: "idx_kp_code")
+  @@index([name], map: "idx_kp_name")
+  @@map("kp")
+}
+
+model Kode {
+  id                    Int                    @id @default(autoincrement())
+  code                  String                 @unique @db.VarChar(100)
+  name                  String                 @db.VarChar(150)
+  isActive              Boolean?               @default(true) @map("is_active")
+  createdAt             DateTime?              @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt             DateTime?              @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  indigoDivisionRecords IndigoDivisionRecord[]
+
+  @@index([code], map: "idx_kode_code")
+  @@index([name], map: "idx_kode_name")
+  @@map("kodes")
+}
+
+model Supplier {
+  id        Int        @id @default(autoincrement())
+  code      Int        @unique
+  name      String     @db.VarChar(100)
+  isActive  Boolean?   @default(true) @map("is_active")
+  createdAt DateTime?  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  yarnTests YarnTest[]
+
+  @@index([code], map: "idx_suppliers_code")
+  @@index([name], map: "idx_suppliers_name")
+  @@map("suppliers")
+}
+
+model MillsUnit {
+  id                Int                @id @default(autoincrement())
+  code              Int                @unique
+  name              String             @db.VarChar(50)
+  letterCode        String             @map("letter_code") @db.VarChar(10)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  productionRecords ProductionRecord[]
+  yarnTests         YarnTest[]
+
+  @@index([code], map: "idx_mills_units_code")
+  @@index([name], map: "idx_mills_units_name")
+  @@index([letterCode], map: "idx_mills_units_letter_code")
+  @@map("mills_units")
+}
+
+model ProcessStep {
+  id        Int        @id @default(autoincrement())
+  code      Int        @unique
+  name      String     @db.VarChar(100)
+  isActive  Boolean?   @default(true) @map("is_active")
+  createdAt DateTime?  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  yarnTests YarnTest[]
+
+  @@index([code], map: "idx_process_steps_code")
+  @@index([name], map: "idx_process_steps_name")
+  @@map("process_steps")
+}
+
+model TestType {
+  id        Int        @id @default(autoincrement())
+  code      Int        @unique
+  name      String     @db.VarChar(100)
+  isActive  Boolean?   @default(true) @map("is_active")
+  createdAt DateTime?  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  yarnTests YarnTest[]
+
+  @@index([code], map: "idx_test_types_code")
+  @@index([name], map: "idx_test_types_name")
+  @@map("test_types")
+}
+
+model Side {
+  id        Int        @id @default(autoincrement())
+  code      String     @unique @db.VarChar(10)
+  name      String     @db.VarChar(50)
+  isActive  Boolean?   @default(true) @map("is_active")
+  createdAt DateTime?  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  yarnTests YarnTest[]
+
+  @@index([code], map: "idx_sides_code")
+  @@index([name], map: "idx_sides_name")
+  @@map("sides")
+}
+
+model WarnaConeCheese {
+  id                Int                @id @default(autoincrement())
+  name              String             @unique @db.VarChar(100)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  productionRecords ProductionRecord[]
+
+  @@index([name], map: "idx_warna_cone_cheese_name")
+  @@map("warna_cone_cheese")
+}
+
+model RayonBrand {
+  id                Int                @id @default(autoincrement())
+  name              String             @unique @db.VarChar(100)
+  /// 1-letter code for UI display/compact tables (e.g. "A")
+  letterCode        String?            @map("letter_code") @db.VarChar(1)
+  isActive          Boolean?           @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  productionRecords ProductionRecord[]
+
+  @@index([name], map: "idx_rayon_brand_name")
+  @@index([letterCode], map: "idx_rayon_brand_letter_code")
+  @@map("rayon_brand")
+}
+
+model YarnTest {
+  id                   BigInt            @id @default(autoincrement())
+  testDate             DateTime          @map("test_date") @db.Date
+  testMonth            String?           @map("test_month") @db.VarChar(20)
+  testYear             Int?              @map("test_year")
+  countDescriptionCode Int?              @map("count_description_code")
+  countNeId            Int?              @map("count_ne_id")
+  lotId                Int?              @map("lot_id")
+  spkId                Int?              @map("spk_id")
+  yarnTypeId           Int?              @map("yarn_type_id")
+  blendId              Int?              @map("blend_id")
+  slubCodeId           Int?              @map("slub_code_id")
+  supplierId           Int?              @map("supplier_id")
+  millsUnitId          Int?              @map("mills_unit_id")
+  processStepId        Int?              @map("process_step_id")
+  testTypeId           Int?              @map("test_type_id")
+  machineNo            Int?              @map("machine_no")
+  sideId               Int?              @map("side_id")
+  sliverRovingNe       Decimal?          @map("sliver_roving_ne") @db.Decimal(10, 3)
+  totalDraft           Decimal?          @map("total_draft") @db.Decimal(10, 2)
+  twistMultiplier      Decimal?          @map("twist_multiplier") @db.Decimal(10, 2)
+  tpi                  Decimal?          @db.Decimal(10, 2)
+  tpm                  Decimal?          @db.Decimal(10, 2)
+  actualTwist          Int?              @map("actual_twist")
+  rotorSpindleSpeed    Int?              @map("rotor_spindle_speed")
+  meanNe               Decimal?          @map("mean_ne") @db.Decimal(10, 2)
+  minNe                Decimal?          @map("min_ne") @db.Decimal(10, 2)
+  maxNe                Decimal?          @map("max_ne") @db.Decimal(10, 2)
+  cvCountPercent       Decimal?          @map("cv_count_percent") @db.Decimal(10, 2)
+  meanStrengthCn       Decimal?          @map("mean_strength_cn") @db.Decimal(10, 2)
+  minStrengthCn        Decimal?          @map("min_strength_cn") @db.Decimal(10, 2)
+  maxStrengthCn        Decimal?          @map("max_strength_cn") @db.Decimal(10, 2)
+  cvStrengthPercent    Decimal?          @map("cv_strength_percent") @db.Decimal(10, 2)
+  tenacityCnTex        Decimal?          @map("tenacity_cn_tex") @db.Decimal(10, 2)
+  elongationPercent    Decimal?          @map("elongation_percent") @db.Decimal(10, 2)
+  clsp                 Decimal?          @db.Decimal(10, 2)
+  uPercent             Decimal?          @map("u_percent") @db.Decimal(10, 2)
+  cvB                  Decimal?          @map("cv_b") @db.Decimal(10, 2)
+  cvm                  Decimal?          @map("cv_m") @db.Decimal(10, 2)
+  cvm1m                Decimal?          @map("cvm_1m") @db.Decimal(10, 2)
+  cvm3m                Decimal?          @map("cvm_3m") @db.Decimal(10, 2)
+  cvm10m               Decimal?          @map("cvm_10m") @db.Decimal(10, 2)
+  thin50Percent        Int?              @map("thin_50_percent")
+  thick50Percent       Int?              @map("thick_50_percent")
+  neps200Percent       Int?              @map("neps_200_percent")
+  neps280Percent       Int?              @map("neps_280_percent")
+  ipis                 Int?
+  oeIpi                Int?              @map("oe_ipi")
+  thin30Percent        Int?              @map("thin_30_percent")
+  thin40Percent        Int?              @map("thin_40_percent")
+  thick35Percent       Int?              @map("thick_35_percent")
+  neps140Percent       Int?              @map("neps_140_percent")
+  shortIpi             Int?              @map("short_ipi")
+  hairiness            Decimal?          @db.Decimal(10, 2)
+  sh                   Decimal?          @db.Decimal(10, 2)
+  s1uPlusS2u           Decimal?          @map("s1u_plus_s2u") @db.Decimal(10, 2)
+  s3u                  Decimal?          @db.Decimal(10, 2)
+  dr1_5m5Percent       Decimal?          @map("dr_1_5m_5_percent") @db.Decimal(10, 2)
+  remarks              String?
+  createdBy            Int?              @map("created_by")
+  updatedBy            Int?              @map("updated_by")
+  createdAt            DateTime?         @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  blend                Blend?            @relation(fields: [blendId], references: [id], onUpdate: NoAction)
+  countDescription     CountDescription? @relation(fields: [countDescriptionCode], references: [code], onUpdate: NoAction)
+  countNe              CountNe?          @relation(fields: [countNeId], references: [id], onUpdate: NoAction)
+  lot                  Lot?              @relation(fields: [lotId], references: [id], onUpdate: NoAction)
+  millsUnit            MillsUnit?        @relation(fields: [millsUnitId], references: [id], onUpdate: NoAction)
+  processStep          ProcessStep?      @relation(fields: [processStepId], references: [id], onUpdate: NoAction)
+  side                 Side?             @relation(fields: [sideId], references: [id], onUpdate: NoAction)
+  slubCode             SlubCode?         @relation(fields: [slubCodeId], references: [id], onUpdate: NoAction)
+  spk                  Spk?              @relation(fields: [spkId], references: [id], onUpdate: NoAction)
+  supplier             Supplier?         @relation(fields: [supplierId], references: [id], onUpdate: NoAction)
+  testType             TestType?         @relation(fields: [testTypeId], references: [id], onUpdate: NoAction)
+  yarnType             YarnType?         @relation(fields: [yarnTypeId], references: [id], onUpdate: NoAction)
+
+  @@index([testDate], map: "idx_yarn_tests_test_date")
+  @@index([testYear, testMonth], map: "idx_yarn_tests_test_year_test_month")
+  @@index([countDescriptionCode], map: "idx_yarn_tests_count_description_code")
+  @@index([countNeId], map: "idx_yarn_tests_count_ne_id")
+  @@index([lotId], map: "idx_yarn_tests_lot_id")
+  @@index([spkId], map: "idx_yarn_tests_spk_id")
+  @@index([blendId], map: "idx_yarn_tests_blend_id")
+  @@index([supplierId], map: "idx_yarn_tests_supplier_id")
+  @@index([millsUnitId], map: "idx_yarn_tests_mills_unit_id")
+  @@index([processStepId], map: "idx_yarn_tests_process_step_id")
+  @@index([testTypeId], map: "idx_yarn_tests_test_type_id")
+  @@index([machineNo], map: "idx_yarn_tests_machine_no")
+  @@index([createdAt], map: "idx_yarn_tests_created_at")
+  @@map("yarn_tests")
+}
+
+/// Main fact table for daily production records.
+model ProductionRecord {
+  id                                             BigInt            @id @default(autoincrement())
+  /// Calendar date of production (column: Date)
+  productionDate                                 DateTime          @map("production_date") @db.Date
+  /// Month text, e.g. "Februari" (column: Month)
+  month                                          String            @db.VarChar(20)
+  /// Year extracted from productionDate (column: Year)
+  year                                           Int?              @map("year")
+  /// Unit / mill name (unified MillsUnit dimension, column: mills_unit_id)
+  millsUnitId                                    Int               @map("mills_unit_id")
+  /// Yarn type descriptor, e.g. OE, RING (column: Yarn Jenis Benang)
+  yarnTypeId                                     Int               @map("yarn_type_id")
+  /// Yarn count Ne (column: Count (Ne))
+  countNeId                                      Int               @map("count_ne_id")
+  /// Denormalized count Ne value for calculations (populated from countNe relation)
+  countNeValue                                   Decimal           @map("count_ne_value") @db.Decimal(10, 2)
+  /// Optional Count Description code (unified with Quality module)
+  /// Links to CountDescription.code (1–36 base set plus any dynamic extensions)
+  countDescriptionCode                           Int?              @map("count_description_code")
+  /// Slub code, if any (column: Slub Code)
+  slubCodeId                                     Int?              @map("slub_code_id")
+  /// Lot identifier (column: Lot Benang)
+  lotId                                          Int?              @map("lot_id")
+  /// SPK identifier (column: SPK)
+  spkId                                          Int?              @map("spk_id")
+  /// Blend identifier (unified dimension table)
+  blendId                                        Int?              @map("blend_id")
+  /// Cone / cheese colour (column: Warna Cone / Cheese)
+  warnaConeCheeseId                              Int?              @map("warna_cone_cheese_id")
+  /// Rayon brand (dimension table reference)
+  rayonBrandId                                   Int?              @map("rayon_brand_id")
+  /// Cone / cheese weight in kilograms (column: Berat Cone / Cheese (Kgs))
+  beratConeCheeseKg                              Decimal           @map("berat_cone_cheese_kg") @db.Decimal(10, 3)
+  /// Twist multiplier TM (column: TM)
+  tm                                             Decimal           @db.Decimal(10, 2)
+  /// TPI is calculated as TM * sqrt(countNeValue) but stored here as a column for import.
+  /// Formula: TPI = TM * sqrt(countNeValue)
+  tpi                                            Decimal           @db.Decimal(10, 3)
+  /// Machine speed (column: Speed)
+  speed                                          Int
+  /// Installed spindles / rotors (column: Jumlah Spindel / Rotor Terpasang)
+  jumlahSpindelRotorTerpasang                    Int               @map("jumlah_spindel_rotor_terpasang")
+  /// Actual production - cone/cheese quantity (column under Aktual Produksi: Jumlah Cones / Cheese)
+  jumlahConesCheese                              Int               @map("jumlah_cones_cheese")
+  /// Actual production in kilograms (Produksi (Kgs)).
+  /// Formula: produksiKgs = beratConeCheeseKg * jumlahConesCheese
+  produksiKgs                                    Decimal           @map("produksi_kgs") @db.Decimal(14, 3)
+  /// Actual production in pounds (Produksi (Lbs)).
+  /// Formula: produksiLbs = beratConeCheeseKg * jumlahConesCheese * 2.2046
+  produksiLbs                                    Decimal           @map("produksi_lbs") @db.Decimal(14, 3)
+  /// Actual production in bales (Aktual Produksi (Bales)).
+  /// Formula: aktualProduksiBales = produksiLbs / 400
+  aktualProduksiBales                            Decimal           @map("aktual_produksi_bales") @db.Decimal(14, 4)
+  /// 100% production capacity in bales (100% Produksi (Bales)).
+  /// Formula:
+  /// 100% produksi(bales) =
+  /// (jumlahSpindelRotorTerpasang * speed * 1440) /
+  /// (countNeValue * tpi * 840 * 36 * 400)
+  produksi100PercentBales                        Decimal           @map("produksi_100_percent_bales") @db.Decimal(14, 4)
+  /// Target production on target OPR (Target Produksi on Target OPR (Bales)).
+  /// Formula:
+  /// targetProduksiOnTargetOprBales =
+  /// jumlahSpindelRotorTerpasang * targetOpsOpr * 3 / 16 / 400
+  targetProduksiOnTargetOprBales                 Decimal           @map("target_produksi_on_target_opr_bales") @db.Decimal(14, 4)
+  /// Gain / loss of efficiency in bales versus target OPS/OPR
+  /// (Keuntungan atau Kerugian Efisiensi Bales on Target OPS / OPR).
+  /// Formula:
+  /// keuntunganKerugianEfisiensiBalesOnTargetOpsOpr =
+  /// (opsOprWorked - targetOpsOpr) *
+  /// jumlahSpindelRotorTerpasang * 3 / 16 / 400
+  keuntunganKerugianEfisiensiBalesOnTargetOpsOpr Decimal           @map("keuntungan_kerugian_efisiensi_bales_on_target_ops_opr") @db.Decimal(14, 4)
+  /// Target OPS/OPR.
+  /// Formula:
+  /// targetOpsOpr = 0.254 * speed * 0.9 / tpi / countNeValue
+  targetOpsOpr                                   Decimal           @map("target_ops_opr") @db.Decimal(12, 6)
+  /// Actual OPS/OPR based on total installed spindles.
+  /// Formula:
+  /// opsOprAktual = (produksiLbs * 16) / 3 / jumlahSpindelRotorTerpasang
+  opsOprAktual                                   Decimal           @map("ops_opr_aktual") @db.Decimal(12, 6)
+  /// OPS/OPR worked (from sheet column "OPS / OPR Worked").
+  opsOprWorked                                   Decimal           @map("ops_opr_worked") @db.Decimal(12, 6)
+  /// Production efficiency percentage (Produksi Effisiensi %).
+  /// Formula:
+  /// produksiEffisiensiPercent = aktualProduksiBales / produksi100PercentBales
+  produksiEffisiensiPercent                      Decimal           @map("produksi_effisiensi_percent") @db.Decimal(8, 4)
+  /// Work efficiency percentage (Effisiensi % Kerja).
+  /// Formula:
+  /// effisiensiKerjaPercent =
+  /// (opsOprWorked * jumlahSpindelRotorTerpasang * 3 / 1600 / 4) /
+  /// produksi100PercentBales
+  effisiensiKerjaPercent                         Decimal           @map("effisiensi_kerja_percent") @db.Decimal(8, 4)
+  /// Stoppage minutes - Power / Electric (min).
+  powerElectricMin                               Int?              @map("power_electric_min")
+  /// Stoppage minutes - Count Mengubah (min).
+  countMengubahMin                               Int?              @map("count_mengubah_min")
+  /// Stoppage minutes - Creel Mengubah (min).
+  creelMengubahMin                               Int?              @map("creel_mengubah_min")
+  /// Stoppage minutes - Preventive Mtc/Rotor/Ring Change Stoppage (min).
+  preventiveMtcMin                               Int?              @map("preventive_mtc_min")
+  /// Stoppage minutes - Creel Short Stoppage (min).
+  creelShortStoppageMin                          Int?              @map("creel_short_stoppage_min")
+  /// Total stoppage minutes (Total Penghentian (min)).
+  /// Formula:
+  /// totalPenghentianMin =
+  /// powerElectricMin + countMengubahMin + creelMengubahMin +
+  /// preventiveMtcMin + creelShortStoppageMin
+  totalPenghentianMin                            Int?              @map("total_penghentian_min")
+  /// Working spindles / rotors (Spindles / Rotors Bekerja).
+  /// Formula:
+  /// spindlesRotorsBekerja =
+  /// ((jumlahSpindelRotorTerpasang * 1440) -
+  /// (jumlahSpindelRotorTerpasang * totalPenghentianMin)) / 1440
+  spindlesRotorsBekerja                          Decimal?          @map("spindles_rotors_bekerja") @db.Decimal(14, 4)
+  /// Spindle / rotor efficiency (Spindle / Rotors Effisiensi).
+  /// Formula:
+  /// spindlesRotorsEffisiensi =
+  /// spindlesRotorsBekerja / jumlahSpindelRotorTerpasang
+  spindlesRotorsEffisiensi                       Decimal?          @map("spindles_rotors_effisiensi") @db.Decimal(10, 6)
+  /// Loss due to power stoppage (Power Penghentian).
+  /// Formula:
+  /// powerPenghentian =
+  /// -(opsOprWorked * 3 *
+  /// (jumlahSpindelRotorTerpasang * powerElectricMin / 1440) /
+  /// 16 / 400)
+  powerPenghentian                               Decimal?          @map("power_penghentian") @db.Decimal(14, 4)
+  /// Loss due to count change (Count Mengubah).
+  /// Formula:
+  /// countMengubahLoss =
+  /// -(opsOprWorked * 3 *
+  /// (jumlahSpindelRotorTerpasang * countMengubahMin / 1440)) /
+  /// 16 / 400
+  countMengubahLoss                              Decimal?          @map("count_mengubah_loss") @db.Decimal(14, 4)
+  /// Loss due to creel change (Creel Mengubah).
+  /// Formula:
+  /// creelMengubahLoss =
+  /// -(opsOprWorked * 3 *
+  /// (jumlahSpindelRotorTerpasang * creelMengubahMin / 1440)) /
+  /// 16 / 400
+  creelMengubahLoss                              Decimal?          @map("creel_mengubah_loss") @db.Decimal(14, 4)
+  /// Loss due to preventive maintenance / rotor / ring cup change.
+  /// Formula:
+  /// preventiveMtcLoss =
+  /// -(opsOprWorked * 3 *
+  /// (jumlahSpindelRotorTerpasang * preventiveMtcMin / 1440)) /
+  /// 16 / 400
+  preventiveMtcLoss                              Decimal?          @map("preventive_mtc_loss") @db.Decimal(14, 4)
+  /// Loss due to Creel (Sliver/Roving) Short.
+  /// Formula:
+  /// creelShortLoss =
+  /// -(opsOprWorked * 3 *
+  /// (jumlahSpindelRotorTerpasang * creelShortStoppageMin / 1440)) /
+  /// 16 / 400
+  creelShortLoss                                 Decimal?          @map("creel_short_loss") @db.Decimal(14, 4)
+  /// Total loss due to stoppage (Kerugian Total).
+  /// Formula:
+  /// kerugianTotal =
+  /// -(opsOprWorked * 3 *
+  /// (jumlahSpindelRotorTerpasang * totalPenghentianMin / 1440)) /
+  /// 16 / 400
+  kerugianTotal                                  Decimal?          @map("kerugian_total") @db.Decimal(14, 4)
+  /// Yarn price per bale (Harga Benang per Bale).
+  hargaBenangPerBale                             Decimal?          @map("harga_benang_per_bale") @db.Decimal(12, 2)
+  createdAt                                      DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                                      DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  blend                                          Blend?            @relation(fields: [blendId], references: [id], onUpdate: NoAction)
+  countDescription                               CountDescription? @relation(fields: [countDescriptionCode], references: [code], onUpdate: NoAction)
+  countNe                                        CountNe           @relation(fields: [countNeId], references: [id], onUpdate: NoAction)
+  lot                                            Lot?              @relation(fields: [lotId], references: [id], onUpdate: NoAction)
+  millsUnit                                      MillsUnit         @relation(fields: [millsUnitId], references: [id], onUpdate: NoAction)
+  rayonBrand                                     RayonBrand?       @relation(fields: [rayonBrandId], references: [id], onUpdate: NoAction)
+  slubCode                                       SlubCode?         @relation(fields: [slubCodeId], references: [id], onUpdate: NoAction)
+  spk                                            Spk?              @relation(fields: [spkId], references: [id], onUpdate: NoAction)
+  warnaConeCheese                                WarnaConeCheese?  @relation(fields: [warnaConeCheeseId], references: [id], onUpdate: NoAction)
+  yarnType                                       YarnType          @relation(fields: [yarnTypeId], references: [id], onUpdate: NoAction)
+
+  @@index([productionDate], map: "idx_production_records_production_date")
+  @@index([month], map: "idx_production_records_month")
+  @@index([year], map: "idx_production_records_year")
+  @@index([year, month], map: "idx_production_records_year_month")
+  @@index([millsUnitId], map: "idx_production_records_mills_unit_id")
+  @@index([yarnTypeId], map: "idx_production_records_yarn_type_id")
+  @@index([countNeId], map: "idx_production_records_count_ne_id")
+  @@index([countDescriptionCode], map: "idx_production_records_count_description_code")
+  @@index([blendId], map: "idx_production_records_blend_id")
+  @@index([slubCodeId], map: "idx_production_records_slub_code_id")
+  @@index([lotId], map: "idx_production_records_lot_id")
+  @@index([spkId], map: "idx_production_records_spk_id")
+  @@index([warnaConeCheeseId], map: "idx_production_records_warna_cone_cheese_id")
+  @@index([rayonBrandId], map: "idx_production_records_rayon_brand_id")
+  @@map("production_records")
+}
+
+/// Main fact table for Indigo Division process / chemical settings.
+model IndigoDivisionRecord {
+  id                          BigInt            @id @default(autoincrement())
+  /// Calendar date for the Indigo entry (column: TANGGAL)
+  tanggal                     DateTime          @db.Date
+  /// Machine / line identifier (column: MC)
+  mc                          Int
+  /// KP (free text from sheet, denormalised label)
+  kp                          String?           @db.VarChar(50)
+  /// Code / lot / internal reference (free text, denormalised label)
+  code                        String?           @db.VarChar(100)
+  /// NE (Count Description) – unified via CountDescription
+  countDescriptionCode        Int?              @map("count_description_code")
+  /// Denormalised NE label as typed in the Indigo sheet (optional)
+  ne                          String?           @db.VarChar(50)
+  /// P, TE, BB – store as decimals
+  p                           Decimal?          @db.Decimal(10, 3)
+  te                          Decimal?          @db.Decimal(10, 3)
+  bb                          Decimal?          @db.Decimal(10, 3)
+  /// Base machine / bath settings
+  speed                       Decimal?          @db.Decimal(10, 3)
+  bakCelup                    Decimal?          @map("bak_celup") @db.Decimal(10, 3)
+  bakSulfur                   Decimal?          @map("bak_sulfur") @db.Decimal(10, 3)
+  konstIdg                    Decimal?          @map("konst_idg") @db.Decimal(10, 3)
+  konstSulfur                 Decimal?          @map("konst_sulfur") @db.Decimal(10, 3)
+  visc                        Decimal?          @db.Decimal(10, 3)
+  ref                         Decimal?          @db.Decimal(10, 3)
+  sizeBox                     Decimal?          @map("size_box") @db.Decimal(10, 3)
+  scoring                     Decimal?          @db.Decimal(10, 3)
+  jetsize                     Decimal?          @db.Decimal(10, 3)
+  polisizeHs                  Decimal?          @map("polisize_hs") @db.Decimal(10, 3)
+  polisize12                  Decimal?          @map("polisize_1_2") @db.Decimal(10, 3)
+  armosize                    Decimal?          @db.Decimal(10, 3)
+  armosize11                  Decimal?          @map("armosize_1_1") @db.Decimal(10, 3)
+  armosize12                  Decimal?          @map("armosize_1_2") @db.Decimal(10, 3)
+  armosize13                  Decimal?          @map("armosize_1_3") @db.Decimal(10, 3)
+  armosize15                  Decimal?          @map("armosize_1_5") @db.Decimal(10, 3)
+  armosize17                  Decimal?          @map("armosize_1_7") @db.Decimal(10, 3)
+  quqlaxe                     Decimal?          @db.Decimal(10, 3)
+  armoC                       Decimal?          @map("armo_c") @db.Decimal(10, 3)
+  vitE                        Decimal?          @map("vit_e") @db.Decimal(10, 3)
+  armoD                       Decimal?          @map("armo_d") @db.Decimal(10, 3)
+  tapioca                     Decimal?          @db.Decimal(10, 3)
+  a308                        Decimal?          @map("a_308") @db.Decimal(10, 3)
+  indigo                      Decimal?          @db.Decimal(10, 3)
+  causticPemasakanIndigo      Decimal?          @map("caustic_pemasakan_indigo") @db.Decimal(10, 3)
+  hydro                       Decimal?          @db.Decimal(10, 3)
+  solopolPemasakanIndigo      Decimal?          @map("solopol_pemasakan_indigo") @db.Decimal(10, 3)
+  serawetPemasakanIndigo      Decimal?          @map("serawet_pemasakan_indigo") @db.Decimal(10, 3)
+  primasolPemasakanIndigo     Decimal?          @map("primasol_pemasakan_indigo") @db.Decimal(10, 3)
+  cottoclarinPemasakanIndigo  Decimal?          @map("cottoclarin_pemasakan_indigo") @db.Decimal(10, 3)
+  setamol                     Decimal?          @db.Decimal(10, 3)
+  granular                    Decimal?          @db.Decimal(10, 3)
+  granule                     Decimal?          @db.Decimal(10, 3)
+  grain                       Decimal?          @db.Decimal(10, 3)
+  wetMatic                    Decimal?          @map("wet_matic") @db.Decimal(10, 3)
+  fisat                       Decimal?          @db.Decimal(10, 3)
+  breviol                     Decimal?          @db.Decimal(10, 3)
+  csk                         Decimal?          @db.Decimal(10, 3)
+  comee                       Decimal?          @db.Decimal(10, 3)
+  dirsolRdp                   Decimal?          @map("dirsol_rdp") @db.Decimal(10, 3)
+  primasolNf                  Decimal?          @map("primasol_nf") @db.Decimal(10, 3)
+  zolopolPhtrZb               Decimal?          @map("zolopol_phtr_zb") @db.Decimal(10, 3)
+  cottoclarinPemasakanCaustik Decimal?          @map("cottoclarin_pemasakan_caustik") @db.Decimal(10, 3)
+  sanwet                      Decimal?          @db.Decimal(10, 3)
+  marcerizeCoustic            Decimal?          @map("marcerize_coustic") @db.Decimal(10, 3)
+  sanmercer                   Decimal?          @db.Decimal(10, 3)
+  sancomplex                  Decimal?          @db.Decimal(10, 3)
+  exsessCaustic               Decimal?          @map("exsess_caustic") @db.Decimal(10, 3)
+  exsessHydro                 Decimal?          @map("exsess_hydro") @db.Decimal(10, 3)
+  dextoor                     Decimal?          @db.Decimal(10, 3)
+  ltr                         Decimal?          @db.Decimal(10, 3)
+  diresolBlackKasRotkas       Decimal?          @map("diresol_black_kas_rotkas") @db.Decimal(10, 3)
+  sansulSdc                   Decimal?          @map("sansul_sdc") @db.Decimal(10, 3)
+  causticPemasakanSulfur      Decimal?          @map("caustic_pemasakan_sulfur") @db.Decimal(10, 3)
+  dextros                     Decimal?          @db.Decimal(10, 3)
+  solopolPemasakanSulfur      Decimal?          @map("solopol_pemasakan_sulfur") @db.Decimal(10, 3)
+  primasolPemasakanSulfur     Decimal?          @map("primasol_pemasakan_sulfur") @db.Decimal(10, 3)
+  serawetPemasakanSulfur      Decimal?          @map("serawet_pemasakan_sulfur") @db.Decimal(10, 3)
+  cottoclarinPemasakanSulfur  Decimal?          @map("cottoclarin_pemasakan_sulfur") @db.Decimal(10, 3)
+  saneutral                   Decimal?          @db.Decimal(10, 3)
+  dextroseAdjust              Decimal?          @map("dextrose_adjust") @db.Decimal(10, 3)
+  optifikRsl                  Decimal?          @map("optifik_rsl") @db.Decimal(10, 3)
+  ekalinF                     Decimal?          @map("ekalin_f") @db.Decimal(10, 3)
+  solopolPhtr                 Decimal?          @map("solopol_phtr") @db.Decimal(10, 3)
+  moitureMahlo                Decimal?          @map("moiture_mahlo") @db.Decimal(10, 3)
+  tempDryer                   Decimal?          @map("temp_dryer") @db.Decimal(10, 3)
+  tempMidDryer                Decimal?          @map("temp_mid_dryer") @db.Decimal(10, 3)
+  tempSizeBox1                Decimal?          @map("temp_size_box_1") @db.Decimal(10, 3)
+  tempSizeBox2                Decimal?          @map("temp_size_box_2") @db.Decimal(10, 3)
+  sizeBox1                    Decimal?          @map("size_box_1") @db.Decimal(10, 3)
+  sizeBox2                    Decimal?          @map("size_box_2") @db.Decimal(10, 3)
+  squeezingRoll1              Decimal?          @map("squeezing_roll_1") @db.Decimal(10, 3)
+  squeezingRoll2              Decimal?          @map("squeezing_roll_2") @db.Decimal(10, 3)
+  immersionRoll               Decimal?          @map("immersion_roll") @db.Decimal(10, 3)
+  dryer                       Decimal?          @db.Decimal(10, 3)
+  takeOff                     Decimal?          @map("take_off") @db.Decimal(10, 3)
+  winding                     Decimal?          @db.Decimal(10, 3)
+  pressBeam                   Decimal?          @map("press_beam") @db.Decimal(10, 3)
+  hydrolicPump1               Decimal?          @map("hydrolic_pump_1") @db.Decimal(10, 3)
+  hydrolicPump2               Decimal?          @map("hydrolic_pump_2") @db.Decimal(10, 3)
+  unwinder                    Decimal?          @db.Decimal(10, 3)
+  dyeingTensWash              Decimal?          @map("dyeing_tens_wash") @db.Decimal(10, 3)
+  dyeingTensWarna             Decimal?          @map("dyeing_tens_warna") @db.Decimal(10, 3)
+  mcIdg                       Decimal?          @map("mc_idg") @db.Decimal(10, 3)
+  strength                    Decimal?          @db.Decimal(10, 3)
+  elongasiIdg                 Decimal?          @map("elongasi_idg") @db.Decimal(10, 3)
+  cvPercent                   Decimal?          @map("cv_percent") @db.Decimal(10, 3)
+  createdAt                   DateTime          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                   DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  /// KODE foreign key to Kode dimension (nullable for legacy rows)
+  kodeId                      Int?              @map("kode_id")
+  /// KP foreign key to KP dimension (nullable for legacy rows)
+  kpId                        Int?              @map("kp_id")
+  countDescription            CountDescription? @relation(fields: [countDescriptionCode], references: [code], onUpdate: NoAction)
+  kodeRef                     Kode?             @relation(fields: [kodeId], references: [id], onUpdate: NoAction)
+  kpRef                       Kp?               @relation(fields: [kpId], references: [id], onUpdate: NoAction)
+
+  @@index([tanggal], map: "idx_indigo_division_records_tanggal")
+  @@index([countDescriptionCode], map: "idx_indigo_division_records_count_description_code")
+  @@index([kpId], map: "idx_indigo_division_records_kp_id")
+  @@index([kodeId], map: "idx_indigo_division_records_kode_id")
+  @@map("indigo_division_records")
+}
+
+model SalesContract {
+  id              Int       @id @default(autoincrement())
+  kp              String    @unique
+  tgl             DateTime
+  permintaan      String?
+  codename        String?
+  kons_kode       String?
+  kode_number     String?
+  kat_kode        String?
+  ket_ct_ws       String?
+  ket_warna       String?
+  status          String?
+  te              Decimal?
+  sisir           String?
+  p_kons          String?
+  ne_k_lusi       String?
+  ne_lusi         Decimal?
+  sp_lusi         String?
+  lot_lusi        String?
+  ne_k_pakan      String?
+  ne_pakan        Decimal?
+  sp_pakan        String?
+  j               Decimal?
+  j_c             Decimal?
+  b_c             Decimal?
+  tb              Decimal?
+  bale_lusi       Decimal?
+  total_pakan     Decimal?
+  bale_pakan      Decimal?
+  ts              DateTime?
+  sacon           Boolean   @default(false)
+  acc             String?
+  proses          String?
+  foto_sacon      String?
+  remarks         String?
+  is_active       Boolean   @default(true)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  pipeline_status String    @default("DRAFT")
+  kp_sequence     Int?      @unique  // decoded integer e.g. BUDQ = 4620
+  kp_status       String    @default("ACTIVE") // ACTIVE | REJECTED | ARCHIVED
+  archived_at     DateTime? // set when this record is archived
+  archived_kp     String?   // copy of kp before recycling
+
+  @@index([kp])
+  @@index([kons_kode, kode_number])
+  @@index([tgl])
+}
+
+model WarpingRun {
+  id              Int           @id @default(autoincrement())
+  kp              String        @unique
+  tgl             DateTime
+  start_time      String?
+  stop_time       String?
+  kode_full       String?
+  benang          String?
+  lot             String?
+  sp              String?
+  pt              Int?
+  te              Decimal?
+  rpm             Float?
+  mtr_min         Decimal?
+  total_putusan   Int?
+  data_putusan    String?
+  total_beam      Int?
+  cn_1            Decimal?
+  jam             Decimal?
+  total_waktu     Decimal?
+  eff_warping     Decimal?
+  no_mc           Int?
+  elongasi        Decimal?
+  strength        Decimal?
+  cv_pct          Decimal?
+  tension_badan   Int?
+  tension_pinggir Int?
+  lebar_creel     Int?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  mtr_per_min     Float?
+  start           String?
+  stop            String?
+  beams           WarpingBeam[]
+
+  @@index([kp])
+  @@index([tgl])
+}
+
+model WarpingBeam {
+  id              Int             @id @default(autoincrement())
+  warping_run_id  Int
+  kp              String
+  position        Int
+  beam_number     Int
+  putusan         Int?
+  created_at      DateTime        @default(now())
+  jumlah_ends     Int?
+  panjang_beam    Float?
+  warping_run     WarpingRun      @relation(fields: [warping_run_id], references: [id])
+  weaving_records WeavingRecord[]
+
+  @@unique([warping_run_id, position])
+  @@unique([kp, beam_number])
+  @@index([beam_number])
+  @@index([kp])
+}
+
+model IndigoRun {
+  id                Int       @id @default(autoincrement())
+  kp                String    @unique
+  tanggal           DateTime
+  mc                Decimal?
+  kode_full         String?
+  ne                String?
+  p                 Decimal?
+  te                Decimal?
+  bb                Decimal?
+  speed             Decimal?
+  bak_celup         Decimal?
+  bak_sulfur        Decimal?
+  konst_idg         Decimal?
+  konst_sulfur      Decimal?
+  visc              Decimal?
+  ref               Decimal?
+  size_box          Decimal?
+  scoring           Decimal?
+  jetsize           Decimal?
+  polisize_hs       Decimal?
+  polisize_1_2      Decimal?
+  armosize          Decimal?
+  armosize_1_1      Decimal?
+  armosize_1_2      Decimal?
+  armosize_1_3      Decimal?
+  armosize_1_5      Decimal?
+  armosize_1_7      Decimal?
+  quqlaxe           Decimal?
+  armo_c            Decimal?
+  vit_e             Decimal?
+  armo_d            Decimal?
+  tapioca           Decimal?
+  a_308             Decimal?
+  indigo            Decimal?
+  caustic           Decimal?
+  hydro             Decimal?
+  solopol           Decimal?
+  serawet           Decimal?
+  primasol          Decimal?
+  cottoclarin       Decimal?
+  setamol           Decimal?
+  granular          Decimal?
+  granule           Decimal?
+  grain             Decimal?
+  wet_matic         Decimal?
+  fisat             Decimal?
+  breviol           Decimal?
+  csk               Decimal?
+  comee             Decimal?
+  dirsol_rdp        Decimal?
+  primasol_nf       Decimal?
+  zolopol_phtr      Decimal?
+  cottoclarin_2     Decimal?
+  sanwet            Decimal?
+  marcerize_caustic Decimal?
+  sanmercer         Decimal?
+  sancomplex        Decimal?
+  exsess_caustic    Decimal?
+  exsess_hydro      Decimal?
+  dextoor           Decimal?
+  ltr               Decimal?
+  diresol_black_kas Decimal?
+  sansul_sdc        Decimal?
+  caustic_2         Decimal?
+  dextros           Decimal?
+  solopol_2         Decimal?
+  primasol_2        Decimal?
+  serawet_2         Decimal?
+  cottoclarin_3     Decimal?
+  saneutral         Decimal?
+  dextrose_adjust   Decimal?
+  optifik_rsl       Decimal?
+  ekalin_f          Decimal?
+  solopol_phtr      Decimal?
+  moisture_mahlo    Decimal?
+  temp_dryer        Decimal?
+  temp_mid_dryer    Decimal?
+  temp_size_box_1   Decimal?
+  temp_size_box_2   Decimal?
+  size_box_1        Decimal?
+  size_box_2        Decimal?
+  squeezing_roll_1  Decimal?
+  squeezing_roll_2  Decimal?
+  immersion_roll    Decimal?
+  dryer             Decimal?
+  take_off          Decimal?
+  winding           Decimal?
+  press_beam        Decimal?
+  hardness          Decimal?
+  hydrolic_pump_1   Decimal?
+  hydrolic_pump_2   Decimal?
+  unwinder          Decimal?
+  dyeing_tens_wash  Decimal?
+  dyeing_tens_warna Decimal?
+  mc_idg            String?
+  strength          Decimal?
+  elongasi_idg      Decimal?
+  cv_pct            Decimal?
+  tenacity          Decimal?
+  bak_1             Decimal?
+  bak_2             Decimal?
+  bak_3             Decimal?
+  bak_4             Decimal?
+  bak_5             Decimal?
+  bak_6             Decimal?
+  bak_7             Decimal?
+  bak_8             Decimal?
+  bak_9             Decimal?
+  bak_10            Decimal?
+  bak_11            Decimal?
+  bak_12            Decimal?
+  bak_13            Decimal?
+  bak_14            Decimal?
+  bak_15            Decimal?
+  bak_16            Decimal?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  bak_count         Int?
+  indigo_bak        Int?
+  indigo_conc       Float?
+  jumlah_rope       Int?
+  keterangan        String?
+  panjang_rope      Float?
+  start             String?
+  stop              String?
+  sulfur_bak        Int?
+  sulfur_conc       Float?
+  tgl               DateTime?
+  total_meters      Float?
+
+  @@index([kp])
+  @@index([tanggal])
+  @@index([mc])
+}
+
+model WeavingRecord {
+  id                 Int                 @id @default(autoincrement())
+  kp                 String
+  warping_beam_id    Int?
+  tanggal            DateTime
+  shift              String?
+  machine            String?
+  warp_supplier      String?
+  sizing             String?
+  beam               Int?
+  kode_kain          String?
+  operator           String?
+  a_pct              Decimal?
+  p_pct              Decimal?
+  rpm                Decimal?
+  kpicks             Decimal?
+  meters             Decimal?
+  warp_no            Int?
+  warp_stop_hr       Decimal?
+  warp_per_stop      Decimal?
+  weft_no            Int?
+  weft_stop_hr       Decimal?
+  weft_per_stop      Decimal?
+  bobbin_no          Int?
+  bobbin_stop_hr     Decimal?
+  bobbin_per_stop    Decimal?
+  stattempt_no       Int?
+  stattempt_stop_hr  Decimal?
+  stattempt_per_stop Decimal?
+  other_stops_no     Int?
+  other_stops_time   String?
+  long_stops_no      Int?
+  long_stops_time    String?
+  m_s                Decimal?
+  b_hr               Decimal?
+  merk               String?
+  area               String?
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  beam_no            Int?
+  efficiency         Float?
+  keterangan         String?
+  meter_out          Float?
+  no_mesin           Int?
+  pick_actual        Int?
+  tgl                DateTime?
+  synced_at          DateTime?           @map("synced_at") @db.Timestamp(6)
+  source             String?             @default("MANUAL") @db.VarChar(20)
+  inspect_gray       InspectGrayRecord[]
+  warping_beam       WarpingBeam?        @relation(fields: [warping_beam_id], references: [id])
+
+  @@unique([kp, tanggal, shift, machine])
+  @@index([kp])
+  @@index([tanggal])
+  @@index([machine])
+  @@index([beam])
+  @@index([machine, beam])
+  @@index([synced_at], map: "idx_weaving_record_synced_at")
+}
+
+model InspectGrayRecord {
+  id                Int            @id @default(autoincrement())
+  kp                String
+  weaving_record_id Int?
+  tg                DateTime
+  d                 String?
+  mc                String?
+  bm                Int?
+  sn                String?
+  sn_combined       String?
+  gd                String?
+  bme               Decimal?
+  sj                Decimal?
+  actual_meters     Decimal?
+  opg               String?
+  tgl_potong        DateTime?
+  no_pot            Int?
+  w                 String?
+  g                 String?
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+  berat             Float?
+  cacat             String?
+  grade             String?
+  inspector_name    String?
+  lebar             Float?
+  no_roll           Int?
+  panjang           Float?
+  tgl               DateTime?
+  weaving_record    WeavingRecord? @relation(fields: [weaving_record_id], references: [id])
+
+  @@unique([kp, mc, bm, no_pot])
+  @@index([kp])
+  @@index([tg])
+  @@index([mc, bm])
+  @@index([no_pot])
+  @@index([tgl_potong])
+}
+
+model FabricSpec {
+  id            Int     @id @default(autoincrement())
+  item          String  @unique
+  kons_kode     String
+  kode          String
+  kat_kode      String
+  te            Int?
+  lusi_type     String?
+  lusi_ne       String?
+  pakan_type    String?
+  pakan_ne      String?
+  sisir         String?
+  pick          Int?
+  anyaman       String?
+  arah          String?
+  lg_inches     Float?
+  lf_inches     Float?
+  susut_pakan   Float?
+  warna         String?
+  pretreatment  String?
+  indigo_i      Float?
+  indigo_bak_i  Int?
+  sulfur_s      Float?
+  sulfur_bak_s  Int?
+  posttreatment String?
+  finish        String?
+  oz_g          Float?
+  oz_f          Float?
+  p_kons        String?
+  remarks       String?
+
+  @@index([kons_kode])
+  @@index([kode])
+}
+
+model ImportLog {
+  id           Int       @id @default(autoincrement())
+  source       String    @db.VarChar(50)
+  rows_ok      Int?      @default(0) @map("rows_ok")
+  rows_error   Int?      @default(0) @map("rows_error")
+  error_detail String?   @map("error_detail")
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@index([createdAt], map: "idx_import_log_created_at")
+  @@index([source], map: "idx_import_log_source")
+  @@map("ImportLog")
+}

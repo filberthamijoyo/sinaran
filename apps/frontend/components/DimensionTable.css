@@ -1,0 +1,219 @@
+.dimension-table-container {
+  margin-top: 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+  padding: 1.25rem 1.5rem 1.5rem;
+  color: var(--color-text-main);
+}
+
+.dimension-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.dimension-table-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.dimension-table-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-refresh {
+  border-radius: 999px;
+  padding: 0.3rem 0.9rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+  color: var(--color-text-main);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.dimension-form {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-muted);
+  padding: 1rem 1.1rem 1.1rem;
+  margin-bottom: 1.1rem;
+  color: var(--color-text-main);
+}
+
+.dimension-form h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.dimension-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dimension-form label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.dimension-form input[type='text'],
+.dimension-form input[type='number'] {
+  border-radius: 6px;
+  border: 1px solid var(--color-border-subtle);
+  padding: 0.4rem 0.55rem;
+  font-size: 0.9rem;
+  background: var(--color-surface);
+  color: var(--color-text-main);
+}
+
+.dimension-form input[type='checkbox'] {
+  transform: translateY(1px);
+}
+
+.form-actions {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.btn-primary {
+  border-radius: 999px;
+  padding: 0.35rem 1.1rem;
+  border: none;
+  background: var(--color-primary);
+  color: white;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.btn-secondary {
+  border-radius: 999px;
+  padding: 0.35rem 1.1rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+  color: var(--color-text-main);
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.table-wrapper {
+  margin-top: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+  overflow: auto;
+  background: var(--color-surface-muted);
+}
+
+.dimension-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.dimension-table thead {
+  background: var(--color-surface-subtle);
+}
+
+.dimension-table th,
+.dimension-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  text-align: left;
+  white-space: nowrap;
+  color: var(--color-text-main);
+}
+
+.dimension-table tbody tr.inactive {
+  opacity: 0.7;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.status-badge.active {
+  background: rgba(0, 160, 80, 0.08);
+  color: #0b7a3e;
+}
+
+.status-badge.inactive {
+  background: rgba(140, 140, 160, 0.1);
+  color: #555;
+}
+
+.actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.btn-edit,
+.btn-delete,
+.btn-reactivate {
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+  color: var(--color-text-main);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.btn-delete {
+  border-color: #f4b4b4;
+  color: #b3261e;
+  background: #fff7f7;
+}
+
+.btn-reactivate {
+  border-color: #b4e0c4;
+  color: #0b7a3e;
+  background: #f4fff9;
+}
+
+.alert {
+  margin-bottom: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.alert-error {
+  background: #fff3f3;
+  border: 1px solid #f4b4b4;
+  color: #b3261e;
+}
+
+.alert-success {
+  background: #f2fff7;
+  border: 1px solid #b4e0c4;
+  color: #0b7a3e;
+}
+
+.loading {
+  padding: 0.75rem;
+  font-size: 0.9rem;
+}
+

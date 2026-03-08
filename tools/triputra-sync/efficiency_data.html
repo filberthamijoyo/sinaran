@@ -1,0 +1,1303 @@
+CURRENT
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow" />
+<title>Efficiency Online</title>
+
+<meta name="generator" content="" />
+
+<meta name="viewport"
+	content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link
+	href="jquery_ui/css/smoothness/jquery-ui-1.10.4.custom.min.css"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="css/jquery.multiselect.css">
+<link
+	rel="stylesheet" href="css/jquery.multiselect.filter.css">
+<link rel="shortcut icon"
+	href="images/favicon.ico">
+<link href="css/styles.css" rel="stylesheet">
+<link
+	href="css/tableGrid.css" rel="stylesheet">
+<link
+	rel="stylesheet" type="text/css" href="css/tableheader.css" />
+
+<link href="css/common.css"
+	rel="stylesheet">
+
+<script type="text/javascript">
+function detectBrowser(){
+	var N= navigator.appName;
+	var UA= navigator.userAgent;
+	var temp;
+	var browserVersion= UA.match(/(opera|chrome|safari|firefox|msie)\/?\s*(\.?\d+(\.\d+)*)/i);
+	if(browserVersion && (temp= UA.match(/version\/([\.\d]+)/i))!= null)
+	browserVersion[2]= temp[1];
+	browserVersion= browserVersion? [browserVersion[1], browserVersion[2]]: [N, navigator.appVersion,'-?'];
+	if(browserVersion[0]=="MSIE"){
+		alert("This Site Best viewed in (Firefox:25+, Chrome:25+) ");
+	}
+	if(browserVersion[0]=="Firefox" && parseInt(browserVersion[1])<25){
+		alert("This Site Best viewed in Firefox Version 25+");
+	}
+	if(browserVersion[0]=="Chrome" && parseInt(browserVersion[1])<25){
+		alert("This Site Best viewed in Chrome Version 25+");
+	}
+	//return browserVersion;
+	//alert(parseInt(browserVersion[1]))
+}
+detectBrowser();
+</script>
+<!-------------------------------for scroll------------------>
+<script type="text/javascript"><!-- This javascript code retains page scroll bar in it's position on page refresh-->
+
+cookieName="page_scroll"
+expdays=365
+
+function setCookie(name, value, expires, path, domain, secure){
+if (!expires){expires = new Date()}
+document.cookie = name + "=" + escape(value) + 
+((expires == null) ? "" : "; expires=" + expires.toGMTString()) +
+((path == null) ? "" : "; path=" + path) +
+((domain == null) ? "" : "; domain=" + domain) +
+((secure == null) ? "" : "; secure")
+}
+
+function getCookie(name) {
+var arg = name + "="
+var alen = arg.length
+var clen = document.cookie.length
+var i = 0
+while (i < clen) {
+var j = i + alen
+if (document.cookie.substring(i, j) == arg){
+return getCookieVal(j)
+}
+i = document.cookie.indexOf(" ", i) + 1
+if (i == 0) break
+}
+return null
+}
+
+function getCookieVal(offset){
+var endstr = document.cookie.indexOf (";", offset)
+if (endstr == -1)
+endstr = document.cookie.length
+return unescape(document.cookie.substring(offset, endstr))
+}
+
+function deleteCookie(name,path,domain){
+document.cookie = name + "=" +
+((path == null) ? "" : "; path=" + path) +
+((domain == null) ? "" : "; domain=" + domain) +
+"; expires=Thu, 01-Jan-00 00:00:01 GMT"
+}
+
+function saveScroll(){ // added function
+var expdate = new Date ()
+expdate.setTime (expdate.getTime() + (expdays*24*60*60*1000)); // expiry date
+
+var x =(window.pageXOffset)?window.pageXOffset:document.body.scrollLeft;
+var y =(window.pageYOffset)?window.pageYOffset:document.body.scrollTop;
+Data=x + "_" + y
+setCookie(cookieName,Data,expdate)
+}
+
+function loadScroll(){ // added function
+inf=getCookie(cookieName)
+if(!inf){return}
+var ar = inf.split("_")
+if(ar.length == 2){
+window.scrollTo(parseInt(ar[0]), parseInt(ar[1]))
+}
+}
+
+</script>	
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link
+	href="jquery_ui/css/smoothness/jquery-ui-1.10.4.custom.min.css"
+	rel="stylesheet">
+<link rel="stylesheet"
+	href="css/jquery.multiselect.css">
+<link
+	rel="stylesheet" href="css/jquery.multiselect.filter.css">
+<link rel="shortcut icon"
+	href="images/favicon.ico">
+<!--<link href="css/styles.css" rel="stylesheet">-->
+<link
+	href="css/tableGrid.css" rel="stylesheet">
+<link
+	rel="stylesheet" type="text/css" href="css/tableheader.css" />
+<link href="css/common.css"
+	rel="stylesheet">
+<link href="css/online_box.css" rel="stylesheet">
+<link href="css/tablestyles.css" rel="stylesheet">
+<link href="css/tablestyles_blue.css" rel="stylesheet">
+<!-------------------------------for scroll------------------>
+</head>
+
+
+<body>
+	<style>
+/*---------------rotate image-------------------*/
+  @-webkit-keyframes spincube {
+    100%{
+     transform:rotateY(0deg);
+  }
+ 0%{
+     transform: rotateY(360deg);
+ }
+  
+  }
+
+  @keyframes spincube {
+    100%{
+     transform:rotateY(0deg);
+  }
+ 0%{
+     transform: rotateY(360deg);
+ }
+	
+  
+  }
+
+  .cubespinner {
+    -webkit-animation-name: spincube;
+    -webkit-animation-timing-function: ease-in-out;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-duration: 20s;
+
+    animation-name: spincube;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    animation-duration: 20s;
+
+    -webkit-transform-style: preserve-3d;
+    -moz-transform-style: preserve-3d;
+    -ms-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+
+    -webkit-transform-origin: 60px 60px 0;
+    -moz-transform-origin: 60px 60px 0;
+    -ms-transform-origin: 60px 60px 0;
+    transform-origin: 60px 60px 0;
+  }
+
+  .cubespinner div {
+    position: absolute;
+    width: 120px;
+    height: 0px;
+    /* border: 1px solid #ccc; */
+    background: rgba(255,255,255,0.8);
+    /* box-shadow: inset 0 0 20px rgba(0,0,0,0.2); */
+    /* line-height: 50px; */
+    /* text-align: center; */
+    /* font-size: 100px;*/
+  }
+
+  .cubespinner .face1 {
+    -webkit-transform: translateZ(60px);
+    -moz-transform: translateZ(60px);
+    -ms-transform: translateZ(60px);
+    transform: translateZ(60px);
+  }
+  .cubespinner .face2 {
+    -webkit-transform: rotateY(90deg) translateZ(60px);
+    -moz-transform: rotateY(90deg) translateZ(60px);
+    -ms-transform: rotateY(90deg) translateZ(60px);
+    transform: rotateY(90deg) translateZ(60px);
+  }
+  .cubespinner .face3 {
+     -webkit-transform: rotateY(180deg) translateZ(60px);
+    -moz-transform: rotateY(180deg) translateZ(60px);
+    -ms-transform: rotateY(180deg) translateZ(60px);
+    transform: rotateY(180deg) translateZ(60px);
+  }
+  .cubespinner .face4 {
+    -webkit-transform: rotateY(270deg) translateZ(60px);
+    -moz-transform: rotateY(270deg) translateZ(60px);
+    -ms-transform: rotateY(270deg) translateZ(60px);
+    transform: rotateY(270deg) translateZ(60px);
+  }
+  .cubespinner .face5 {
+    -webkit-transform: rotateY(360deg) translateZ(60px);
+    -moz-transform: rotateY(360deg) translateZ(60px);
+    -ms-transform: rotateY(360deg) translateZ(60px);
+    transform: rotateY(360deg) translateZ(60px);
+  }
+  .cubespinner .face6 {
+    -webkit-transform: rotateY(-90deg) translateZ(60px);
+    -moz-transform: rotateY(-90deg) translateZ(60px);
+    -ms-transform: rotateY(-90deg) translateZ(60px);
+    transform: rotateY(-90deg) translateZ(60px);
+  }
+
+
+/*---------------rotate image-------------------*/
+
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+<a id="dlink"
+
+	style="display: none;"></a>
+
+<div
+
+	class="navbar navbar-default navbar-fixed-top nav-wrapper"
+
+	role="navigation" id="navbartop">
+
+	<!--div class="" style="background-color: #7B7B7B; color: #FFFFFF;">
+
+		<span title="Version">PW-1.00Ver </span> <span
+
+			style="padding-left: 35%; font-weight: bold;">***PT TRI PUTRA***
+		</span> <span title="Shift Date & Time" class="pull-right">Shift-3 &nbsp;&nbsp;03-03-2026 &nbsp;&nbsp;
+			<span id="mytime"></span> </span>
+
+	</div-->
+
+	<div class="navbar-header nav-wrapper" >
+
+		<button type="button" class="navbar-toggle" data-toggle="collapse"
+
+			style="border: none;" data-target=".navbar-ex1-collapse">
+
+			<span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span>
+
+			<span class="icon-bar"></span> <span class="icon-bar"></span>
+
+
+
+		</button>
+
+		<div class="nav-wrapper blue-grey darken-4">
+
+			<a href="index.php" class="brand-logo left"><img
+
+				src="uploads/mill/mill_logo.png" height="35px"
+
+				style="margin-top: 8px; margin-left: 8px" /> </a>
+
+		</div>
+
+		<!--a class="" href="index.php"> <img alt="."
+
+			src="" width="150px"
+
+			height="50px" title="DASHBOARD">
+
+		</a-->
+
+	</div>
+
+	<div class="collapse navbar-collapse navbar-ex1-collapse " >
+
+		<ul class="nav navbar-nav ">
+
+			<li class="menu-item dropdown"><a target="" href="#"
+
+				class="dropdown-toggle nav-text" data-toggle="dropdown"><b
+
+					class="caret"></b> </a>
+
+				<ul class="dropdown-menu">
+
+					<li class="nav-text"><a class="nav-text"  target="" 
+						href="overall_online.php" title="Ctrl+Shift+1">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="production.php"
+
+						title="Ctrl+Shift+2"> </a></li>
+
+					
+
+					<li><a  target=""  class=" nav-text" href="stoppage.php"
+
+						title="Ctrl+Shift+3"> </a></li>
+
+					
+
+					<li><a  target=""  class="nav-text" href="efficiency.php"
+
+						title="Ctrl+Shift+4"></a>
+
+					</li>
+					
+					<li><a  target=""  class="nav-text" href="urutanoff.php"
+
+						title="Ctrl+Shift+4">Urutan Mesin Stop</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="speed.php"
+
+						title="Ctrl+Shift+5"> </a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="weaver_section.php"
+
+						title="Ctrl+Shift+6"> </a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="group_online.php"
+
+						title="Ctrl+Shift+7"> </a>
+
+					</li>
+
+										<li><a  target=""  class="nav-text"
+
+						href="dashboard_analysis.php" title="Ctrl+Shift+8">
+					</a>
+
+					</li>
+
+				</ul>
+
+			</li>
+
+			
+
+			<li class="menu-item dropdown"><a  target=""  href="#"
+
+				class="dropdown-toggle nav-text" data-toggle="dropdown"><b
+
+					class="caret"></b> </a>
+
+				<ul class="dropdown-menu blue-grey darken-4">
+
+					
+					<li><a  target=""  class="nav-text" href="mill_std_ae.php">
+					</a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="machine_std_ae.php?a=0"> </a>
+
+					</li>
+
+					
+					
+					
+					<li><a  target=""  class="nav-text"
+
+						href="style_std_ae.php?a=0"> </a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text" href="men_std_ae.php?a=0">
+					</a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="scode_std_ae.php?a=0"> </a>
+
+					</li>
+					<li><a  target="_blank"  class="nav-text"
+
+						href="scode_sub_std_ae.php?a=0"> Stop Codes Sub Group</a>
+
+					</li>
+					
+					<li><a  target=""  class="nav-text" href="beam_std_ae.php?a=0">
+					</a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text" href="shed_std_ae.php?a=0"></a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="mtype_std_ae.php?a=0"> </a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="group_std_ae.php?a=0"> </a>
+
+					</li>
+					
+					
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="supplier_std_ae.php?a=0"> </a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text" href="color_std_ae.php">
+					</a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="reportpara_std_ae.php">
+					</a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="scoreboard_std_ae.php?a=0">
+					</a>
+
+					</li>
+
+					
+					<li><a  target=""  class="nav-text" href="wsec_std_ae.php?a=0">
+					</a> 			<!-- 	<li class="menu-item dropdown dropdown-submenu"><a
+						 target="" 						href="#" class="dropdown-toggle" data-toggle="dropdown">					</a>
+						<ul class="dropdown-menu">
+							<li><a  target=""
+								 class="nav-text" href="mailmaster_std_ae.php?a=0">							</a></li>
+							<li><a  target=""
+								 class="nav-text" href="mailsettings_std_ae.php?a=0">							</a></li>
+						</ul>
+				</li> -->
+				
+
+				</ul>
+
+			</li>
+
+			<li class="menu-item dropdown"><a  target=""  href="#"
+
+				class="dropdown-toggle nav-text" data-toggle="dropdown"><b
+
+					class="caret"></b> </a>
+
+				<ul class="dropdown-menu blue-grey darken-4">
+
+					
+					<li><a  target=""  class="nav-text"
+
+						href="men_plan_assign.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text" href="userlevels.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="scode_assign.php?a=0"> </a> 
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="style_beam_assign.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="cur_men_assign.php?a=0"> </a>
+
+						
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="group_assign.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="enable_disable_mc.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="weaversection_assign.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="enable_disable_roll.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text" href="mcorder.php?a=0">
+					</a> 
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="manual_entry.php?a=0">
+					</a> 				
+				
+
+				</ul>
+
+			</li><li class="menu-item dropdown"><a target="" href="#"
+
+				class="dropdown-toggle nav-text" data-toggle="dropdown"><b
+
+					class="caret"></b> </a>
+
+				<ul class="dropdown-menu blue-grey darken-4">
+
+					<li><a  target=""  class="nav-text"
+
+						href="production_report_new.php"> </a>
+
+					</li>
+					<li><a  target=""  class="nav-text"
+
+						href="user_production_report.php"> </a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="stoppage_report.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text"
+
+						href="efficiency_report.php"> </a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="eff_trend.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="performance.php">
+					</a>
+
+					</li>
+					<li><a  target=""  class="nav-text"
+
+						href="user_performance.php">User Performance </a>
+
+					</li>
+					<li><a  target=""  class="nav-text" href="beamplaning.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="unassbeam.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="rolldoff_rep.php">
+					</a>
+
+					</li>
+					<li><a  target=""  class="nav-text" href="metersonloom.php">Meters on Loom
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="long_term.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="stopgraph.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="comparison_rep.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="monthlyrep.php">
+					</a>
+
+					</li>
+					<!--<li><a  target=""  class="nav-text" href="conversion_rate_report.php">Conversion Rate Report
+
+					</a>
+
+					</li>
+					<li class="menu-item dropdown dropdown-submenu"><a  target="" 
+						href="#" class="dropdown-toggle nav-text" data-toggle="dropdown">
+					</a>-->
+                    
+                    <ul class="dropdown-menu blue-grey darken-4">
+					       <li><a  target=""  class="nav-text" href="user_report1.php">
+							</a></li>
+							<li><a  target=""  class="nav-text" href="user_report2.php">
+							</a></li>
+							
+							<li><a  target=""  class="nav-text" href="user_report3.php">
+							</a>
+
+							</li>
+							<!-- additional user report --->
+							<li><a  target=""  class="nav-text" href="user_report4.php">
+							</a>
+
+							</li>
+							<li><a  target=""  class="nav-text" href="user_report5.php">
+							</a>
+
+							</li>
+										
+						
+							<li><a  target=""  class="nav-text" href="user_report6.php">
+							</a>
+
+							</li>
+							
+							
+							
+							<li><a  target=""  class="nav-text" href="user_report7.php">
+							</a>
+
+							</li>
+							<!-- 
+				         	<li><a  target=""  class="nav-text" href="user_report8.php">
+							</a>
+
+							</li>
+							<li><a  target=""  class="nav-text" href="user_report9.php">
+							</a>
+
+							</li>-->
+
+						</ul>
+					</li>
+
+					<li><a  target=""  class="nav-text" href="threeshift_nw.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="assigned_men.php">
+					</a>
+
+					</li>
+					
+					<!-- <li><a  target=""  class="nav-text"	href="demo_layout.php?a=0">					 </a>
+					
+					</li>
+					
+					<li><a  target=""  class="nav-text"	href="threeshiftnw.php?a=0">User Three Shift Report					 </a>
+					
+					</li> -->
+					
+                     									
+
+					<li class="menu-item dropdown dropdown-submenu"><a  target="" 
+						href="#" class="dropdown-toggle nav-text" data-toggle="dropdown">
+					</a>
+
+						<ul class="dropdown-menu blue-grey darken-4">
+
+							<li><a  target=""  class="nav-text" href="stdmc_rep.php">
+							</a>
+
+							
+
+							<li><a  target=""  class="nav-text" href="stdbeam_rep.php">
+							</a>
+
+							
+
+							<li><a  target=""  class="nav-text"
+
+								href="stdstopcode_rep.php"> </a>
+
+							
+
+							<li><a  target=""  class="nav-text" href="stdstyle_rep.php">
+							</a>
+
+							
+
+							<li><a  target=""  class="nav-text"
+
+								href="stdsupplier_rep.php"> </a>
+
+							
+
+						
+
+							
+
+							<li><a  target=""  class="nav-text" href="stdmen_rep.php">
+							</a>
+
+							
+
+							<li><a  target=""  class="nav-text" href="stdweaver_rep.php">
+							</a> <!-- 	<li><a target="" href="stdgroup_rep.php"></a> -->
+
+							</li>
+
+						</ul>
+
+					</li>
+
+				</ul>
+
+			</li>
+
+			<li class="menu-item dropdown"><a target="" href="#"
+
+				class="dropdown-toggle nav-text" data-toggle="dropdown">New<b
+
+					class="caret"></b> </a>
+
+				<ul class="dropdown-menu blue-grey darken-4">
+
+					<li><a  target=""  class="nav-text"
+
+						href="production_report_new2.php"> </a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="stoppage_report_new.php">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text"
+
+						href="efficiency_report_new.php"> </a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="beamplaning_new.php">
+					</a>
+
+					</li>
+
+				</ul>
+
+			</li>
+
+			
+			<li class="menu-item dropdown"><a  target=""  href="#"
+
+				class="dropdown-toggle nav-text" data-toggle="dropdown"><b
+
+					class="caret"></b> </a>
+
+				<ul class="dropdown-menu blue-grey darken-4">
+
+					<li><a  target=""  class="nav-text" href="system_config.php"
+
+						title=""> </a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text"
+
+						href="production_excel.php" title="">
+					</a>
+
+					</li>
+
+					<li><a  target=""  class="nav-text" href="formulae.php"
+
+						title=""> </a>
+
+					
+
+					<li><a  target=""  class="nav-text"
+
+						href="communication_checker.php" title="">
+					</a>
+
+					
+
+					<li><a  target=""  class="nav-text" href="change_password.php" title=""></a>
+
+					</li>
+					
+					<!-- <li><a  target=""  class="nav-text" href="layout_view.php" title="">Layout View</a>
+
+					</li> -->
+
+				</ul>
+
+			</li>
+
+			<!-- <li class="menu-item dropdown"><a target="" href="#"
+
+				class="dropdown-to
+
+					
+
+					ggle" data-toggle="dropdown">Standards<b
+
+					class="caret"></b>
+
+			</a><ul class="dropdown-menu">
+
+							<li><a target="" href="testall.php">test</a>
+
+							</li></ul>
+
+			</li>
+
+			<li class="menu-item dropdown"><a target="" href="#"
+
+				class="dropdown-toggle" data-toggle="dropdown">Assignments<b
+
+					class="caret"></b>
+
+			</a></li> -->
+
+			<li class="menu-item dropdown"><a  target=""  href="#"
+
+				class="dropdown-toggle nav-text" data-toggle="dropdown">About <b
+
+					class="caret"></b> </a>
+
+                    <ul class="dropdown-menu blue-grey darken-4">
+
+					<li style="font-size: 10px" class="white-text">
+
+						PW-1.00Ver &nbsp;&nbsp;&nbsp; Shift-3 &nbsp;&nbsp;03-03-2026 &nbsp;&nbsp;
+						<span id="mytime">8:47:00 PM </span>
+
+					</li>
+
+                    </ul>
+
+			</li>
+
+			<li><a  href="logout.php" title="Exit">Exit</a>
+
+			<li>
+
+            </ul>
+
+			<span style="float:right;" onclick="window.open('http://datalog.co.in', '_blank');">
+ <!---------------rotate image------------------->
+			
+<div class="stage" style="width: 120px; height: 50px;">
+<div class="cubespinner">
+<div class="face1"><img alt="Datalog" src="images/D Smart Logo.jpg" title="DATALOG" style="margin: 0px; width: 120px; height: 50px;"></div>
+<div class="face2"><img alt="Datalog" src="images/Logo.jpg" title="DATALOG" style="margin: 0px; width: 120px; height: 50px;"></div>
+<div class="face3"><img alt="Datalog" src="images/D Smart Logo.jpg" title="DATALOG" style="margin: 0px; width: 120px; height: 50px;"></div>
+<div class="face4"><img alt="Datalog" src="images/Logo.jpg" title="DATALOG" style="margin: 0px; width: 120px; height: 50px;"></div>
+<div class="face5"><img alt="Datalog" src="images/D Smart Logo.jpg" title="DATALOG" style="margin: 0px; width: 120px; height: 50px;"></div>
+<div class="face6"><img alt="Datalog" src="images/Logo.jpg" title="DATALOG" style="margin: 0px; width: 120px; height: 50px;"></div>
+
+</div>
+</div>
+			<!---------------rotate image------------------->
+			</span>
+
+		
+
+	</div>
+
+</div>
+
+<div id="filtericon" style="position:fixed; top:10px; z-index:10000; display:none">
+
+<button id="filterbtn" class="btn btn-sm "data-toggle="modal" data-target="#myModal" ><i class="glyphicon glyphicon-filter"></i></button>
+
+</div>
+
+
+
+<div id="reloadbtn" style="position:fixed; top:10px; z-index:10000;display:none">
+
+<button class="btn btn-sm btn-info" style="box-shadow:2px 2px 2px #888" onclick="window.location=window.location" ><i class="glyphicon glyphicon-repeat"></i></button>
+
+</div>
+
+
+
+<div id="mylodaerImage" style="position:fixed; top:250px; width:100%; padding:10px;">
+
+<marquee direction="left" width="100%"  behavior="alternate" style="border:none">
+
+<img src="images/Logo.jpg" width="150px"><br/><div style="width:150px; text-align:center">Loading</div>
+
+</marquee>
+
+</div>
+
+
+
+<script type="text/javascript">
+
+var MillName="***PT TRI PUTRA***";
+
+var Datalog="DATALOG";
+
+var Phpversion="PW01.1";
+
+var topContent="<table style='font-size:22px;font-weight:bold;'><tr><td colspan='5' style='text-align:center;'>***PT TRI PUTRA***</td><td colspan='5' style='text-align:right;'>Datalog</td></tr></table>";
+
+var exportExlContent="<b style='color:red;'>*Report taken through Excel</b>";
+
+</script>
+<style>
+select#selection_type {
+    width: 95px;
+}
+</style>
+
+
+<style>
+.close {
+    float: right;
+    font-size: 29px;
+    font-weight: 700;
+    line-height: 1;
+    color: red;
+    text-shadow: 0 1px 0 #fff;
+    opacity: 1.2;
+    filter: alpha(opacity = 20);
+}
+
+</style>
+
+<style>
+div#mylodaerImage {
+    display: none;
+}
+.col-lg-1 {
+
+    width: 9.33333333%;
+
+}
+
+</style>
+	
+	<div id="mymaincontent" style="padding:12px">
+		<div class="row">
+			<div id="custom_main">
+
+				
+				<div class='modal fade' id='myModal' role='dialog'>
+    <div class='modal-dialog' style='width: 100%;'>
+    
+      <div class='modal-content'>
+        <div class='modal-header'>
+		  <button type='button' class='btn btn-default close' data-dismiss='modal'>&times;</button>
+		  </br>
+           </div>
+        <div class='modal-body'>				
+				<div class='col-md-12 col-lg-12  online_search_fixed'>					<h5 class="ac">
+						<b> </b>
+					</h5>
+					<div class="col-md-12 col-lg-12">
+						<form method="post" id="onlineefffrm">
+							<div class="row">
+								<div class="col-md-12 col-lg-12 " style="padding: 5px;">
+										<div class="col-md-2 col-lg-1">
+																					</div>
+										<div class="col-md-4 col-lg-3" style="padding: 5px;">
+											<select class="clur form-control" id="shed" name="shed">
+												<option value="">All</option>
+												<option value='SHED-1' >SHED-1</option><option value='SHED-3' >SHED-3</option>
+											</select>
+										</div>
+									</div>
+
+								<div class="col-md-12 col-lg-12 " style="padding: 5px;">
+										<div class="col-md-2 col-lg-1">
+																					</div>
+										<div class="col-md-4 col-lg-3" style="padding: 5px;">
+											<select class="clur form-control" id="machine_type"
+												name="machine_type" onchange="load_reptype1(this.value);">
+												<option value="">All</option>
+												<option value='GAMMAX' >GAMMAX</option><option value='GT MAX' >GT MAX</option><option value='GTMAX I' >GTMAX I</option><option value='OPT YUNANI' >OPT YUNANI</option><option value='OPTIMAX I' >OPTIMAX I</option><option value='OPTIMAX M' >OPTIMAX M</option><option value='OPTMAX' >OPTMAX</option>
+											</select>
+										</div>
+									</div>
+								
+								<!--select machine and style-->
+								<div class="col-md-12 col-lg-12 " style="padding: 5px;">
+										<div class="col-md-2 col-lg-1">
+											<font id=""></font>
+										</div>
+								<div class="col-md-4 col-lg-3" style="padding: 5px;">
+											<select class="clur form-control" id="sortby" name="sortby"
+												onchange="js:$('#option_type').val('All');$('#rep_type_td').html('');$('#type_lable').html(this.value);">
+												<option value="Machine"
+												>Machine</option>
+												<option value="Style"
+												>Style</option>
+												<!--<option value="descr"
+												>Quality Group</option>-->
+												<option value="Beam"
+												>Beam</option>
+												<option value="Group"
+												>Group</option>
+												<option value='Weaver' >Weaver</option><option value='Fitter' >Fitter</option><option value='Supervisor' >Supervisor</option>											</select>
+										</div>
+									</div>
+									<div class="col-md-12 col-lg-12 " style="padding: 5px;">
+										<div class="col-md-2 col-lg-1">
+											<font id="type_lable"> </font>
+										</div>
+										<div class="col-md-4 col-lg-3" style="padding: 5px;">
+											<select class="clur form-control"
+												onchange="load_reptype(this.value);" id="option_type"
+												name="option_type">
+												<option value="All"
+												>All</option>
+												<option value="Single"
+												>Single</option>
+												<option value="Selection"
+												>Selection</option>
+
+											</select>
+										</div>
+										<div class="col-md-4 col-lg-4" style="padding: 5px;">
+											<span id="rep_type_td"></span>
+										</div>
+									</div>
+								<!--select machine and style-->
+								
+								
+							</div>
+							<div class="row">
+								<div class="col-md-12 col-lg-12 " style="padding: 5px;">
+									<div class="col-md-4 col-lg-1">
+																			</div>
+									<div class="col-md-2 col-lg-2" style="padding: 5px;">
+										<select id="selectdata" name="selectdata" class="form-control"
+											onchange="enable(this.value,1); enable_show();">
+											<option value="">All</option>
+																						<option value="Aeff"
+											>
+												Aeff											</option>
+																						<option value="Peff"
+											>
+												Peff											</option>
+																					</select>
+									</div>
+									<div class="col-md-2 col-lg-2" style="padding: 5px;">
+										<input type="text" name="con_value" id="con_value"
+											placeholder="Value" autocomplete="off"
+											value="" size="3"
+											class="form-control" onblur="enable_show();" />
+									</div>
+									<div class="col-md-2 col-lg-2" style="padding: 5px;">
+										<select class="clur form-control" name="con" id="con"
+											onchange="enable_show();">
+											<option value="">--Condition--</option>
+											<option value=">"
+											>
+												>											</option>
+											<option value="<"
+											>
+												<											</option>
+										</select>
+									</div>
+									<div class="col-md-2 col-lg-2" style="padding: 5px;">
+										<select class="clur form-control" id="ordersort"
+											name="ordersort" style="padding: 5px;">
+											<option value="">--Order by--</option>
+											<option value="ASC"
+											>Ascending</option>
+											<option value="DESC"
+											>Descending</option>
+										</select>
+									</div>
+									<div class="col-md-2 col-lg-2" id="result_filter_button"
+										style="padding: 5px;">
+										<input type="button" class="btn btn-success" id="show_button"
+											value="Show" onclick="prod_load();" />
+																				<input type="button" class="btn btn-danger" id="reset_button"
+											value="Reset" />
+																			</div>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+        <div class='modal-footer'>
+         
+        </div>
+      </div>
+      
+    </div>
+  </div><div id='filterbox'></div>					</div>				<div class="col-md-12 col-lg-12" style="padding: 5px;">
+					<h5 class="chartTitle">
+						<b> </b>
+					</h5>
+					<div class="col-sm-12 col-md-6 col-lg-6 btn-filterapply" style="height:70px; padding:5px; ">
+						Filter On:
+						Machine Type - All / Shed Type - All / Sort By - Current					</div>
+					<div
+						class="col-sm-12 col-md-6 col-lg-6 btn-filterapply"
+						style="height: 70px; padding: 0px;">
+						<table class="CSSTableGenerator" width="100%">
+							<tr>
+								<td></td>
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>Aeff</td>
+								<td>0.0								</td>
+								<td>0.0								</td>
+								<td>0.0								</td>
+							</tr>
+							<tr>
+								<td>Peff</td>
+								<td>0.0								</td>
+								<td>0.0								</td>
+								<td>0.0								</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+
+				<div style='width:100%;'>No Records Found.</div>
+
+
+			</div>
+		</div>
+	</div>
+
+
+
+	<script src="js/jquery.min.js"></script><script src="js/bootstrap.min.js"></script><script	src="jquery_ui/js/jquery-ui-1.10.4.custom.min.js"></script><script	src="js/jquery.multiselect.js"></script><script	src="js/jquery.multiselect.filter.js"></script><script src="js/table_to_excel.js"></script><script	type="text/javascript" src="js/jquery.freezeheader.js"></script><script	type="text/javascript" src="js/shortcut.js"></script><script	src="js/jquery.fixedheadertable.js"></script><script	src="js/jvalidate/jquery.validate.js"></script><script src="js/common.js"></script><script>$( "#showicon" ).click(function() {	  $( "#search_box" ).slideToggle( "slow" );});$( "#showicon" ).click(function() {	  	$( "#filterbox" ).slideToggle( "slow" );});$( "#filtericon" ).click(function() {	  	$( "#filterbox" ).slideToggle( "slow" );});$( "#filtericon" ).click(function() {	  	$( "#search_box" ).slideToggle( "slow" );});</script><script>function sortby(field){    var order_by="";    if(order_by=="" || order_by=='desc'){    	order_by="asc";    }else{    	order_by="desc";    }    $("#orderby").val(order_by);    $("#orderby_field").val(field);    $("#sortform").submit();}function blink(elem, times, speed) {    if (times > 0 || times < 0) {        if ($(elem).hasClass("blink"))             $(elem).removeClass("blink");        else            $(elem).addClass("blink");    }    clearTimeout(function () {        blink(elem, times, speed);    });    if (times > 0 || times < 0) {        setTimeout(function () {            blink(elem, times, speed);        }, speed);        times -= .5;    }}</script><script>function filtericonposition(){	var w1=$(window).width() ;	if (w1>992){		document.getElementById("filtericon").style.right="210px";document.getElementById("reloadbtn").style.right="170px";document.getElementById("reloadbtn").style.display = "block";		} else {		document.getElementById("filtericon").style.right="100px";document.getElementById("reloadbtn").style.right="60px";document.getElementById("reloadbtn").style.display = "block";	}}window.addEventListener("resize", filtericonposition);filtericonposition();$( document ).ready(function() {	if ((document.getElementById('search_box')) || (document.getElementById('filterbox'))) {		 	document.getElementById("filtericon").style.display = "block";		   }if (document.getElementById('search_box')){	$('#search_box').slideUp('fast');}if (document.getElementById('filterbox')) {	$('#filterbox').slideUp('fast');}});/*$(document).click(function() {	$('#filterbox').slideUp('slow');});$('#filterbox').click(function(e) {    e.stopPropagation();});$('#filtericon').click(function(e) {    e.stopPropagation();});*/$('#reset_button').click(function(e) {	 	$dropdown_machine = $("#machinetype");	 	$dropdown_machine[0].selectedIndex = 0;	 	$dropdown_shed = $("#shed");	 	$dropdown_shed[0].selectedIndex = 0;	 	$dropdown_selectdata = $("#selectdata");	 	$dropdown_selectdata[0].selectedIndex = 0;	 	$dropdown_con = $("#con");	 	$dropdown_con[0].selectedIndex = 0;	 	$dropdown_ordersort = $("#ordersort");	 	$dropdown_ordersort[0].selectedIndex = 0;	 	$("#con_value").val("");	 	$( "#filterbtn" ).removeClass( "btn-filterapply" ).addClass( "btn-filterclear" );		prod_load();		 	});$('#reset_button_rep').click(function(e) {	 	$dropdown_machine = $("#machine_type");	 	$dropdown_machine[0].selectedIndex = 0;	 	$dropdown_shed = $("#shed");	 	$dropdown_shed[0].selectedIndex = 0;	 	$dropdown_selectdata = $("#period");		$dropdown_selectdata[0].selectedIndex = 0;	load_shift("Current");	 		$dropdown_con = $("#sortby");	 	$dropdown_con[0].selectedIndex = 0;	 	$('#option_type').val('All');	$('#rep_type_td').html('');	$('#type_lable').html('Machine');	$('input[name="his_summ"][value="History"]').prop('checked', true); 	$('input[name="reg_exc"][value="Regular"]').prop('checked', true); 	load_eff();	$( "#filterbtn" ).removeClass( "btn-filterapply" ).addClass( "btn-filterclear" );	 	prod_load();	 });function loadcomplete(){ 	document.getElementById('mylodaerImage').style.display="none";	document.getElementById('mymaincontent').style.opacity="1";}var h1=$(window).height()-160;document.getElementById('mylodaerImage').style.height=h1+"px";</script>
+	<script type="text/javascript">
+	$(document).ready(function(){
+		  $("#custom_main").scroll(function(){
+			  var sticky = $('#filterbox'),
+		      scroll = $("#custom_main").scrollTop();
+
+			  if (scroll >= 500) sticky.addClass('online_search_fixed');
+			  else sticky.removeClass('online_search_fixed');
+		  });
+		  blink(".on_image", -1, 100);
+	});
+	function prod_load(){
+		$("#onlineefffrm").submit();
+	}
+	//enable('Current',0);
+	function enable(value,d){
+		if(d==1){
+			$('#con_value').val('');
+			$('#con').val('');
+		}
+		if(value!=""){
+			
+			$('#con_value').attr('readonly', false);
+			$('#con').attr('disabled', false);
+			$('#ordersort').attr('disabled', false);
+			
+		}else{
+			$('#con_value').attr('readonly', true);
+			$('#con').attr('disabled', true);
+			$('#ordersort').attr('disabled', true);
+			
+		}
+		 blink(".on_image", -1, 100);
+	}
+	</script>
+<script type="text/javascript">
+	function load_reptype(rep_typevalue){
+
+		if(rep_typevalue!=''){
+
+			var sortby=byId("sortby").value;
+			var mtyp=byId("machine_type").value;
+			$.ajax({
+
+				type:"POST",
+
+				url:"action/prod_stop_eff_action.php",
+
+				data:{sortby:sortby,type:rep_typevalue,mtyp:mtyp},
+
+				success:function (data){
+
+					$("#rep_type_td").html(data);
+
+					if(rep_typevalue=="Selection"){
+
+						$("#selection_type").attr( "multiple","multiple");
+
+						$("#selection_type").multiselect().multiselectfilter();						
+
+					}
+
+																											
+
+				}
+
+			});
+
+		}		
+
+	}
+	//load_shift($("#period").val());
+function load_reptype1(rep_typevalue){
+	load_reptype($("#option_type").val());
+}
+load_reptype($("#option_type").val());
+
+	//load_eff();
+
+	
+
+	</script>		
+	
+	<script type="text/javascript">
+    setInterval('window.location.reload()', 60000);
+</script>
+
+</body>
+</html>

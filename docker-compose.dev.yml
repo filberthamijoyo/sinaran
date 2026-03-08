@@ -1,0 +1,48 @@
+# ============================================
+# Development Docker Compose Override
+# ============================================
+# This file extends docker-compose.yml for development
+# Run with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  # Backend API (Development with hot reload)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: npm run dev --workspace=apps/api
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/prisma:/app/packages/prisma
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      # Use Neon database for development
+      DATABASE_URL: ${DATABASE_URL:-postgresql://neondb_owner:npg_c6JfMBL7Pjno@ep-plain-dust-a1bggj1v-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require}
+      FRONTEND_URL: http://localhost:3000
+      PRISMA_CLIENT_ENGINE_TYPE: binary
+    ports:
+      - "3001:3001"
+
+  # Frontend (Development with hot reload)
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      target: builder
+    command: npm run start --workspace=apps/frontend
+    volumes:
+      - ./apps/frontend/src:/app/apps/frontend/src
+      - ./apps/frontend/public:/app/apps/frontend/public
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:3001
+      REACT_APP_QUALITY_PORT: 3001
+      REACT_APP_PRODUCTION_PORT: 4001
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
