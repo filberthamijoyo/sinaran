@@ -1150,6 +1150,15 @@ router.post('/weaving-sync', requireApiKey, async (req: Request, res: Response) 
     let inserted = 0;
     let updated = 0;
     for (const r of records) {
+      // Try to find matching WarpingBeam by kp + beam_number
+      let warping_beam_id: number | null = null;
+      if (r.beam_id && typeof r.beam_id === 'number') {
+        const beam = await prisma.warpingBeam.findFirst({
+          where: { kp: r.kp, beam_number: r.beam_id }
+        });
+        if (beam) warping_beam_id = beam.id;
+      }
+
       const existing = await prisma.weavingRecord.findFirst({
         where: {
           kp: r.kp,
@@ -1190,6 +1199,7 @@ router.post('/weaving-sync', requireApiKey, async (req: Request, res: Response) 
           b_hr: r.b_hr,
           source: 'TRIPUTRA',
           synced_at: new Date(),
+          warping_beam_id: warping_beam_id,
         },
         create: {
           kp: r.kp,
@@ -1225,6 +1235,7 @@ router.post('/weaving-sync', requireApiKey, async (req: Request, res: Response) 
           b_hr: r.b_hr,
           source: 'TRIPUTRA',
           synced_at: new Date(),
+          warping_beam_id: warping_beam_id,
         }
       });
       existing ? updated++ : inserted++;
