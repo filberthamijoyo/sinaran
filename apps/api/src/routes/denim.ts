@@ -1149,15 +1149,22 @@ router.post('/weaving-sync', requireApiKey, async (req: Request, res: Response) 
   try {
     let inserted = 0;
     let updated = 0;
+
+    // Batch fetch all WarpingBeams for KPs in this batch
+    const kpsInBatch = [...new Set(records.map((r: any) => r.kp))];
+    const warpingBeams = await prisma.warpingBeam.findMany({
+      where: { kp: { in: kpsInBatch } },
+      select: { id: true, kp: true, beam_number: true }
+    });
+    const beamLookup = new Map(
+      warpingBeams.map(b => [`${b.kp}::${b.beam_number}`, b.id])
+    );
+
     for (const r of records) {
-      // Try to find matching WarpingBeam by kp + beam_number
-      let warping_beam_id: number | null = null;
-      if (r.beam_id && typeof r.beam_id === 'number') {
-        const beam = await prisma.warpingBeam.findFirst({
-          where: { kp: r.kp, beam_number: r.beam_id }
-        });
-        if (beam) warping_beam_id = beam.id;
-      }
+      // Fast lookup from Map (no DB call per record)
+      const warping_beam_id = (r.beam_id && typeof r.beam_id === 'number')
+        ? (beamLookup.get(`${r.kp}::${r.beam_id}`) ?? null)
+        : null;
 
       const existing = await prisma.weavingRecord.findFirst({
         where: {
