@@ -1,8 +1,7 @@
 {
-  "buildCommand": "npm run build:frontend",
-  "outputDirectory": "apps/frontend/build",
-  "installCommand": "npm install",
-  "rewrites": [
-    { "source": "/((?!static/).*)", "destination": "/index.html" }
-  ]
+  "framework": "nextjs",
+  "rootDirectory": "apps/frontend",
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install"
 }
