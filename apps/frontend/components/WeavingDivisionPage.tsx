@@ -74,7 +74,7 @@ export const WEAVING_TRIPUTRA_COLUMNS = [
 const createEmptyRow = (): BaseGridRow => {
   const now = new Date();
   const base: BaseGridRow = {
-    _localId: generateLocalId(),
+    _localId: generateLocalId('NEW'),
     _status: 'new',
     _error: '',
     id: null,

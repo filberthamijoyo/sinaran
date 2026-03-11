@@ -18,7 +18,7 @@ const API_BASE_URL = API_ENDPOINTS.indigo;
 
 const createEmptyRow = (): BaseGridRow => {
   const base: BaseGridRow = {
-    _localId: generateLocalId(),
+    _localId: generateLocalId('NEW'),
     _status: 'new',
     _error: '',
     id: null,

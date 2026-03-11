@@ -20,7 +20,13 @@ export const generateLocalId = (prefix: string): string => {
   return `${prefix}-${y}${m}-${seq}`;
 };
 export const addNumber = (a: number, b: number): number => a + b;
-export const displayValue = (v: any): string => v ?? '-';
+export const addNumberToObj = (obj: any, key: string, value: number): void => {
+  obj[key] = (obj[key] || 0) + value;
+};
+export const displayValue = (v: any, formatter?: (v: any) => string): string => {
+  if (formatter) return formatter(v);
+  return v ?? '-';
+};
 export const formatDate = (d: Date | string | null | undefined): string => {
   if (!d) return '';
   const date = typeof d === 'string' ? new Date(d) : d;

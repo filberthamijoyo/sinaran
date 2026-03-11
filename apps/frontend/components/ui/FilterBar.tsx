@@ -31,11 +31,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         if (config.type === 'select') {
           return (
             <div key={config.key} className="filter-group">
+              {config.label && (
+                <label className="text-xs font-medium text-zinc-600 mb-1 block">
+                  {config.label}
+                </label>
+              )}
               <Select
-                label={config.label}
                 options={config.options || []}
                 value={filters[config.key] || ''}
-                onChange={(e) => onChange(config.key, e.target.value)}
+                onChange={(value) => onChange(config.key, value)}
                 placeholder={config.placeholder}
               />
             </div>
@@ -44,9 +48,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
         return (
           <div key={config.key} className="filter-group">
+            {config.label && (
+              <label className="text-xs font-medium text-zinc-600 mb-1 block">
+                {config.label}
+              </label>
+            )}
             <Input
               type={config.type}
-              label={config.label}
               placeholder={config.placeholder}
               value={filters[config.key] || ''}
               onChange={(e) => onChange(config.key, e.target.value)}
