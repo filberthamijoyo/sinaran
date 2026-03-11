@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { prisma, testDatabaseConnection } from './lib/prisma';
 import qualityRoutes from './routes/quality';
@@ -28,6 +30,27 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
+
+// Security headers
+app.use(helmet());
+
+// Rate limiting — 200 requests per minute per IP
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+app.use('/api/', limiter);
+
+// Stricter limit on auth routes — 10 attempts per 15 minutes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts, please try again later.' },
+});
+app.use('/api/auth/', authLimiter);
 
 // Health check with database connection test
 app.get('/api/health', async (req, res) => {

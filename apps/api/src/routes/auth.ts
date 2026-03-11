@@ -8,10 +8,10 @@ const router = Router();
 const USERS: (AuthUser & { passwordHash: string })[] = [
   {
     id: '1',
-    email: 'bandung@sinaran.com',
-    name: 'Operator Bandung',
-    role: 'bandung',
-    passwordHash: bcrypt.hashSync('bandung123', 10),
+    email: 'factory@sinaran.com',
+    name: 'Factory Operator',
+    role: 'factory',
+    passwordHash: bcrypt.hashSync('factory123', 10),
   },
   {
     id: '2',

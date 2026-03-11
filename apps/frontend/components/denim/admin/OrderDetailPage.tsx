@@ -255,6 +255,7 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
   const [data, setData] = useState<PipelineApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showIndigoFormula, setShowIndigoFormula] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -334,6 +335,22 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
       <div className="px-8 pb-8 space-y-6">
         <PipelineProgressBar pipelineData={{ sc, warping, indigo, weaving, inspection }} />
 
+        {sc?.pipeline_status === 'COMPLETE' &&
+          (!warping || !indigo || !weaving?.length) && (
+          <div className="mx-8 mb-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+            <span className="text-amber-500 text-sm mt-0.5">⚠️</span>
+            <div>
+              <p className="text-sm font-medium text-amber-800">Incomplete historical data</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                This order is marked Complete but some stages were not captured in the historical import:
+                {!warping && <span className="font-medium"> Warping</span>}
+                {!indigo && <span className="font-medium"> · Indigo</span>}
+                {(!weaving || weaving.length === 0) && <span className="font-medium"> · Weaving</span>}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Sales Contract Section */}
         <SectionCard
           title="Sales Contract"
@@ -408,6 +425,48 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                   <p className="text-sm text-zinc-900">{warping.total_putusan?.toLocaleString() || '—'}</p>
                 </div>
               </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-xs text-zinc-500">Machine No</p>
+                  <p className="text-sm text-zinc-900">{warping.no_mc || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Total Beam</p>
+                  <p className="text-sm text-zinc-900">{warping.total_beam || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Elongasi</p>
+                  <p className="text-sm text-zinc-900">{warping.elongasi || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Strength</p>
+                  <p className="text-sm text-zinc-900">{warping.strength || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">CV%</p>
+                  <p className="text-sm text-zinc-900">{warping.cv_pct || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Tension Badan</p>
+                  <p className="text-sm text-zinc-900">{warping.tension_badan || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Tension Pinggir</p>
+                  <p className="text-sm text-zinc-900">{warping.tension_pinggir || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Lebar Creel</p>
+                  <p className="text-sm text-zinc-900">{warping.lebar_creel || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Jam</p>
+                  <p className="text-sm text-zinc-900">{warping.jam || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Eff Warping</p>
+                  <p className="text-sm text-zinc-900">{warping.eff_warping || '—'}</p>
+                </div>
+              </div>
               {warping.beams && warping.beams.length > 0 && (
                 <div className="mt-4">
                   <p className="text-xs text-zinc-500 mb-2">Beams</p>
@@ -417,8 +476,7 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                         <TableRow className="bg-zinc-50">
                           <TableHead className="text-xs">#</TableHead>
                           <TableHead className="text-xs">Beam No</TableHead>
-                          <TableHead className="text-xs">Length</TableHead>
-                          <TableHead className="text-xs">Ends</TableHead>
+                          <TableHead className="text-xs">Putusan</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -426,8 +484,7 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                           <TableRow key={beam.id}>
                             <TableCell className="text-xs">{idx + 1}</TableCell>
                             <TableCell className="text-sm font-mono">{beam.beam_number}</TableCell>
-                            <TableCell className="text-sm">{beam.panjang_beam?.toLocaleString() || '—'}</TableCell>
-                            <TableCell className="text-sm">{beam.jumlah_ends?.toLocaleString() || '—'}</TableCell>
+                            <TableCell className="text-sm">{beam.putusan?.toLocaleString() || '—'}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -447,32 +504,229 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
           icon={<SectionIcon hasData={!!indigo} />}
         >
           {indigo ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-xs text-zinc-500">Date</p>
-                <p className="text-sm text-zinc-900">{formatDate(indigo.tanggal)}</p>
+                <p className="text-sm text-zinc-900">{formatDate(indigo.tgl) || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Start</p>
-                <p className="text-sm text-zinc-900">{indigo.start || '—'}</p>
+                <p className="text-xs text-zinc-500">Machine</p>
+                <p className="text-sm text-zinc-900">{indigo.mc || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Stop</p>
-                <p className="text-sm text-zinc-900">{indigo.stop || '—'}</p>
+                <p className="text-xs text-zinc-500">Speed (m/min)</p>
+                <p className="text-sm text-zinc-900">{indigo.speed || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Rope Count</p>
-                <p className="text-sm text-zinc-900">{indigo.jumlah_rope || '—'}</p>
+                <p className="text-xs text-zinc-500">Bak Celup</p>
+                <p className="text-sm text-zinc-900">{indigo.bak_celup || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Rope Length</p>
-                <p className="text-sm text-zinc-900">{indigo.panjang_rope || '—'}</p>
+                <p className="text-xs text-zinc-500">Indigo (g/L)</p>
+                <p className="text-sm text-zinc-900">{indigo.indigo || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Total Meters</p>
-                <p className="text-sm text-zinc-900">{indigo.total_meters?.toLocaleString() || '—'}</p>
+                <p className="text-xs text-zinc-500">Caustic (g/L)</p>
+                <p className="text-sm text-zinc-900">{indigo.caustic || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500">Hydro (g/L)</p>
+                <p className="text-sm text-zinc-900">{indigo.hydro || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500">Temp Dryer (°C)</p>
+                <p className="text-sm text-zinc-900">{indigo.temp_dryer || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500">Moisture Mahlo</p>
+                <p className="text-sm text-zinc-900">{indigo.moisture_mahlo || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500">Strength</p>
+                <p className="text-sm text-zinc-900">{indigo.strength || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500">Elongasi</p>
+                <p className="text-sm text-zinc-900">{indigo.elongasi_idg || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500">BB</p>
+                <p className="text-sm text-zinc-900">{indigo.bb || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-zinc-500">P</p>
+                <p className="text-sm text-zinc-900">{indigo.p || '—'}</p>
               </div>
             </div>
+            <div className="border-t border-gray-200 my-4"></div>
+            <button
+              onClick={() => setShowIndigoFormula(!showIndigoFormula)}
+              className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
+            >
+              {showIndigoFormula ? '▼ Full Formula' : '▶ Full Formula'}
+            </button>
+            {showIndigoFormula && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <p className="text-xs text-zinc-500">Bak Sulfur</p>
+                  <p className="text-sm text-zinc-900">{indigo.bak_sulfur || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Konst Indigo</p>
+                  <p className="text-sm text-zinc-900">{indigo.konst_idg || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Konst Sulfur</p>
+                  <p className="text-sm text-zinc-900">{indigo.konst_sulfur || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Viscosity</p>
+                  <p className="text-sm text-zinc-900">{indigo.visc || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Refraktometer</p>
+                  <p className="text-sm text-zinc-900">{indigo.ref || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Scoring</p>
+                  <p className="text-sm text-zinc-900">{indigo.scoring || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Size Box</p>
+                  <p className="text-sm text-zinc-900">{indigo.size_box || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Jetsize</p>
+                  <p className="text-sm text-zinc-900">{indigo.jetsize || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Temp Mid Dryer</p>
+                  <p className="text-sm text-zinc-900">{indigo.temp_mid_dryer || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Temp Size Box 1</p>
+                  <p className="text-sm text-zinc-900">{indigo.temp_size_box_1 || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Temp Size Box 2</p>
+                  <p className="text-sm text-zinc-900">{indigo.temp_size_box_2 || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Size Box 1</p>
+                  <p className="text-sm text-zinc-900">{indigo.size_box_1 || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Size Box 2</p>
+                  <p className="text-sm text-zinc-900">{indigo.size_box_2 || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Squeezing Roll 1</p>
+                  <p className="text-sm text-zinc-900">{indigo.squeezing_roll_1 || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Squeezing Roll 2</p>
+                  <p className="text-sm text-zinc-900">{indigo.squeezing_roll_2 || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Immersion Roll</p>
+                  <p className="text-sm text-zinc-900">{indigo.immersion_roll || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Dryer</p>
+                  <p className="text-sm text-zinc-900">{indigo.dryer || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Take Off</p>
+                  <p className="text-sm text-zinc-900">{indigo.take_off || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Winding</p>
+                  <p className="text-sm text-zinc-900">{indigo.winding || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Press Beam</p>
+                  <p className="text-sm text-zinc-900">{indigo.press_beam || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Hardness</p>
+                  <p className="text-sm text-zinc-900">{indigo.hardness || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Unwinder</p>
+                  <p className="text-sm text-zinc-900">{indigo.unwinder || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Dyeing Tens Wash</p>
+                  <p className="text-sm text-zinc-900">{indigo.dyeing_tens_wash || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Dyeing Tens Warna</p>
+                  <p className="text-sm text-zinc-900">{indigo.dyeing_tens_warna || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">MC IDG</p>
+                  <p className="text-sm text-zinc-900">{indigo.mc_idg || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Tenacity</p>
+                  <p className="text-sm text-zinc-900">{indigo.tenacity || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Polisize HS</p>
+                  <p className="text-sm text-zinc-900">{indigo.polisize_hs || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Polisize 1/2</p>
+                  <p className="text-sm text-zinc-900">{indigo.polisize_1_2 || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Armosize</p>
+                  <p className="text-sm text-zinc-900">{indigo.armosize || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Solopol</p>
+                  <p className="text-sm text-zinc-900">{indigo.solopol || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Serawet</p>
+                  <p className="text-sm text-zinc-900">{indigo.serawet || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Primasol</p>
+                  <p className="text-sm text-zinc-900">{indigo.primasol || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Cottoclarin</p>
+                  <p className="text-sm text-zinc-900">{indigo.cottoclarin || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Setamol</p>
+                  <p className="text-sm text-zinc-900">{indigo.setamol || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Granular</p>
+                  <p className="text-sm text-zinc-900">{indigo.granular || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Indigo Conc</p>
+                  <p className="text-sm text-zinc-900">{indigo.indigo_conc || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Sulfur Bak</p>
+                  <p className="text-sm text-zinc-900">{indigo.sulfur_bak || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Sulfur Conc</p>
+                  <p className="text-sm text-zinc-900">{indigo.sulfur_conc || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Keterangan</p>
+                  <p className="text-sm text-zinc-900">{indigo.keterangan || '—'}</p>
+                </div>
+              </div>
+            )}
+            </>
           ) : (
             <p className="text-sm text-zinc-400">No indigo data yet</p>
           )}
@@ -484,7 +738,79 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
           icon={<SectionIcon hasData={weaving.length > 0} />}
         >
           {weaving.length > 0 ? (
-            <div className="border rounded-lg overflow-hidden">
+            <>
+              {/* Summary Stats */}
+              {(() => {
+                const totalRecords = weaving.length;
+                const efficiencies = weaving.filter(r => r.a_pct != null).map(r => Number(r.a_pct));
+                const avgEfficiency = efficiencies.length > 0 
+                  ? (efficiencies.reduce((a, b) => a + b, 0) / efficiencies.length).toFixed(1) + '%'
+                  : '—';
+                const totalMeters = weaving.filter(r => r.meters != null)
+                  .reduce((sum, r) => sum + Number(r.meters || 0), 0);
+                const dates = weaving.filter(r => r.tanggal != null).map(r => new Date(r.tanggal!));
+                const minDate = dates.length > 0 ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
+                const maxDate = dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
+                const formatDateRange = () => {
+                  if (!minDate || !maxDate) return '—';
+                  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                  return minDate.getFullYear() === maxDate.getFullYear()
+                    ? `${fmt(minDate)} – ${fmt(maxDate)} ${maxDate.getFullYear()}`
+                    : `${fmt(minDate)} ${minDate.getFullYear()} – ${fmt(maxDate)} ${maxDate.getFullYear()}`;
+                };
+
+                // Machine breakdown
+                const machineStats: Record<string, { count: number; effs: number[] }> = {};
+                weaving.forEach(r => {
+                  if (r.machine) {
+                    if (!machineStats[r.machine]) machineStats[r.machine] = { count: 0, effs: [] };
+                    machineStats[r.machine].count++;
+                    if (r.a_pct != null) machineStats[r.machine].effs.push(Number(r.a_pct));
+                  }
+                });
+                const machineBreakdown = Object.entries(machineStats)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([machine, stats]) => ({
+                    machine,
+                    count: stats.count,
+                    avg: stats.effs.length > 0 
+                      ? (stats.effs.reduce((a, b) => a + b, 0) / stats.effs.length).toFixed(1) 
+                      : null
+                  }));
+
+                return (
+                  <>
+                    <div className="grid grid-cols-4 gap-3 mb-4">
+                      <div className="bg-zinc-100 rounded px-3 py-2">
+                        <p className="text-xs text-zinc-500">Records</p>
+                        <p className="text-sm font-semibold text-zinc-900">{totalRecords}</p>
+                      </div>
+                      <div className="bg-zinc-100 rounded px-3 py-2">
+                        <p className="text-xs text-zinc-500">Avg Efficiency</p>
+                        <p className="text-sm font-semibold text-zinc-900">{avgEfficiency}</p>
+                      </div>
+                      <div className="bg-zinc-100 rounded px-3 py-2">
+                        <p className="text-xs text-zinc-500">Total Meters</p>
+                        <p className="text-sm font-semibold text-zinc-900">{totalMeters.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-zinc-100 rounded px-3 py-2">
+                        <p className="text-xs text-zinc-500">Period</p>
+                        <p className="text-sm font-semibold text-zinc-900">{formatDateRange()}</p>
+                      </div>
+                    </div>
+                    {machineBreakdown.length > 0 && (
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs text-zinc-600">
+                        {machineBreakdown.map(m => (
+                          <span key={m.machine}>
+                            {m.machine} · {m.count} shifts · Avg {m.avg ? m.avg + '%' : '—'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+              <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-zinc-50">
@@ -512,6 +838,7 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                 </TableBody>
               </Table>
             </div>
+            </>
           ) : (
             <p className="text-sm text-zinc-400">No weaving data yet</p>
           )}

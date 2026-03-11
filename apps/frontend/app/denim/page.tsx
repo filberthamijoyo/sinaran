@@ -39,8 +39,8 @@ export default function DenimDashboard() {
       <PageHeader
         title={`Welcome, ${user.name.split(' ')[0]}`}
         subtitle={
-          user.role === 'bandung'
-            ? 'Bandung Factory — Production pipeline'
+          user.role === 'factory'
+            ? 'Factory — Production pipeline'
             : user.role === 'jakarta'
             ? 'Jakarta HQ — Approval center'
             : 'Administrator — Full pipeline overview'
@@ -58,7 +58,7 @@ export default function DenimDashboard() {
         </div>
 
         {/* Quick actions by role */}
-        {user.role === 'bandung' && (
+        {user.role === 'factory' && (
           <div className="bg-white rounded-xl border border-zinc-200/80
             shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-zinc-100">

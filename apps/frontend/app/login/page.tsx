@@ -12,7 +12,7 @@ import { Factory, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const DEV_ACCOUNTS = [
-  { email: 'bandung@sinaran.com', password: 'bandung123', role: 'Bandung Factory' },
+  { email: 'factory@sinaran.com', password: 'factory123', role: 'Factory' },
   { email: 'jakarta@sinaran.com', password: 'jakarta123', role: 'Jakarta HQ' },
   { email: 'admin@sinaran.com', password: 'admin123', role: 'Administrator' },
 ];

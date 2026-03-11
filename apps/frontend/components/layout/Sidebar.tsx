@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Factory,
   BarChart2,
+  Archive,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -31,7 +32,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const bandungNav: NavGroup[] = [
+const factoryNav: NavGroup[] = [
   {
     title: 'Overview',
     items: [
@@ -69,6 +70,7 @@ const adminNav: NavGroup[] = [
     items: [
       { label: 'Dashboard', href: '/denim/admin/dashboard', icon: LayoutDashboard },
       { label: 'All Orders', href: '/denim/admin/orders', icon: FileText },
+      { label: 'KP Archive', href: '/denim/admin/kp-archive', icon: Archive },
       { label: 'Analytics', href: '/denim/admin/analytics', icon: BarChart2 },
     ],
   },
@@ -84,19 +86,19 @@ const adminNav: NavGroup[] = [
 ];
 
 const navByRole: Record<string, NavGroup[]> = {
-  bandung: bandungNav,
+  factory: factoryNav,
   jakarta: jakartaNav,
   admin: adminNav,
 };
 
 const roleLabel: Record<string, string> = {
-  bandung: 'Bandung Factory',
+  factory: 'Factory',
   jakarta: 'Jakarta HQ',
   admin: 'Administrator',
 };
 
 const roleBadgeColor: Record<string, string> = {
-  bandung: 'bg-violet-500/20 text-violet-300',
+  factory: 'bg-violet-500/20 text-violet-300',
   jakarta: 'bg-blue-500/20 text-blue-300',
   admin: 'bg-amber-500/20 text-amber-300',
 };
@@ -107,7 +109,7 @@ export default function Sidebar() {
 
   if (!user) return null;
 
-  const groups = navByRole[user.role] || bandungNav;
+  const groups = navByRole[user.role] || factoryNav;
 
   const isActive = (href: string) => {
     if (href === '/denim') return pathname === '/denim';

@@ -218,6 +218,17 @@ export default function AdminOrdersPage({ defaultStage = 'ALL' }: Props) {
                       <StatusBadge
                         status={row.pipeline_status || 'DRAFT'}
                       />
+                      {(() => {
+                        const daysWaiting = row.tgl
+                          ? Math.floor((Date.now() - new Date(row.tgl).getTime()) / (1000 * 60 * 60 * 24))
+                          : 0;
+                        const isStalled = row.pipeline_status === 'PENDING_APPROVAL' && daysWaiting > 30;
+                        return isStalled ? (
+                          <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
+                            🕐 Stalled {daysWaiting}d
+                          </span>
+                        ) : null;
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))

@@ -93,38 +93,60 @@ if (require.main === module) {
  * Returns the next available KP code for a new SalesContract.
  *
  * Rules:
- * 1. If there are any ARCHIVED slots with kp_sequence < current MAX,
- *    take the LOWEST one (fill the gap).
- * 2. Otherwise, take MAX(kp_sequence) + 1.
+ * 1. Find the floor — the lowest kp_sequence ever assigned in the DB.
+ *    New KPs must never go below this.
+ * 2. Find the ceiling — the highest kp_sequence currently in use.
+ * 3. Get all sequences currently held by ACTIVE contracts (pipeline_status != REJECTED
+ *    and kp does not start with kp_archived_).
+ * 4. Find the lowest gap at or above the floor.
+ * 5. If no gaps found, go one above the ceiling.
  *
  * This ensures:
- * - No gaps in the sequence
- * - Recycled KPs come from real rejected slots, not from sequence start
+ * - No KPs below the historical floor
+ * - Recycled KPs come from rejected slots (kp_archived_*)
  * - The sequence always moves forward if no gaps exist
  */
 export async function generateNextKP(prisma: any): Promise<string> {
-  // Get the current maximum sequence number
-  const maxResult = await prisma.salesContract.aggregate({
+  // Step 1: Find the floor — the lowest kp_sequence for ACTIVE contracts.
+  // New KPs must never go below the lowest active sequence (archived slots can be recycled).
+  const floorResult = await prisma.salesContract.aggregate({
+    _min: { kp_sequence: true },
+    where: { 
+      kp_sequence: { not: null },
+      kp_status: 'ACTIVE',
+    },
+  });
+  const floor = floorResult._min.kp_sequence ?? 0;
+
+  // Step 2: Find the ceiling — the highest kp_sequence for ACTIVE contracts.
+  const ceilResult = await prisma.salesContract.aggregate({
     _max: { kp_sequence: true },
     where: { 
-      kp_status: { in: ['ACTIVE', 'ARCHIVED'] },
-      kp_sequence: { not: null }
-    }
-  });
-  const currentMax = maxResult._max.kp_sequence ?? -1;
-
-  // Look for any archived (recycled) slot below the current max
-  const recycled = await prisma.salesContract.findFirst({
-    where: {
-      kp_status: 'ARCHIVED',
-      kp_sequence: { lt: currentMax }
+      kp_sequence: { not: null },
+      kp_status: 'ACTIVE',
     },
-    orderBy: { kp_sequence: 'asc' }  // take the lowest gap first
   });
+  const ceiling = ceilResult._max.kp_sequence ?? floor;
 
-  const nextSequence = recycled ? recycled.kp_sequence! : currentMax + 1;
+  // Step 3: Get ALL sequences currently in the database (including archived)
+  // This ensures we don't try to reuse a sequence that's already taken
+  // by any record, whether active, rejected, or archived
+  const allSeqs = await prisma.salesContract.findMany({
+    where: { kp_sequence: { not: null } },
+    select: { kp_sequence: true },
+  });
+  const occupiedSet = new Set(allSeqs.map((r: any) => r.kp_sequence));
 
-  if (nextSequence > 67599) throw new Error('KP sequence exhausted (max 67,600 reached)');
+  // Step 4: Find the lowest gap at or above the floor
+  for (let seq = floor; seq <= ceiling; seq++) {
+    if (!occupiedSet.has(seq)) {
+      if (seq > 67599) throw new Error('KP sequence exhausted');
+      return encodeKP(seq);
+    }
+  }
 
-  return encodeKP(nextSequence);
+  // Step 5: No gaps found — go one above the ceiling
+  const next = ceiling + 1;
+  if (next > 67599) throw new Error('KP sequence exhausted');
+  return encodeKP(next);
 }

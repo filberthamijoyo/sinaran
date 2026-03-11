@@ -741,6 +741,7 @@ model WarpingRun {
 
   @@index([kp])
   @@index([tgl])
+  @@index([kp, tgl])
 }
 
 model WarpingBeam {
@@ -895,7 +896,7 @@ model IndigoRun {
 
   @@index([kp])
   @@index([tanggal])
-  @@index([mc])
+  @@index([kp, tanggal])
 }
 
 model WeavingRecord {

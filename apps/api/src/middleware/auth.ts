@@ -1,11 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-prod';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set');
+  process.exit(1);
+}
 
-const WEAVING_SYNC_API_KEY = process.env.WEAVING_IMPORT_API_KEY || '';
+const WEAVING_SYNC_API_KEY = process.env.WEAVING_IMPORT_API_KEY;
+if (!WEAVING_SYNC_API_KEY) {
+  console.warn('WARNING: WEAVING_IMPORT_API_KEY is not set — weaving sync endpoint is unprotected');
+}
 
-export type UserRole = 'bandung' | 'jakarta' | 'admin';
+export type UserRole = 'factory' | 'jakarta' | 'admin';
 
 export interface AuthUser {
   id: string;
