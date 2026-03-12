@@ -1,386 +1,252 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '../../lib/authFetch';
 import PageHeader from '../layout/PageHeader';
-import KpContextBanner from './KpContextBanner';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import { Skeleton } from '../ui/skeleton';
-import { Clock, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
-interface SCData {
-  kp: string;
-  tgl: string;
-  codename: string | null;
-  permintaan: string | null;
-  kat_kode: string | null;
-  ket_warna: string | null;
-  te: number | null;
-}
-
-interface LoomRow {
-  no_mesin: string;
-  beam_no: string;
-  pick_actual: string;
-  meter_out: string;
-  efficiency: string;
-  keterangan: string;
-}
-
-interface WeavingFormState {
+type WeavingRecord = {
+  id: number;
+  tanggal: string;
   shift: string;
-  looms: LoomRow[];
+  machine: string | null;
+  a_pct: number | null;
+  meters: number | null;
+  source: string | null;
+};
+
+type WeavingSummary = {
+  totalRecords: number;
+  avgEfficiency: number | null;
+  totalMeters: number;
+  uniqueMachines: number;
+  firstDate: string;
+  lastDate: string;
+};
+
+type PipelineData = {
+  sc: { kp: string; codename: string | null; permintaan: string | null; pipeline_status: string } | null;
+  weaving: WeavingRecord[];
+  weavingSummary: WeavingSummary | null;
+};
+
+const SHIFT_LABEL: Record<string, string> = {
+  '1': 'Shift 1  ·  06:00 – 13:59',
+  '2': 'Shift 2  ·  14:00 – 21:59',
+  '3': 'Shift 3  ·  22:00 – 05:59',
+};
+
+function effColor(v: number | null) {
+  if (v == null) return 'text-zinc-400';
+  if (v >= 80) return 'text-emerald-600';
+  if (v >= 70) return 'text-amber-500';
+  return 'text-red-500';
 }
 
-const emptyLoom = (): LoomRow => ({
-  no_mesin: '',
-  beam_no: '',
-  pick_actual: '',
-  meter_out: '',
-  efficiency: '',
-  keterangan: '',
-});
+function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
+  return (
+    <div className="bg-white border border-zinc-200 rounded-xl p-5">
+      <p className="text-xs font-medium text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-2xl font-semibold text-zinc-900 tracking-tight">{value}</p>
+      {sub && <p className="text-xs text-zinc-400 mt-1">{sub}</p>}
+    </div>
+  );
+}
 
 export default function WeavingFormPage({ kp }: { kp: string }) {
   const router = useRouter();
-  const [sc, setSc] = useState<SCData | null>(null);
-  const [loadingSc, setLoadingSc] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [data, setData] = useState<PipelineData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [confirming, setConfirming] = useState(false);
 
-  const [form, setForm] = useState<WeavingFormState>({
-    shift: '',
-    looms: [emptyLoom()],
-  });
-
-  // Auto-calculate total meters
-  const totalMeterOut = useMemo(() => {
-    return form.looms.reduce((sum, loom) => {
-      const meters = parseFloat(loom.meter_out) || 0;
-      return sum + meters;
-    }, 0);
-  }, [form.looms]);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await authFetch(
-          `/denim/sales-contracts/${kp}`
-        ) as any;
-        setSc(data);
-      } catch (e) {
-        toast.error('Failed to load order data.');
-      } finally {
-        setLoadingSc(false);
-      }
-    };
-    load();
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await authFetch(`/denim/admin/pipeline/${kp}`) as PipelineData;
+      setData(res);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to load weaving data');
+    } finally {
+      setLoading(false);
+    }
   }, [kp]);
 
-  const setField = (key: keyof WeavingFormState, value: string) =>
-    setForm(f => ({ ...f, [key]: value }));
+  useEffect(() => { load(); }, [load]);
 
-  const setLoomField = (
-    index: number,
-    key: keyof LoomRow,
-    value: string
-  ) => {
-    setForm(f => {
-      const looms = [...f.looms];
-      looms[index] = { ...looms[index], [key]: value };
-      return { ...f, looms };
-    });
-  };
-
-  const addLoom = () =>
-    setForm(f => ({ ...f, looms: [...f.looms, emptyLoom()] }));
-
-  const removeLoom = (index: number) =>
-    setForm(f => ({
-      ...f,
-      looms: f.looms.filter((_, i) => i !== index),
-    }));
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const validLooms = form.looms.filter(l => l.no_mesin.trim());
-    if (validLooms.length === 0) {
-      toast.error('Add at least one loom/machine.');
-      return;
-    }
-    setSubmitting(true);
+  const handleConfirm = async () => {
+    setConfirming(true);
     try {
       await authFetch('/denim/weaving', {
         method: 'POST',
-        body: JSON.stringify({
-          kp,
-          shift: form.shift || null,
-          looms: validLooms.map(l => ({
-            no_mesin: parseInt(l.no_mesin),
-            beam_no: l.beam_no ? parseInt(l.beam_no) : null,
-            pick_actual: l.pick_actual ? parseInt(l.pick_actual) : null,
-            meter_out: l.meter_out ? parseFloat(l.meter_out) : null,
-            efficiency: l.efficiency ? parseFloat(l.efficiency) : null,
-            keterangan: l.keterangan || null,
-          })),
-          total_meter_out: totalMeterOut || null,
-        }),
+        body: JSON.stringify({ kp }),
       });
-      toast.success(`Weaving saved for KP ${kp}. Moved to Inspect Gray.`);
+      toast.success('Weaving complete. Moving to Inspect Gray.');
       router.push('/denim/inbox/weaving');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to save weaving data.');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to confirm weaving');
     } finally {
-      setSubmitting(false);
+      setConfirming(false);
     }
   };
 
-  if (loadingSc) {
-    return (
-      <div className="px-8 py-8 space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
+  const records = data?.weaving ?? [];
+  const summary = data?.weavingSummary;
+  const hasData = records.length > 0;
+
+  // Group by date → shift
+  const grouped = records.reduce((acc, r) => {
+    const dateKey = format(new Date(r.tanggal), 'yyyy-MM-dd');
+    if (!acc[dateKey]) acc[dateKey] = {} as Record<string, WeavingRecord[]>;
+    const s = String(r.shift);
+    if (!acc[dateKey][s]) acc[dateKey][s] = [];
+    acc[dateKey][s].push(r);
+    return acc;
+  }, {} as Record<string, Record<string, WeavingRecord[]>>);
 
   return (
-    <div>
-      <PageHeader
-        title={`Weaving — ${kp}`}
-        subtitle="Fill in weaving production data"
-      />
+    <div className="max-w-4xl mx-auto px-6 py-8 space-y-8">
+      <div className="flex items-start justify-between">
+        <PageHeader
+          title="Weaving Production"
+          subtitle={data?.sc ? `${kp} · ${data.sc.codename ?? ''}` : kp}
+        />
+        <Button variant="outline" size="sm" onClick={load} disabled={loading} className="mt-1">
+          <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
 
-      <KpContextBanner
-        kp={kp}
-        codename={sc?.codename ?? null}
-        customer={sc?.permintaan ?? null}
-        kat_kode={sc?.kat_kode ?? null}
-        te={sc?.te ?? null}
-        color={sc?.ket_warna ?? null}
-        currentStage="WEAVING"
-      />
+      {/* Loading skeletons */}
+      {loading && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+          </div>
+          <Skeleton className="h-48 rounded-xl" />
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="px-8 pb-8 space-y-5">
+      {/* Empty state */}
+      {!loading && !hasData && (
+        <div className="flex flex-col items-center justify-center py-24 border border-dashed border-zinc-200 rounded-2xl text-zinc-400 gap-3">
+          <Clock className="w-8 h-8" />
+          <p className="font-medium text-zinc-600">Waiting for production data</p>
+          <p className="text-sm text-center max-w-xs">
+            TRIPUTRA sync will populate this automatically once looms start running on this KP.
+          </p>
+        </div>
+      )}
 
-          {/* Section 1: Run Details */}
-          <div className="bg-white rounded-xl border border-zinc-200/80
-            shadow-sm p-6">
-            <h2 className="text-sm font-semibold text-zinc-800 mb-1
-              flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-blue-600
-                text-white text-xs flex items-center justify-center
-                font-bold">1</span>
-              Run Details
-            </h2>
-            <p className="text-xs text-zinc-400 mb-5 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              Date and time recorded automatically on submit
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-600">
-                  Shift
-                </Label>
-                <select
-                  value={form.shift}
-                  onChange={e => setField('shift', e.target.value)}
-                  className="w-full h-9 px-3 text-sm border border-zinc-200 
-                    rounded-md focus:outline-none focus:ring-2 
-                    focus:ring-blue-500 bg-white"
-                >
-                  <option value="">Select shift...</option>
-                  <option value="Pagi">Pagi</option>
-                  <option value="Sore">Sore</option>
-                  <option value="Malam">Malam</option>
-                </select>
-              </div>
+      {/* Data loaded */}
+      {!loading && hasData && (
+        <>
+          {/* Summary stats */}
+          {summary && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <StatCard label="Records" value={summary.totalRecords} />
+              <StatCard
+                label="Avg Efficiency"
+                value={summary.avgEfficiency != null ? `${summary.avgEfficiency.toFixed(1)}%` : '—'}
+              />
+              <StatCard
+                label="Total Meters"
+                value={`${summary.totalMeters.toFixed(1)} m`}
+              />
+              <StatCard
+                label="Machines"
+                value={summary.uniqueMachines}
+                sub={`${format(new Date(summary.firstDate), 'd MMM')} – ${format(new Date(summary.lastDate), 'd MMM yyyy')}`}
+              />
             </div>
+          )}
+
+          {/* Production records */}
+          <div className="space-y-6">
+            {Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b)).map(([dateKey, shifts]) => (
+              <div key={dateKey}>
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">
+                  {format(new Date(dateKey), 'EEEE, d MMMM yyyy')}
+                </p>
+                <div className="space-y-2">
+                  {Object.entries(shifts).sort(([a],[b]) => a.localeCompare(b)).map(([shift, rows]) => (
+                    <div key={shift} className="border border-zinc-200 rounded-xl overflow-hidden">
+                      <div className="flex items-center justify-between bg-zinc-50 px-4 py-2.5 border-b border-zinc-200">
+                        <p className="text-xs font-semibold text-zinc-600">
+                          {SHIFT_LABEL[shift] ?? `Shift ${shift}`}
+                        </p>
+                        <p className="text-xs text-zinc-400">{rows.length} machine{rows.length !== 1 ? 's' : ''}</p>
+                      </div>
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-zinc-100">
+                            <th className="text-left px-4 py-2 text-xs font-medium text-zinc-400">Machine</th>
+                            <th className="text-right px-4 py-2 text-xs font-medium text-zinc-400">Efficiency</th>
+                            <th className="text-right px-4 py-2 text-xs font-medium text-zinc-400">Meters</th>
+                            <th className="text-right px-4 py-2 text-xs font-medium text-zinc-400">Source</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map(r => (
+                            <tr key={r.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50 transition-colors">
+                              <td className="px-4 py-3 font-medium text-zinc-800">{r.machine ?? '—'}</td>
+                              <td className={`px-4 py-3 text-right font-semibold tabular-nums ${effColor(r.a_pct)}`}>
+                                {r.a_pct != null ? `${Number(r.a_pct).toFixed(1)}%` : '—'}
+                              </td>
+                              <td className="px-4 py-3 text-right text-zinc-600 tabular-nums">
+                                {r.meters != null ? `${Number(r.meters).toFixed(1)} m` : '—'}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium ${
+                                  r.source === 'TRIPUTRA'
+                                    ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-100'
+                                    : 'bg-zinc-100 text-zinc-500'
+                                }`}>
+                                  {r.source ?? 'MANUAL'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Section 2: Loom Data */}
-          <div className="bg-white rounded-xl border border-zinc-200/80
-            shadow-sm p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold text-zinc-800
-                flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-blue-600
-                  text-white text-xs flex items-center justify-center
-                  font-bold">2</span>
-                Loom / Machine Data
-                <span className="ml-1 text-xs font-normal
-                  text-zinc-400">
-                  ({form.looms.length})
-                </span>
-              </h2>
-              <Button type="button" variant="outline" size="sm"
-                onClick={addLoom} className="h-7 text-xs gap-1">
-                <Plus className="w-3 h-3" /> Add Loom
+          {/* Confirm action */}
+          <div className="border border-zinc-200 rounded-2xl p-6 bg-zinc-50">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-zinc-800">Ready to close this weaving job?</p>
+                  <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                    Review all production records above before confirming. Once marked complete, this order moves to
+                    <span className="font-medium text-zinc-700"> Inspect Gray</span> and cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleConfirm}
+                disabled={confirming}
+                className="shrink-0 bg-zinc-900 hover:bg-zinc-700 text-white px-5"
+              >
+                {confirming
+                  ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Confirming…</>
+                  : <><CheckCircle2 className="w-4 h-4 mr-2" />Mark Weaving Complete</>
+                }
               </Button>
             </div>
-
-            <div className="space-y-2">
-              {/* Header */}
-              <div className="grid grid-cols-12 gap-3 px-1">
-                <p className="col-span-1 text-xs text-zinc-400">#</p>
-                <p className="col-span-1 text-xs font-medium
-                  text-zinc-500">Machine</p>
-                <p className="col-span-1 text-xs font-medium
-                  text-zinc-500">Beam</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Pick Actual</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Meters Out</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Efficiency %</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Notes</p>
-                <p className="col-span-1" />
-              </div>
-
-              {form.looms.map((loom, i) => (
-                <div key={i}
-                  className="grid grid-cols-12 gap-3 items-center">
-                  <span className="col-span-1 text-xs text-zinc-400
-                    font-mono text-center">
-                    {i + 1}
-                  </span>
-                  <div className="col-span-1">
-                    <Input
-                      type="number"
-                      value={loom.no_mesin}
-                      onChange={e =>
-                        setLoomField(i, 'no_mesin', e.target.value)
-                      }
-                      placeholder="e.g. 1"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <Input
-                      type="number"
-                      value={loom.beam_no}
-                      onChange={e =>
-                        setLoomField(i, 'beam_no', e.target.value)
-                      }
-                      placeholder="e.g. 1"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      value={loom.pick_actual}
-                      onChange={e =>
-                        setLoomField(i, 'pick_actual', e.target.value)
-                      }
-                      placeholder="e.g. 42"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={loom.meter_out}
-                      onChange={e =>
-                        setLoomField(i, 'meter_out', e.target.value)
-                      }
-                      placeholder="e.g. 1200"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={loom.efficiency}
-                      onChange={e =>
-                        setLoomField(i, 'efficiency', e.target.value)
-                      }
-                      placeholder="e.g. 85"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      value={loom.keterangan}
-                      onChange={e =>
-                        setLoomField(i, 'keterangan', e.target.value)
-                      }
-                      placeholder="Defects, notes..."
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    {form.looms.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeLoom(i)}
-                        className="text-zinc-300 hover:text-red-400
-                          transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
-
-          {/* Section 3: Summary */}
-          <div className="bg-white rounded-xl border border-zinc-200/80
-            shadow-sm p-6">
-            <h2 className="text-sm font-semibold text-zinc-800 mb-5
-              flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-blue-600
-                text-white text-xs flex items-center justify-center
-                font-bold">3</span>
-              Summary
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-600">
-                  Total Meters Output
-                </Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={totalMeterOut || ''}
-                  readOnly
-                  className="h-9 text-sm font-mono bg-zinc-50 
-                    border-zinc-200"
-                  placeholder="Auto-calculated"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Submit row */}
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline"
-              onClick={() => router.back()}
-              className="text-zinc-500">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting}
-              className="bg-blue-600 hover:bg-blue-500 text-white
-                min-w-32">
-              {submitting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...</>
-              ) : 'Submit Weaving'}
-            </Button>
-          </div>
-
-        </div>
-      </form>
+        </>
+      )}
     </div>
   );
 }

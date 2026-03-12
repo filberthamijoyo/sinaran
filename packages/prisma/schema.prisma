@@ -694,6 +694,7 @@ model SalesContract {
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   pipeline_status String    @default("DRAFT")
+  weaving_confirmed_at DateTime? // confirmed by weaving dept
   kp_sequence     Int?      @unique  // decoded integer e.g. BUDQ = 4620
   kp_status       String    @default("ACTIVE") // ACTIVE | REJECTED | ARCHIVED
   archived_at     DateTime? // set when this record is archived

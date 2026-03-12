@@ -386,6 +386,7 @@ router.get('/fabric-specs/search',
         OR: [
           { kode: { contains: q, mode: 'insensitive' } },
           { item: { contains: q, mode: 'insensitive' } },
+          { kons_kode: { contains: q, mode: 'insensitive' } },
         ],
       },
       select: {
@@ -423,6 +424,59 @@ router.get('/fabric-specs/:item',
     const item = decodeURIComponent(req.params.item);
     const spec = await prisma.fabricSpec.findUnique({ where: { item } });
     if (!spec) return res.status(404).json({ error: 'Not found' });
+    return res.json(spec);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/denim/fabric-specs — full list with usage counts (admin)
+router.get('/fabric-specs', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { q, kat_kode } = req.query as any;
+    const specs = await prisma.fabricSpec.findMany({
+      where: {
+        ...(kat_kode ? { kat_kode } : {}),
+        ...(q ? {
+          OR: [
+            { item: { contains: q, mode: 'insensitive' } },
+            { kons_kode: { contains: q, mode: 'insensitive' } },
+            { kode: { contains: q, mode: 'insensitive' } },
+          ]
+        } : {}),
+      },
+      orderBy: { item: 'asc' },
+    });
+    const usageRaw = await prisma.salesContract.groupBy({
+      by: ['kons_kode'],
+      _count: { kp: true },
+    });
+    const usageMap = Object.fromEntries(
+      usageRaw.map(u => [u.kons_kode, u._count.kp])
+    );
+    return res.json(specs.map(s => ({ ...s, usage_count: usageMap[s.kons_kode] ?? 0 })));
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/denim/fabric-specs — create new spec (admin only)
+router.post('/fabric-specs', requireAuth, requireRole('admin'), async (req: Request, res: Response) => {
+  try {
+    const spec = await prisma.fabricSpec.create({ data: req.body });
+    return res.json(spec);
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/denim/fabric-specs/:id — update spec (admin only)
+router.put('/fabric-specs/:id', requireAuth, requireRole('admin'), async (req: Request, res: Response) => {
+  try {
+    const spec = await prisma.fabricSpec.update({
+      where: { id: Number(req.params.id) },
+      data: req.body,
+    });
     return res.json(spec);
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -772,56 +826,31 @@ router.get('/weaving-inbox',
 });
 
 // POST /api/denim/weaving
-// Creates weaving records (one per loom) and advances pipeline to 'INSPECT_GRAY'
-router.post('/weaving', requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const { kp, tgl, shift, looms, total_meter_out } = req.body;
+// Confirms weaving completion and advances pipeline to 'INSPECT_GRAY'
+router.post('/weaving', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { kp } = req.body;
+    if (!kp) return res.status(400).json({ error: 'kp is required' });
 
-      // WeavingRecord is many per KP — create one record per loom
-      // First delete existing records for this KP+tgl combo
-      const tglDate = tgl ? new Date(tgl) : new Date();
-      await prisma.weavingRecord.deleteMany({
-        where: { kp, tanggal: tglDate },
-      });
-
-      if (looms && Array.isArray(looms) && looms.length > 0) {
-        await prisma.weavingRecord.createMany({
-          data: looms.map((l: any) => ({
-            kp,
-            tanggal: tglDate,
-            shift: shift || null,
-            machine: l.no_mesin
-              ? String(l.no_mesin)
-              : null,
-            beam: l.beam_no
-              ? parseInt(l.beam_no)
-              : null,
-            kpicks: l.pick_actual
-              ? parseInt(l.pick_actual)
-              : null,
-            meters: l.meter_out
-              ? parseFloat(l.meter_out)
-              : null,
-            a_pct: l.efficiency
-              ? parseFloat(l.efficiency)
-              : null,
-            operator: l.keterangan || null,
-          })),
-        });
-      }
-
-      await prisma.salesContract.update({
-        where: { kp },
-        data: { pipeline_status: 'INSPECT_GRAY' },
-      });
-
-      return res.json({ success: true });
-    } catch (err: any) {
-      return res.status(500).json({ error: err.message });
+    const sc = await prisma.salesContract.findUnique({ where: { kp } });
+    if (!sc) return res.status(404).json({ error: 'Sales contract not found' });
+    if (sc.pipeline_status !== 'WEAVING') {
+      return res.status(400).json({ error: `Cannot confirm: SC is in ${sc.pipeline_status}` });
     }
+
+    await prisma.salesContract.update({
+      where: { kp },
+      data: {
+        pipeline_status: 'INSPECT_GRAY',
+        weaving_confirmed_at: new Date(),
+      },
+    });
+
+    return res.json({ ok: true, kp, pipeline_status: 'INSPECT_GRAY' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
   }
-);
+});
 
 // GET /api/denim/inspect-gray-inbox
 // Returns sales contracts ready for inspect gray (pipeline_status = 'INSPECT_GRAY')

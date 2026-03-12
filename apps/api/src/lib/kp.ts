@@ -8,6 +8,19 @@
  * Total capacity: 26 × 26 × 10 × 10 = 67,600 contracts
  */
 
+// =============================================================================
+// MODE CONFIGURATION - Switch between modes by changing this value
+// =============================================================================
+// MODE 1: "floor" - Find gaps in all historical KPs (legacy behavior)
+// MODE 2: "capped" - Cap at BUEB (4610) and generate sequential KPs after that
+const KP_GENERATION_MODE = 'capped' as const; // Change to 'floor' for legacy behavior
+
+// For "capped" mode: The minimum sequence (BUEB = 4610)
+// For "floor" mode: This value is calculated dynamically from the database
+const BUEB_SEQUENCE = 4610; // BUEB = sequence 4610
+
+// =============================================================================
+
 const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');       // A=0 ... Z=25
 const DIGIT = ['Q', 'S', 'D', 'T', 'E', 'L', 'N', 'J', 'P', 'B'];  // Q=0 ... B=9
 
@@ -92,61 +105,96 @@ if (require.main === module) {
 /**
  * Returns the next available KP code for a new SalesContract.
  *
- * Rules:
- * 1. Find the floor — the lowest kp_sequence ever assigned in the DB.
- *    New KPs must never go below this.
- * 2. Find the ceiling — the highest kp_sequence currently in use.
- * 3. Get all sequences currently held by ACTIVE contracts (pipeline_status != REJECTED
- *    and kp does not start with kp_archived_).
- * 4. Find the lowest gap at or above the floor.
- * 5. If no gaps found, go one above the ceiling.
+ * MODE: "capped" (current default)
+ * - Caps at BUEB (sequence 4610) as the minimum
+ * - Finds the highest sequence at or above BUEB
+ * - Returns the next sequential KP
+ * - Simpler, no gap detection needed
  *
- * This ensures:
- * - No KPs below the historical floor
- * - Recycled KPs come from rejected slots (kp_archived_*)
- * - The sequence always moves forward if no gaps exist
+ * MODE: "floor" (legacy - commented out below)
+ * - Find the floor — the lowest kp_sequence ever assigned in the DB.
+ * - Find the ceiling — the highest kp_sequence currently in use.
+ * - Get all sequences currently held by ACTIVE contracts
+ * - Find the lowest gap at or above the floor.
+ * - If no gaps found, go one above the ceiling.
  */
 export async function generateNextKP(prisma: any): Promise<string> {
-  // Step 1: Find the floor — the lowest kp_sequence for ACTIVE contracts.
-  // New KPs must never go below the lowest active sequence (archived slots can be recycled).
-  const floorResult = await prisma.salesContract.aggregate({
-    _min: { kp_sequence: true },
-    where: { 
-      kp_sequence: { not: null },
-      kp_status: 'ACTIVE',
-    },
-  });
-  const floor = floorResult._min.kp_sequence ?? 0;
+  if (KP_GENERATION_MODE === 'capped') {
+    // =============================================================================
+    // MODE: CAPPED (Simplified - caps at BUEB)
+    // =============================================================================
+    
+    // Step 1: Find the highest sequence at or above BUEB (4610)
+    const ceilResult = await prisma.salesContract.aggregate({
+      _max: { kp_sequence: true },
+      where: { 
+        kp_sequence: { gte: BUEB_SEQUENCE },
+      },
+    });
+    const highestSequence = ceilResult._max.kp_sequence ?? BUEB_SEQUENCE;
 
-  // Step 2: Find the ceiling — the highest kp_sequence for ACTIVE contracts.
-  const ceilResult = await prisma.salesContract.aggregate({
-    _max: { kp_sequence: true },
-    where: { 
-      kp_sequence: { not: null },
-      kp_status: 'ACTIVE',
-    },
-  });
-  const ceiling = ceilResult._max.kp_sequence ?? floor;
+    // Step 2: Generate the next sequential KP
+    const nextSequence = highestSequence + 1;
+    if (nextSequence > 67599) throw new Error('KP sequence exhausted');
+    
+    return encodeKP(nextSequence);
+  } else {
+    // =============================================================================
+    // MODE: FLOOR (Legacy - gap detection)
+    // =============================================================================
+    /*
+    // Step 1: Find the floor — the lowest kp_sequence for ACTIVE contracts.
+    // New KPs must never go below the lowest active sequence (archived slots can be recycled).
+    const floorResult = await prisma.salesContract.aggregate({
+      _min: { kp_sequence: true },
+      where: { 
+        kp_sequence: { not: null },
+        kp_status: 'ACTIVE',
+      },
+    });
+    const floor = floorResult._min.kp_sequence ?? 0;
 
-  // Step 3: Get ALL sequences currently in the database (including archived)
-  // This ensures we don't try to reuse a sequence that's already taken
-  // by any record, whether active, rejected, or archived
-  const allSeqs = await prisma.salesContract.findMany({
-    where: { kp_sequence: { not: null } },
-    select: { kp_sequence: true },
-  });
-  const occupiedSet = new Set(allSeqs.map((r: any) => r.kp_sequence));
+    // Step 2: Find the ceiling — the highest kp_sequence for ACTIVE contracts.
+    const ceilResult = await prisma.salesContract.aggregate({
+      _max: { kp_sequence: true },
+      where: { 
+        kp_sequence: { not: null },
+        kp_status: 'ACTIVE',
+      },
+    });
+    const ceiling = ceilResult._max.kp_sequence ?? floor;
 
-  // Step 4: Find the lowest gap at or above the floor
-  for (let seq = floor; seq <= ceiling; seq++) {
-    if (!occupiedSet.has(seq)) {
-      if (seq > 67599) throw new Error('KP sequence exhausted');
-      return encodeKP(seq);
+    // Step 3: Get ALL sequences currently in the database (including archived)
+    // This ensures we don't try to reuse a sequence that's already taken
+    // by any record, whether active, rejected, or archived
+    const allSeqs = await prisma.salesContract.findMany({
+      where: { kp_sequence: { not: null } },
+      select: { kp_sequence: true },
+    });
+    const occupiedSet = new Set(allSeqs.map((r: any) => r.kp_sequence));
+
+    // Step 4: Find the lowest gap at or above the floor
+    for (let seq = floor; seq <= ceiling; seq++) {
+      if (!occupiedSet.has(seq)) {
+        if (seq > 67599) throw new Error('KP sequence exhausted');
+        return encodeKP(seq);
+      }
     }
-  }
 
-  // Step 5: No gaps found — go one above the ceiling
-  const next = ceiling + 1;
-  if (next > 67599) throw new Error('KP sequence exhausted');
-  return encodeKP(next);
+    // Step 5: No gaps found — go one above the ceiling
+    const next = ceiling + 1;
+    if (next > 67599) throw new Error('KP sequence exhausted');
+    return encodeKP(next);
+    */
+   
+    // Fallback for floor mode if not uncommented above
+    const ceilResult = await prisma.salesContract.aggregate({
+      _max: { kp_sequence: true },
+      where: { kp_sequence: { not: null } },
+    });
+    const highestSequence = ceilResult._max.kp_sequence ?? 0;
+    const nextSequence = highestSequence + 1;
+    if (nextSequence > 67599) throw new Error('KP sequence exhausted');
+    return encodeKP(nextSequence);
+  }
 }
