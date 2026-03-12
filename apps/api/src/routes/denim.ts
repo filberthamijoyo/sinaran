@@ -410,17 +410,17 @@ router.get('/fabric-specs/search',
       orderBy: { kode: 'asc' },
     });
 
-    // Get usage counts from sales contracts
+    // Get usage counts from sales contracts (match on both kons_kode and kode_number)
     const usageRaw = await prisma.salesContract.groupBy({
-      by: ['kons_kode'],
+      by: ['kons_kode', 'kode_number'],
       _count: { kp: true },
     });
     const usageMap = Object.fromEntries(
-      usageRaw.map(u => [u.kons_kode, u._count.kp])
+      usageRaw.map(u => [`${u.kons_kode}|${u.kode_number}`, u._count.kp])
     );
     const itemsWithUsage = items.map(s => ({
       ...s,
-      usage_count: usageMap[s.kons_kode] ?? 0,
+      usage_count: usageMap[`${s.kons_kode}|${s.kode}`] ?? 0,
     }));
 
     return res.json({ items: itemsWithUsage });
@@ -462,13 +462,13 @@ router.get('/fabric-specs', requireAuth, async (req: Request, res: Response) => 
       orderBy: { item: 'asc' },
     });
     const usageRaw = await prisma.salesContract.groupBy({
-      by: ['kons_kode'],
+      by: ['kons_kode', 'kode_number'],
       _count: { kp: true },
     });
     const usageMap = Object.fromEntries(
-      usageRaw.map(u => [u.kons_kode, u._count.kp])
+      usageRaw.map(u => [`${u.kons_kode}|${u.kode_number}`, u._count.kp])
     );
-    return res.json(specs.map(s => ({ ...s, usage_count: usageMap[s.kons_kode] ?? 0 })));
+    return res.json(specs.map(s => ({ ...s, usage_count: usageMap[`${s.kons_kode}|${s.kode}`] ?? 0 })));
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
