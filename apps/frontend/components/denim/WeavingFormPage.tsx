@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '../../lib/authFetch';
-import PageHeader from '../layout/PageHeader';
-import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
+import PageHeader from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, RefreshCw, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';

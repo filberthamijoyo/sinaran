@@ -17,6 +17,7 @@ import {
   Factory,
   BarChart2,
   Archive,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -71,6 +72,7 @@ const adminNav: NavGroup[] = [
       { label: 'Dashboard', href: '/denim/admin/dashboard', icon: LayoutDashboard },
       { label: 'All Orders', href: '/denim/admin/orders', icon: FileText },
       { label: 'KP Archive', href: '/denim/admin/kp-archive', icon: Archive },
+      { label: 'Fabric Specs', href: '/denim/admin/fabric-specs', icon: FlaskConical },
       { label: 'Analytics', href: '/denim/admin/analytics', icon: BarChart2 },
     ],
   },

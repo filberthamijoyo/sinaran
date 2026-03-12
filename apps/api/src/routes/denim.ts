@@ -409,7 +409,21 @@ router.get('/fabric-specs/search',
       take: 20,
       orderBy: { kode: 'asc' },
     });
-    return res.json({ items });
+
+    // Get usage counts from sales contracts
+    const usageRaw = await prisma.salesContract.groupBy({
+      by: ['kons_kode'],
+      _count: { kp: true },
+    });
+    const usageMap = Object.fromEntries(
+      usageRaw.map(u => [u.kons_kode, u._count.kp])
+    );
+    const itemsWithUsage = items.map(s => ({
+      ...s,
+      usage_count: usageMap[s.kons_kode] ?? 0,
+    }));
+
+    return res.json({ items: itemsWithUsage });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

@@ -34,6 +34,7 @@ type FabricSpec = {
   oz_f: number | null;
   arah: string | null;
   anyaman: string | null;
+  usage_count?: number;
 };
 
 type FormState = {
@@ -110,7 +111,7 @@ export default function NewOrderPage() {
       setSearchLoading(true);
       try {
         const data = await authFetch(
-          `/denim/fabric-specs/search?q=${encodeURIComponent(searchQuery)}`
+          `/denim/fabric-specs/search?q=${encodeURIComponent(searchQuery)}&_include_usage=1`
         ) as any;
         setSearchResults(data?.items || []);
         setSearchOpen(true);
@@ -293,14 +294,28 @@ export default function NewOrderPage() {
                           onClick={() => selectSpec(s)}
                           className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-50 text-left border-b border-zinc-100 last:border-0 transition-colors"
                         >
-                          <div>
-                            <p className="text-sm font-medium text-zinc-800">{s.kode}</p>
-                            <p className="text-xs text-zinc-500">{s.item}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-zinc-400 font-mono">TE {s.te?.toLocaleString()}</span>
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600">{s.kat_kode}</span>
-                            <ChevronRight className="w-3 h-3 text-zinc-300" />
+                          <div className="flex items-center justify-between w-full">
+                            <div>
+                              <p className="text-sm font-medium text-zinc-800">{s.item}</p>
+                              <p className="text-xs text-zinc-400 mt-0.5">{s.kons_kode} · {s.kat_kode}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-3">
+                              {s.te && (
+                                <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded font-medium">
+                                  TE {s.te}
+                                </span>
+                              )}
+                              {(s as any).usage_count > 10 && (
+                                <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded font-medium">
+                                  🔥 {(s as any).usage_count}
+                                </span>
+                              )}
+                              <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                                s.kat_kode === 'SC' ? 'bg-blue-50 text-blue-600' :
+                                s.kat_kode === 'WS' ? 'bg-amber-50 text-amber-600' :
+                                'bg-zinc-100 text-zinc-500'
+                              }`}>{s.kat_kode}</span>
+                            </div>
                           </div>
                         </button>
                       ))}

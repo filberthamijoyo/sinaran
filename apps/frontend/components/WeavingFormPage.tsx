@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { authFetch } from '../lib/authFetch';
-import PageHeader from '../layout/PageHeader';
-import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
+import { authFetch } from '@/lib/authFetch';
+import PageHeader from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, RefreshCw, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -58,7 +58,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
   );
 }
 
-export default function WeavingFormPage({ kp }: { kp: string }) {
+export default function WeavingFormPage({ kp }: { kp?: string }) {
   const router = useRouter();
   const [data, setData] = useState<PipelineData | null>(null);
   const [loading, setLoading] = useState(true);
