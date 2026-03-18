@@ -1,98 +1,493 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
+/* ================================================
+   NEUMORPHISM DESIGN SYSTEM — Sinaran ERP
+   Base: #E0E5EC cool grey, dual rgba shadows
+   Fonts: Plus Jakarta Sans (display) + DM Sans (body)
+   ================================================ */
+
 @theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  /* Core surface */
+  --color-nm-base: #E0E5EC;
+  --color-nm-base-deep: #d1d9e6;
+
+  /* Typography */
+  --color-nm-text-primary: #3D4852;
+  --color-nm-text-secondary: #6B7280;
+  --color-nm-text-muted: #9CA3AF;
+
+  /* Accent */
+  --color-nm-accent: #6C63FF;
+  --color-nm-accent-light: #8B84FF;
+  --color-nm-accent-teal: #38B2AC;
+
+  /* Status */
+  --color-nm-success: #38B2AC;
+  --color-nm-warning: #F59E0B;
+  --color-nm-danger: #EF4444;
+  --color-nm-info: #6C63FF;
+
+  /* Shadcn compat — mapped to neumorphism values */
+  --color-background: #E0E5EC;
+  --color-foreground: #3D4852;
+  --color-card: #E0E5EC;
+  --color-card-foreground: #3D4852;
+  --color-popover: #E0E5EC;
+  --color-popover-foreground: #3D4852;
+  --color-primary: #6C63FF;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #E0E5EC;
+  --color-secondary-foreground: #3D4852;
+  --color-muted: #E0E5EC;
+  --color-muted-foreground: #6B7280;
+  --color-accent: #6C63FF;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #EF4444;
+  --color-border: transparent;
+  --color-input: #E0E5EC;
+  --color-ring: #6C63FF;
+
+  /* Radius */
+  --radius-nm-card: 32px;
+  --radius-nm-base: 16px;
+  --radius-nm-inner: 12px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  /* Fonts */
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
 :root {
+  /* ---- Shadow palette (rgba for smooth blending) ---- */
+  --nm-shadow-light: rgba(255, 255, 255, 0.55);
+  --nm-shadow-dark:  rgba(163, 177, 198, 0.65);
+
+  /* Extruded — element raised from surface */
+  --nm-extruded:
+    9px 9px 16px rgb(163 177 198 / 0.6),
+    -9px -9px 16px rgba(255, 255, 255, 0.5);
+
+  /* Extruded hover — lifts higher */
+  --nm-extruded-hover:
+    12px 12px 20px rgb(163 177 198 / 0.7),
+    -12px -12px 20px rgba(255, 255, 255, 0.6);
+
+  /* Extruded small — for tight elements */
+  --nm-extruded-sm:
+    5px 5px 10px rgb(163 177 198 / 0.6),
+    -5px -5px 10px rgba(255, 255, 255, 0.5);
+
+  /* Inset — pressed into surface */
+  --nm-inset:
+    inset 6px 6px 10px rgb(163 177 198 / 0.6),
+    inset -6px -6px 10px rgba(255, 255, 255, 0.5);
+
+  /* Inset deep — wells, inputs, active states */
+  --nm-inset-deep:
+    inset 10px 10px 20px rgb(163 177 198 / 0.7),
+    inset -10px -10px 20px rgba(255, 255, 255, 0.6);
+
+  /* Inset small — subtle tracks, pills */
+  --nm-inset-sm:
+    inset 3px 3px 6px rgb(163 177 198 / 0.6),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.5);
+
   /* Sidebar */
-  --sidebar-bg: #0c0c0c;
-  --sidebar-border: #1f1f1f;
-  --sidebar-text: #a1a1aa;
-  --sidebar-text-active: #ffffff;
-  --sidebar-accent: #18181b;
-  --sidebar-accent-active: #27272a;
+  --sidebar-bg: #E0E5EC;
+  --sidebar-border: transparent;
+  --sidebar-text: #6B7280;
+  --sidebar-text-active: #3D4852;
+  --sidebar-accent: #d8dde8;
+  --sidebar-accent-active: #cdd3de;
 
-  /* Content */
-  --background: 0 0% 98%;
-  --foreground: 240 10% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.5rem;
-
-  /* Status colors */
-  --status-draft: #71717a;
-  --status-pending: #d97706;
-  --status-approved: #16a34a;
-  --status-rejected: #dc2626;
-  --status-warping: #7c3aed;
-  --status-indigo: #0891b2;
-  --status-weaving: #0d9488;
-  --status-inspect: #ca8a04;
-  --status-complete: #16a34a;
+  /* Status colors — warm but accessible on #E0E5EC */
+  --status-pending:  #D97706;
+  --status-warping:  #6C63FF;
+  --status-indigo:   #0891B2;
+  --status-weaving:  #059669;
+  --status-inspect:  #EA580C;
+  --status-bbsf:     #7C3AED;
+  --status-complete: #16A34A;
+  --status-rejected: #DC2626;
 }
 
-* {
+/* ================================================
+   GOOGLE FONTS — Plus Jakarta Sans + DM Sans
+   ================================================ */
+/* ================================================
+   BASE RESET
+   ================================================ */
+*, *::before, *::after {
   box-sizing: border-box;
-  border-color: hsl(var(--border));
+  border-color: transparent;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
 }
 
 body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
+  background-color: #E0E5EC;
+  color: #3D4852;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  min-height: 100vh;
 }
 
-/* Scrollbar */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono, code, kbd {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ================================================
+   NEUMORPHISM SHADOW UTILITIES
+   ================================================ */
+
+/* Extruded — raised from the surface */
+.nm-extruded {
+  box-shadow: var(--nm-extruded);
+  background: #E0E5EC;
+  border: none;
+}
+
+.nm-extruded:hover {
+  box-shadow: var(--nm-extruded-hover);
+  transform: translateY(-1px);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.nm-extruded-sm {
+  box-shadow: var(--nm-extruded-sm);
+  background: #E0E5EC;
+  border: none;
+}
+
+/* Inset — pressed into the surface */
+.nm-inset {
+  box-shadow: var(--nm-inset);
+  background: #E0E5EC;
+  border: none;
+}
+
+.nm-inset-deep {
+  box-shadow: var(--nm-inset-deep);
+  background: #E0E5EC;
+  border: none;
+}
+
+.nm-inset-sm {
+  box-shadow: var(--nm-inset-sm);
+  background: #E0E5EC;
+  border: none;
+}
+
+/* Card — the primary container */
+.nm-card {
+  box-shadow: var(--nm-extruded);
+  background: #E0E5EC;
+  border-radius: 32px;
+  border: none;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.nm-card:hover {
+  box-shadow: var(--nm-extruded-hover);
+  transform: translateY(-2px);
+}
+
+/* Card static — no hover lift (for data-dense cards) */
+.nm-card-static {
+  box-shadow: var(--nm-extruded);
+  background: #E0E5EC;
+  border-radius: 32px;
+  border: none;
+}
+
+/* ================================================
+   BUTTON STYLES
+   ================================================ */
+
+.nm-btn {
+  background: #E0E5EC;
+  border-radius: 16px;
+  border: none;
+  box-shadow: var(--nm-extruded-sm);
+  color: #3D4852;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  gap: 8px;
+}
+
+.nm-btn:hover {
+  box-shadow: var(--nm-extruded);
+  transform: translateY(-1px);
+}
+
+.nm-btn:active {
+  box-shadow: var(--nm-inset-sm);
+  transform: translateY(0.5px);
+}
+
+.nm-btn-primary {
+  background: #6C63FF;
+  color: #ffffff;
+  border-radius: 16px;
+  border: none;
+  box-shadow:
+    5px 5px 10px rgb(163 177 198 / 0.6),
+    -5px -5px 10px rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-weight: 600;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 24px;
+  gap: 8px;
+}
+
+.nm-btn-primary:hover {
+  box-shadow:
+    8px 8px 16px rgb(163 177 198 / 0.7),
+    -8px -8px 16px rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  background: #8B84FF;
+}
+
+.nm-btn-primary:active {
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.2),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.1);
+  transform: translateY(0.5px);
+}
+
+/* ================================================
+   INPUT STYLES
+   ================================================ */
+
+.nm-input {
+  background: #E0E5EC;
+  border: none;
+  border-radius: 16px;
+  box-shadow: var(--nm-inset);
+  color: #3D4852;
+  font-family: var(--font-sans);
+  padding: 10px 16px;
+  outline: none;
+  transition: box-shadow 0.3s ease;
+  width: 100%;
+}
+
+.nm-input::placeholder {
+  color: #A0AEC0;
+}
+
+.nm-input:focus {
+  box-shadow:
+    var(--nm-inset-deep),
+    0 0 0 2px #E0E5EC,
+    0 0 0 4px #6C63FF;
+}
+
+/* ================================================
+   SCROLLBAR — refined for light bg
+   ================================================ */
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: rgb(163 177 198 / 0.6);
   border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover { background: #52525b; }
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(163 177 198 / 0.9);
+}
 
-/* Table row hover */
-.table-row-hover:hover { background: hsl(var(--muted)); cursor: pointer; }
+/* ================================================
+   TABLE — neumorphic rows
+   ================================================ */
+
+.nm-table-row {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.nm-table-row:hover {
+  box-shadow: var(--nm-extruded-sm);
+  transform: translateX(2px);
+  background: #E0E5EC;
+  border-radius: 12px;
+}
+
+/* ================================================
+   SIDEBAR ACTIVE INDICATOR
+   ================================================ */
+
+.nm-sidebar-item {
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  color: #6B7280;
+}
+
+.nm-sidebar-item:hover {
+  box-shadow: var(--nm-extruded-sm);
+  color: #3D4852;
+}
+
+.nm-sidebar-item.active {
+  box-shadow: var(--nm-inset);
+  color: #3D4852;
+  font-weight: 600;
+}
+
+/* ================================================
+   BADGE / PILL UTILITIES
+   ================================================ */
+
+.nm-badge {
+  border-radius: 9999px;
+  box-shadow: var(--nm-extruded-sm);
+  background: #E0E5EC;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nm-badge-accent {
+  background: #6C63FF;
+  color: #fff;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow:
+    3px 3px 6px rgb(163 177 198 / 0.5),
+    -3px -3px 6px rgba(255, 255, 255, 0.4);
+}
+
+/* ================================================
+   PAGE & SECTION UTILITIES
+   ================================================ */
+
+.nm-well {
+  background: #E0E5EC;
+  border-radius: 24px;
+  box-shadow: var(--nm-inset);
+  padding: 24px;
+}
+
+.nm-icon-well {
+  background: #E0E5EC;
+  border-radius: 16px;
+  box-shadow: var(--nm-inset-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ================================================
+   ANIMATIONS
+   ================================================ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in-up    { animation: fadeInUp 0.4s cubic-bezier(0.4,0,0.2,1) forwards; }
+.animate-fade-in-scale { animation: fadeInScale 0.3s cubic-bezier(0.4,0,0.2,1) forwards; }
+.animate-float         { animation: float 3s ease-in-out infinite; }
+.page-content          { animation: pageFadeIn 150ms ease-out forwards; }
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Stagger delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+
+/* ================================================
+   ACCESSIBILITY
+   ================================================ */
+
+:focus-visible {
+  outline: 2px solid #6C63FF;
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgba(108, 99, 255, 0.2);
+  color: #3D4852;
+}
+
+/* ================================================
+   RESPONSIVE UTILITIES
+   ================================================ */
+
+@media (max-width: 768px) {
+  .nm-card:hover,
+  .nm-btn:hover,
+  .nm-btn-primary:hover {
+    transform: none;
+  }
+  .nm-table-row:hover {
+    transform: none;
+  }
+}

@@ -464,7 +464,7 @@ async function importWeaving() {
 }
 
 async function main() {
-  await truncateAll();
+  // await truncateAll();
   await importSacon();
   await importWarping();
   await importIndigo();

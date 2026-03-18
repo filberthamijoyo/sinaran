@@ -699,6 +699,7 @@ model SalesContract {
   kp_status       String    @default("ACTIVE") // ACTIVE | REJECTED | ARCHIVED
   archived_at     DateTime? // set when this record is archived
   archived_kp     String?   // copy of kp before recycling
+  rejection_reason String?  // reason when rejected in approval flow
 
   @@index([kp])
   @@index([kons_kode, kode_number])
@@ -970,6 +971,7 @@ model InspectGrayRecord {
   bm                Int?
   sn                String?
   sn_combined       String?
+  sn_full           String?   // combined SN = mc + bm + sn_short (already in Excel col 7)
   gd                String?
   bme               Decimal?
   sj                Decimal?
@@ -989,6 +991,63 @@ model InspectGrayRecord {
   no_roll           Int?
   panjang           Float?
   tgl               DateTime?
+  
+  // Extended fields from Excel - defect types
+  bmc               Int?           // Banyak Cacat (calculated sum)
+  btl               Int?           // Beltel (narrow width)
+  bts               Int?           // Batas (edge)
+  pp                Int?
+  pks               Int?
+  ko                Int?           // Kotor (dirty)
+  db                Int?
+  bl                Int?           // Belang (stripes)
+  ptr               Int?           // Peter defect
+  pkt               Int?
+  fly               Int?
+  ls                Int?
+  lpb               Int?
+  p_bulu            Int?           // Putus Bulu
+  smg               Int?           // Sumur
+  sms               Int?
+  aw                Int?
+  pl                Int?
+  na                Int?
+  lm                Int?           // Lumayan
+  lkc               Int?           // Lobang Kecil
+  lks               Int?           // Lobang Sedang
+  ld                Int?           // Lobang Besar
+  pts               Int?
+  pd                Int?
+  lkt               Int?           // Luka Tipis
+  pk                Int?
+  lp                Int?
+  plc               Int?
+  j                 Int?           // Jarum (needle)
+  kk                Int?           // Kriting
+  bta               Int?           // Bintik
+  pj                Int?
+  rp                Int?
+  pb                Int?
+  xpd               Int?
+  br                Int?           // Bulu
+  pss               Int?
+  luper             Int?           // Luput
+  ptn               Int?           // Peti
+  b_bercak          Int?           // Bercak
+  r_rusak           Int?           // Rusak
+  sl                Int?           // Selep
+  p_timbul          Int?           // Pilih Tumbuh
+  b_celup           Int?           // Bau Celup
+  p_tumpuk          Int?           // Tumpuk
+  b_bar             Int?           // Bercak
+  sml               Int?           // Semel
+  p_slub            Int?           // Putus Slub
+  p_belang          Int?           // Pilih Belang
+  crossing          Int?
+  x_sambang         Int?           // Sambungan
+  p_jelek           Int?           // Pilih Jelek
+  lipatan           Int?           // Lipatan
+  
   weaving_record    WeavingRecord? @relation(fields: [weaving_record_id], references: [id])
 
   @@unique([kp, mc, bm, no_pot])
@@ -997,6 +1056,151 @@ model InspectGrayRecord {
   @@index([mc, bm])
   @@index([no_pot])
   @@index([tgl_potong])
+  @@index([sn_combined])
+}
+
+model BBSFWashingRun {
+  id              Int      @id @default(autoincrement())
+  kp              String
+  tgl             DateTime
+  shift           String?
+  mc              String?
+  jam_proses      String?
+  speed           String?
+  larutan_1       String?
+  temp_1          Float?
+  padder_1        Float?
+  dancing_1       Float?
+  larutan_2       String?
+  temp_2          Float?
+  padder_2        Float?
+  dancing_2       Float?
+  skala_skew      Float?
+  tekanan_boiler  Float?
+  press_dancing_1 Float?
+  press_dancing_2 Float?
+  press_dancing_3 Float?
+  temp_zone_1     Float?
+  temp_zone_2     Float?
+  temp_zone_3     Float?
+  temp_zone_4     Float?
+  temp_zone_5     Float?
+  temp_zone_6     Float?
+  lebar_awal      Float?
+  panjang_awal    Float?
+  permasalahan    String?
+  pelaksana       String?
+  created_at      DateTime @default(now())
+  @@index([kp])
+  @@index([tgl])
+}
+
+model BBSFSanforRun {
+  id            Int      @id @default(autoincrement())
+  kp            String
+  tgl           DateTime
+  shift         String?
+  mc            String?
+  sanfor_type   String   // 'SF1', 'SF2', 'SF5'
+  jam           String?
+  speed         String?
+  damping       Float?
+  press         Float?
+  tension       Float?
+  tension_limit Float?
+  temperatur    Float?
+  susut         Float?
+  awal          Float?
+  akhir         Float?
+  panjang       Float?
+  permasalahan  String?
+  pelaksana     String?
+  created_at    DateTime @default(now())
+  @@index([kp])
+  @@index([tgl])
+  @@index([kp, sanfor_type])
+}
+
+model BBSFServiceRecord {
+  id          Int      @id @default(autoincrement())
+  tgl         DateTime
+  keterangan  String?
+  mc          String?
+  no_mc       Float?
+  tindakan    String?
+  created_at  DateTime @default(now())
+  @@index([tgl])
+}
+
+model InspectFinishRecord {
+  id           Int      @id @default(autoincrement())
+  kp           String
+  tgl          DateTime
+  shift        String?
+  operator     String?
+  no_roll      Int?
+  sn           String?  // legacy - migrate to sn_combined
+  sn_combined  String?  // links to InspectGrayRecord.sn_combined — format: MC + BM + SN_short e.g. AE04182D03L
+  sn_machine   String?   // decoded from sn e.g. "AE04"
+  sn_beam      Int?      // decoded from sn e.g. 182
+  sn_lot       String?   // decoded from sn e.g. "D03L"
+  tgl_potong   DateTime?
+  lebar        Float?
+  kg           Float?
+  susut_lusi   Float?
+  grade        String?
+  point        Float?
+  
+  // Defects
+  btl          Int?
+  bts          Int?
+  slub         Int?
+  snl          Int?
+  losp         Int?
+  lb           Int?
+  ptr          Int?
+  p_slub       Int?
+  pb           Int?
+  lm           Int?
+  aw           Int?
+  ptm          Int?
+  j            Int?
+  bta          Int?
+  pts          Int?
+  pd           Int?
+  pp           Int?
+  pks          Int?
+  pss          Int?
+  pkl          Int?
+  pk           Int?
+  plc          Int?
+  lp           Int?
+  lks          Int?
+  lkc          Int?
+  ld           Int?
+  lkt          Int?
+  lki          Int?
+  lptd         Int?
+  bmc          Int?
+  exst         Int?
+  smg          Int?
+  
+  // Quality flags
+  noda         String?
+  kotor        String?
+  bkrt         String?
+  ket          String?
+  
+  // Blueprint refs
+  blpt_grey    String?
+  bl_ws        Float?
+  bl_bb        String?
+  
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  
+  @@index([kp])
+  @@index([sn_combined])
 }
 
 model FabricSpec {

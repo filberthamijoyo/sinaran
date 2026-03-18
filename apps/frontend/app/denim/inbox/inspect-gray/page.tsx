@@ -41,13 +41,20 @@ export default function InspectGrayInboxPage() {
                 ? 's' : ''} ready for gray inspection`
         }
         actions={
-          <Button variant="outline" size="sm"
-            onClick={fetchInbox} className="h-8 w-8 p-0">
-            <RefreshCw className="w-3.5 h-3.5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {rows.length > 0 ? (
+              <span className="text-xs bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full font-medium">
+                {rows.length} order{rows.length !== 1 ? 's' : ''}
+              </span>
+            ) : null}
+            <Button variant="outline" size="sm"
+              onClick={fetchInbox} className="h-8 w-8 p-0">
+              <RefreshCw className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         }
       />
-      <div className="px-8 pb-8">
+      <div className="px-4 sm:px-8 pb-8">
         <InboxTable
           rows={rows}
           loading={loading}

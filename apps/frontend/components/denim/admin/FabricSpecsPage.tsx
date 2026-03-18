@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, CSSProperties } from 'react';
 import { authFetch } from '../../../lib/authFetch';
 import PageHeader from '../../layout/PageHeader';
 import { Button } from '../../ui/button';
@@ -15,7 +15,7 @@ import {
   SelectTrigger, SelectValue,
 } from '../../ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Edit3, X, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, Plus, Edit3, X, ChevronDown, ChevronRight, Loader2, Inbox } from 'lucide-react';
 
 type FabricSpec = {
   id: number;
@@ -52,14 +52,14 @@ type FabricSpec = {
 
 const KAT_KODE_OPTIONS = ['SC', 'WS', 'Other'];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  SC: 'bg-blue-50 text-blue-700 border-blue-200',
-  WS: 'bg-amber-50 text-amber-700 border-amber-200',
+const CATEGORY_COLORS: Record<string, CSSProperties> = {
+  SC: { background: '#E0E5EC', color: '#3D4852', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' },
+  WS: { background: '#E0E5EC', color: '#3D4852', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' },
 };
 
-function getCategoryColor(kat_kode: string | null) {
-  if (!kat_kode) return 'bg-zinc-100 text-zinc-600 border-zinc-200';
-  return CATEGORY_COLORS[kat_kode] || 'bg-zinc-100 text-zinc-600 border-zinc-200';
+function getCategoryColor(kat_kode: string | null): CSSProperties {
+  if (!kat_kode) return { background: '#E0E5EC', color: '#6B7280' };
+  return CATEGORY_COLORS[kat_kode] || { background: '#E0E5EC', color: '#6B7280' };
 }
 
 export default function FabricSpecsPage() {
@@ -250,11 +250,11 @@ export default function FabricSpecsPage() {
         }
       />
 
-      <div className="px-8 pb-8">
+      <div className="px-4 sm:px-8 pb-8">
         {/* Filters */}
         <div className="flex items-center gap-3 mb-4">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
             <Input
               placeholder="Search by item, kons_kode, kode..."
               value={search}
@@ -275,25 +275,31 @@ export default function FabricSpecsPage() {
             </SelectContent>
           </Select>
 
-          <Button onClick={openNewSpec} className="ml-auto bg-zinc-900 hover:bg-zinc-800">
+          <Button onClick={openNewSpec} style={{ marginLeft: 'auto', background: '#6C63FF', borderRadius: '16px', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', color: '#fff', border: 'none', padding: '8px 16px', fontSize: '14px', fontWeight: 500 }}>
             <Plus className="w-4 h-4 mr-1.5" />
             New Spec
           </Button>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm overflow-hidden">
+        <div
+          className="rounded-[32px] p-6 overflow-x-auto"
+          style={{
+            background: '#E0E5EC',
+            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+          }}
+        >
           <Table>
             <TableHeader>
-              <TableRow className="bg-zinc-50/80 hover:bg-zinc-50/80">
-                <TableHead className="text-xs font-semibold text-zinc-500">Item</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Category</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">TE</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Ne Lusi / Ne Pakan</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Sisir / Pick</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Warna</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Used In</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500 w-16">Actions</TableHead>
+              <TableRow style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Item</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Category</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>TE</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Ne Lusi / Ne Pakan</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Sisir / Pick</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Warna</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Used In</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest w-16" style={{ color: '#9CA3AF' }}>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -307,44 +313,48 @@ export default function FabricSpecsPage() {
                 ))
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-zinc-400">
-                    No fabric specs found
+                  <TableCell colSpan={8}>
+                    <div className="flex flex-col items-center justify-center py-16" style={{ color: '#9CA3AF' }}>
+                      <Inbox className="w-10 h-10 mb-3" />
+                      <p className="text-sm font-medium">No fabric specs found</p>
+                      <p className="text-xs mt-1">Try adjusting your search</p>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 rows.map(spec => (
-                  <TableRow key={spec.id} className="hover:bg-zinc-50/50">
+                  <TableRow key={spec.id} style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
                     <TableCell>
-                      <div className="font-medium text-zinc-900">{spec.item}</div>
-                      <div className="text-xs text-zinc-400">{spec.kons_kode}</div>
+                      <div className="font-medium" style={{ color: '#3D4852' }}>{spec.item}</div>
+                      <div className="text-xs" style={{ color: '#6B7280' }}>{spec.kons_kode}</div>
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium border ${getCategoryColor(spec.kat_kode)}`}>
+                      <span style={getCategoryColor(spec.kat_kode)} className="inline-flex px-2 py-0.5 rounded-[9999px] text-xs font-bold">
                         {spec.kat_kode || '—'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-zinc-600">{spec.te ?? '—'}</TableCell>
-                    <TableCell className="text-zinc-600">
+                    <TableCell style={{ color: '#6B7280' }}>{spec.te ?? '—'}</TableCell>
+                    <TableCell style={{ color: '#6B7280' }}>
                       {spec.lusi_ne || '—'} / {spec.pakan_ne || '—'}
                     </TableCell>
-                    <TableCell className="text-zinc-600">
+                    <TableCell style={{ color: '#6B7280' }}>
                       {spec.sisir || '—'} / {spec.pick ?? '—'}
                     </TableCell>
-                    <TableCell className="text-zinc-600">{spec.warna || '—'}</TableCell>
-                    <TableCell className="text-zinc-600">
+                    <TableCell style={{ color: '#6B7280' }}>{spec.warna || '—'}</TableCell>
+                    <TableCell style={{ color: '#6B7280' }}>
                       {spec.usage_count > 0 ? (
-                        <span className="text-zinc-900 font-medium">{spec.usage_count}</span>
+                        <span style={{ color: '#3D4852', fontWeight: 500 }}>{spec.usage_count}</span>
                       ) : (
-                        <span className="text-zinc-400">0</span>
+                        <span>0</span>
                       )}
-                      <span className="text-zinc-400 text-xs ml-1">orders</span>
+                      <span style={{ color: '#6B7280', fontSize: '12px', marginLeft: '4px' }}>orders</span>
                     </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => openEditSpec(spec)}
-                        className="h-7 px-2 text-zinc-500 hover:text-zinc-900"
+                        style={{ height: '28px', padding: '0 8px', background: 'transparent', border: 'none', color: '#9CA3AF' }}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </Button>
@@ -367,31 +377,32 @@ export default function FabricSpecsPage() {
           />
 
           {/* Panel */}
-          <div className="fixed top-0 right-0 z-50 h-full w-[480px] bg-white shadow-xl overflow-y-auto">
+          <div className="fixed top-0 right-0 z-50 h-full w-[480px] overflow-y-auto" style={{ background: '#E0E5EC', boxShadow: '-9px 0 16px rgb(163 177 198 / 0.4)' }}>
             {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-zinc-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-900">
+            <div className="sticky top-0 px-6 py-4 flex items-center justify-between" style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+              <h2 className="text-lg font-semibold" style={{ color: '#3D4852' }}>
                 {editingSpec ? `Edit: ${editingSpec.item}` : 'New Fabric Spec'}
               </h2>
-              <Button variant="ghost" size="sm" onClick={closePanel} className="h-8 w-8 p-0">
-                <X className="w-4 h-4" />
+              <Button variant="ghost" size="sm" onClick={closePanel} style={{ height: '32px', width: '32px', padding: 0, background: 'transparent', border: 'none' }}>
+                <X className="w-4 h-4" style={{ color: '#6B7280' }} />
               </Button>
             </div>
 
             {/* Form */}
             <div className="p-6 space-y-4">
               {/* Identity Section */}
-              <div className="border border-zinc-200 rounded-lg overflow-hidden">
+              <div style={{ border: '1px solid rgb(163 177 198 / 0.3)', borderRadius: '16px', overflow: 'hidden' }}>
                 <button
                   type="button"
                   onClick={() => toggleSection('identity')}
-                  className="w-full px-4 py-3 flex items-center justify-between bg-zinc-50 hover:bg-zinc-100 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between"
+                  style={{ background: '#E0E5EC' }}
                 >
-                  <span className="font-medium text-zinc-700">Identity</span>
+                  <span className="font-medium" style={{ color: '#3D4852' }}>Identity</span>
                   {expandedSections.identity ? (
-                    <ChevronDown className="w-4 h-4 text-zinc-400" />
+                    <ChevronDown className="w-4 h-4" style={{ color: '#6B7280' }} />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-zinc-400" />
+                    <ChevronRight className="w-4 h-4" style={{ color: '#6B7280' }} />
                   )}
                 </button>
                 {expandedSections.identity && (
@@ -416,17 +427,18 @@ export default function FabricSpecsPage() {
               </div>
 
               {/* Thread & Weave Section */}
-              <div className="border border-zinc-200 rounded-lg overflow-hidden">
+              <div style={{ border: '1px solid rgb(163 177 198 / 0.3)', borderRadius: '16px', overflow: 'hidden' }}>
                 <button
                   type="button"
                   onClick={() => toggleSection('threadWeave')}
-                  className="w-full px-4 py-3 flex items-center justify-between bg-zinc-50 hover:bg-zinc-100 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between"
+                  style={{ background: '#E0E5EC' }}
                 >
-                  <span className="font-medium text-zinc-700">Thread & Weave</span>
+                  <span className="font-medium" style={{ color: '#3D4852' }}>Thread & Weave</span>
                   {expandedSections.threadWeave ? (
-                    <ChevronDown className="w-4 h-4 text-zinc-400" />
+                    <ChevronDown className="w-4 h-4" style={{ color: '#6B7280' }} />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-zinc-400" />
+                    <ChevronRight className="w-4 h-4" style={{ color: '#6B7280' }} />
                   )}
                 </button>
                 {expandedSections.threadWeave && (
@@ -445,17 +457,17 @@ export default function FabricSpecsPage() {
               </div>
 
               {/* Dimensions & Weight Section */}
-              <div className="border border-zinc-200 rounded-lg overflow-hidden">
+              <div style={{ border: '1px solid rgb(163 177 198 / 0.3)', borderRadius: '16px', overflow: 'hidden' }}>
                 <button
                   type="button"
                   onClick={() => toggleSection('dimensions')}
-                  className="w-full px-4 py-3 flex items-center justify-between bg-zinc-50 hover:bg-zinc-100 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between"
                 >
-                  <span className="font-medium text-zinc-700">Dimensions & Weight</span>
+                  <span className="font-medium" style={{ color: '#3D4852' }}>Dimensions & Weight</span>
                   {expandedSections.dimensions ? (
-                    <ChevronDown className="w-4 h-4 text-zinc-400" />
+                    <ChevronDown className="w-4 h-4" style={{ color: '#6B7280' }} />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-zinc-400" />
+                    <ChevronRight className="w-4 h-4" style={{ color: '#6B7280' }} />
                   )}
                 </button>
                 {expandedSections.dimensions && (
@@ -470,17 +482,17 @@ export default function FabricSpecsPage() {
               </div>
 
               {/* Color & Process Section */}
-              <div className="border border-zinc-200 rounded-lg overflow-hidden">
+              <div style={{ border: '1px solid rgb(163 177 198 / 0.3)', borderRadius: '16px', overflow: 'hidden' }}>
                 <button
                   type="button"
                   onClick={() => toggleSection('colorProcess')}
-                  className="w-full px-4 py-3 flex items-center justify-between bg-zinc-50 hover:bg-zinc-100 transition-colors"
+                  className="w-full px-4 py-3 flex items-center justify-between"
                 >
-                  <span className="font-medium text-zinc-700">Color & Process</span>
+                  <span className="font-medium" style={{ color: '#3D4852' }}>Color & Process</span>
                   {expandedSections.colorProcess ? (
-                    <ChevronDown className="w-4 h-4 text-zinc-400" />
+                    <ChevronDown className="w-4 h-4" style={{ color: '#6B7280' }} />
                   ) : (
-                    <ChevronRight className="w-4 h-4 text-zinc-400" />
+                    <ChevronRight className="w-4 h-4" style={{ color: '#6B7280' }} />
                   )}
                 </button>
                 {expandedSections.colorProcess && (
@@ -512,12 +524,12 @@ export default function FabricSpecsPage() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 bg-zinc-900 hover:bg-zinc-800"
+                  style={{ flex: 1, background: '#6C63FF', borderRadius: '16px', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', color: '#fff', border: 'none', padding: '8px 16px', fontSize: '14px', fontWeight: 500 }}
                 >
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   {editingSpec ? 'Update Spec' : 'Create Spec'}
                 </Button>
-                <Button variant="outline" onClick={closePanel}>
+                <Button variant="outline" onClick={closePanel} style={{ background: '#E0E5EC', borderRadius: '16px', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', color: '#6B7280', border: 'none' }}>
                   Cancel
                 </Button>
               </div>
@@ -532,15 +544,19 @@ export default function FabricSpecsPage() {
           height: 36px;
           padding: 0 10px;
           font-size: 14px;
-          border: 1px solid #e4e4e7;
-          border-radius: 6px;
-          background: white;
-          transition: border-color 0.15s, box-shadow 0.15s;
+          border: none;
+          border-radius: 16px;
+          background: #E0E5EC;
+          color: #3D4852;
+          box-shadow: inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5);
+          transition: box-shadow 0.15s;
+        }
+        .input::placeholder {
+          color: #9CA3AF;
         }
         .input:focus {
           outline: none;
-          border-color: #71717a;
-          box-shadow: 0 0 0 2px rgba(113, 113, 122, 0.1);
+          box-shadow: inset 10px 10px 20px rgb(163 177 198 / 0.7), inset -10px -10px 20px rgba(255,255,255,0.6), 0 0 0 2px #6C63FF;
         }
         .form-group {
           display: flex;
@@ -548,17 +564,19 @@ export default function FabricSpecsPage() {
           gap: 4px;
         }
         .form-group label {
-          font-size: 13px;
-          font-weight: 500;
-          color: #3f3f46;
+          font-size: 10px;
+          font-weight: bold;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #9CA3AF;
         }
         .form-group label .required {
-          color: #ef4444;
+          color: #DC2626;
           margin-left: 2px;
         }
         .form-error {
           font-size: 12px;
-          color: #ef4444;
+          color: #DC2626;
         }
         textarea.input {
           height: auto;

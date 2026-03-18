@@ -1,6 +1,7 @@
 import InspectGrayFormPage from '../../../../../components/denim/InspectGrayFormPage';
 
-export default async function Page({ params }: { params: Promise<{ kp: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ kp: string }>; searchParams: Promise<{ edit?: string }> }) {
   const { kp } = await params;
-  return <InspectGrayFormPage kp={kp} />;
+  const { edit } = await searchParams;
+  return <InspectGrayFormPage kp={kp} editMode={edit === '1'} />;
 }

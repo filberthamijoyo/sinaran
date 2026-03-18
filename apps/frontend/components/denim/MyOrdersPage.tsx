@@ -41,9 +41,9 @@ const formatDate = (iso: string) => {
 };
 
 const SC_TYPE_COLORS: Record<string, string> = {
-  PO1: 'bg-blue-50 text-blue-700 border-blue-200',
-  RP:  'bg-violet-50 text-violet-700 border-violet-200',
-  SCN: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+  PO1: 'text-[#6C63FF]',
+  RP:  'text-[#6C63FF]',
+  SCN: 'text-[#6B7280]',
 };
 
 export default function MyOrdersPage() {
@@ -96,7 +96,12 @@ export default function MyOrdersPage() {
         actions={
           <Button
             onClick={() => router.push('/denim/new-order')}
-            className="bg-blue-600 hover:bg-blue-500 h-8 text-sm gap-1.5"
+            style={{
+              background: '#6C63FF',
+              color: '#FFFFFF',
+              border: 'none',
+            }}
+            className="h-8 text-sm gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             New Order
@@ -104,7 +109,7 @@ export default function MyOrdersPage() {
         }
       />
 
-      <div className="px-8 pb-8">
+      <div className="px-4 sm:px-8 pb-8">
         {/* Search + refresh */}
         <div className="flex items-center gap-2 mb-4">
           <OrderFilterBar
@@ -115,37 +120,44 @@ export default function MyOrdersPage() {
             placeholder="Search by KP (e.g. BQQS)..."
           />
           <Button
-            variant="outline"
             size="sm"
             onClick={fetchOrders}
             className="h-8 w-8 p-0"
+            style={{
+              background: '#E0E5EC',
+              color: '#6B7280',
+              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+              border: 'none',
+            }}
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-zinc-200/80
-          shadow-sm overflow-hidden">
+        <div
+          className="rounded-[32px] p-6 overflow-hidden"
+          style={{
+            background: '#E0E5EC',
+            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+          }}
+        >
           <Table>
             <TableHeader>
-              <TableRow className="bg-zinc-50/80 hover:bg-zinc-50/80">
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500 w-28">Date</TableHead>
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500 w-24">KP</TableHead>
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500">Construction</TableHead>
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500 w-20">Type</TableHead>
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500">Customer</TableHead>
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500 w-20">TE</TableHead>
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500">Color</TableHead>
-                <TableHead className="text-xs font-semibold
-                  text-zinc-500 w-32">Pipeline</TableHead>
+              <TableRow
+                style={{
+                  background: '#E0E5EC',
+                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                }}
+              >
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>KP</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Construction</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Type</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Customer</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>TE</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Color</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Pipeline</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -160,9 +172,16 @@ export default function MyOrdersPage() {
                   </TableRow>
                 ))
               ) : rows.length === 0 ? (
-                <TableRow>
+                <TableRow
+                  style={{
+                    background: '#E0E5EC',
+                    borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                  }}
+                >
                   <TableCell colSpan={8}
-                    className="text-center text-zinc-400 text-sm py-16">
+                    className="text-center text-sm py-16"
+                    style={{ color: '#6B7280' }}
+                  >
                     No orders found.
                   </TableCell>
                 </TableRow>
@@ -170,42 +189,48 @@ export default function MyOrdersPage() {
                 rows.map(row => (
                   <TableRow
                     key={row.id}
-                    className="table-row-hover border-zinc-100"
+                    style={{
+                      background: '#E0E5EC',
+                      borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                    }}
+                    className="cursor-pointer transition-all duration-100 hover:translate-x-[2px]"
                     onClick={() =>
                       router.push(`/denim/orders/${row.kp}`)
                     }
                   >
-                    <TableCell className="text-sm text-zinc-500">
+                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
                       {formatDate(row.tgl)}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm font-mono font-semibold
-                        text-zinc-800">
+                      <span className="text-sm font-mono font-semibold"
+                        style={{ color: '#3D4852' }}>
                         {row.kp}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-zinc-700">
+                    <TableCell className="text-sm" style={{ color: '#3D4852' }}>
                       {row.codename || '—'}
                     </TableCell>
                     <TableCell>
                       {row.kat_kode && (
-                        <span className={`inline-flex items-center
-                          rounded-md border px-2 py-0.5 text-xs
-                          font-medium ${SC_TYPE_COLORS[row.kat_kode]
-                            ?? 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                          }`}>
+                        <span className={`inline-flex items-center rounded-[9999px] px-3 py-1 text-xs font-bold`}
+                          style={{
+                            background: '#E0E5EC',
+                            color: '#3D4852',
+                            boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                          }}
+                        >
                           {row.kat_kode}
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-zinc-600">
+                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
                       {row.permintaan || '—'}
                     </TableCell>
-                    <TableCell className="text-sm font-mono
-                      text-zinc-600">
+                    <TableCell className="text-sm font-mono"
+                      style={{ color: '#6B7280' }}>
                       {row.te?.toLocaleString() || '—'}
                     </TableCell>
-                    <TableCell className="text-sm text-zinc-600">
+                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
                       {row.ket_warna || '—'}
                     </TableCell>
                     <TableCell>
@@ -223,26 +248,36 @@ export default function MyOrdersPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs" style={{ color: '#6B7280' }}>
               Page {page} of {totalPages}
               {' '}· {total.toLocaleString()} orders
             </p>
             <div className="flex items-center gap-1.5">
               <Button
-                variant="outline"
                 size="sm"
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
                 className="h-7 text-xs"
+                style={{
+                  background: '#E0E5EC',
+                  color: '#3D4852',
+                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                  border: 'none',
+                }}
               >
                 Previous
               </Button>
               <Button
-                variant="outline"
                 size="sm"
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => p + 1)}
                 className="h-7 text-xs"
+                style={{
+                  background: '#E0E5EC',
+                  color: '#3D4852',
+                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                  border: 'none',
+                }}
               >
                 Next
               </Button>

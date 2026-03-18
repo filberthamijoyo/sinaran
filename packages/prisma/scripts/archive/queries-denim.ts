@@ -27,37 +27,54 @@ const prisma = new PrismaClient();
  */
 export async function getFullPipeline(kp: string) {
   // Fetch from each table by KP (case-insensitive)
-  const salesContract = await prisma.salesContract.findFirst({
+  const sc = await prisma.salesContract.findFirst({
     where: { kp: { equals: kp, mode: 'insensitive' } },
   });
 
-  const warpingRun = await prisma.warpingRun.findFirst({
+  const warping = await prisma.warpingRun.findFirst({
     where: { kp: { equals: kp, mode: 'insensitive' } },
     include: {
       beams: true,
     },
   });
 
-  const indigoRun = await prisma.indigoRun.findFirst({
+  const indigo = await prisma.indigoRun.findFirst({
     where: { kp: { equals: kp, mode: 'insensitive' } },
   });
 
-  const weavingRecords = await prisma.weavingRecord.findMany({
+  const weaving = await prisma.weavingRecord.findMany({
     where: { kp: { equals: kp, mode: 'insensitive' } },
     include: {
       warping_beam: true,
     },
   });
 
-  if (!salesContract) {
+  const inspection = await prisma.inspectGrayRecord.findMany({
+    where: { kp: { equals: kp, mode: 'insensitive' } },
+    orderBy: { no_roll: 'asc' },
+  });
+
+  const bbsf = await prisma.bBSFRecord.findFirst({
+    where: { kp: { equals: kp, mode: 'insensitive' } },
+  });
+
+  const inspectFinish = await prisma.inspectFinishRecord.findMany({
+    where: { kp: { equals: kp, mode: 'insensitive' } },
+    orderBy: { no_roll: 'asc' },
+  });
+
+  if (!sc) {
     return null;
   }
 
   return {
-    salesContract,
-    warping_run: warpingRun,
-    indigo_run: indigoRun,
-    weaving_records: weavingRecords,
+    sc,
+    warping,
+    indigo,
+    weaving,
+    inspection,
+    bbsf,
+    inspectFinish,
   };
 }
 

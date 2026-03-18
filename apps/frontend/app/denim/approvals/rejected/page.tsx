@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState, useCallback } from 'react';
 import { authFetch } from '../../../../lib/authFetch';
 import PageHeader from '../../../../components/layout/PageHeader';
@@ -48,25 +49,25 @@ export default function RejectedPage() {
           </Button>
         }
       />
-      <div className="px-8 pb-8">
-        <div className="bg-white rounded-xl border
-          border-zinc-200/80 shadow-sm overflow-hidden">
+      <div className="px-4 sm:px-8 pb-8">
+        <div className="card-glow rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-zinc-50/80 hover:bg-zinc-50/80">
+              <TableRow className="bg-[hsl(var(--muted))] hover:bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))]">
                 <TableHead className="text-xs font-semibold text-zinc-500">Date</TableHead>
                 <TableHead className="text-xs font-semibold text-zinc-500">KP</TableHead>
                 <TableHead className="text-xs font-semibold text-zinc-500">Construction</TableHead>
                 <TableHead className="text-xs font-semibold text-zinc-500">Customer</TableHead>
                 <TableHead className="text-xs font-semibold text-zinc-500">TE</TableHead>
                 <TableHead className="text-xs font-semibold text-zinc-500">Stage</TableHead>
+                <TableHead className="text-xs font-semibold text-zinc-500">Reason</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 6 }).map((_, j) => (
+                    {Array.from({ length: 7 }).map((_, j) => (
                       <TableCell key={j}>
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
@@ -75,31 +76,34 @@ export default function RejectedPage() {
                 ))
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-16">
-                    <XCircle className="w-8 h-8 text-zinc-200 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-400">No rejected orders.</p>
+                  <TableCell colSpan={7} className="text-center py-16">
+                    <XCircle className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-500">No rejected orders.</p>
                   </TableCell>
                 </TableRow>
               ) : (
                 rows.map((row: any) => (
                   <TableRow
                     key={row.id}
-                    className="table-row-hover border-zinc-100"
+                    className="table-row-hover border-[hsl(var(--border))]"
                     onClick={() => router.push(`/denim/orders/${row.kp}`)}
                   >
                     <TableCell className="text-sm text-zinc-500">{fmt(row.tgl)}</TableCell>
                     <TableCell>
-                      <span className="text-sm font-mono font-semibold text-zinc-800">
+                      <span className="text-sm font-mono font-semibold text-zinc-200">
                         {row.kp}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-zinc-700">{row.codename || '—'}</TableCell>
-                    <TableCell className="text-sm text-zinc-600">{row.permintaan || '—'}</TableCell>
-                    <TableCell className="text-sm font-mono text-zinc-600">
+                    <TableCell className="text-sm text-zinc-300">{row.codename || '—'}</TableCell>
+                    <TableCell className="text-sm text-zinc-400">{row.permintaan || '—'}</TableCell>
+                    <TableCell className="text-sm font-mono text-zinc-400">
                       {row.te?.toLocaleString() || '—'}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={row.pipeline_status || 'REJECTED'} />
+                    </TableCell>
+                    <TableCell className="text-sm text-zinc-500 max-w-xs truncate">
+                      {row.rejection_reason || <span className="text-zinc-400">—</span>}
                     </TableCell>
                   </TableRow>
                 ))

@@ -24,9 +24,9 @@ interface StageCardProps {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  PO1: 'bg-blue-50 text-blue-700 border-blue-200',
-  RP:  'bg-violet-50 text-violet-700 border-violet-200',
-  SCN: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+  PO1: 'text-[#6C63FF]',
+  RP:  'text-[#6C63FF]',
+  SCN: 'text-[#6B7280]',
 };
 
 export default function StageCard({
@@ -35,19 +35,23 @@ export default function StageCard({
   const router = useRouter();
 
   return (
-    <div className={`bg-white rounded-xl border shadow-sm
-      overflow-hidden flex flex-col ${borderColor}`}>
+    <div style={{
+      background: '#E0E5EC',
+      borderRadius: '32px',
+      overflow: 'hidden',
+      flex: 'flex',
+      flexDirection: 'column',
+      boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+    }}>
 
       {/* Top accent bar */}
-      <div className={`h-1 w-full ${color}`} />
+      <div style={{ height: '4px', width: '100%', background: color || '#6C63FF' }} />
 
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 flex items-center
-        justify-between border-b border-zinc-100">
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider
-            text-zinc-500">{label}</p>
-          <p className={`text-3xl font-bold mt-0.5 ${textColor}`}>
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>{label}</p>
+          <p className="text-3xl font-bold mt-0.5" style={{ color: '#3D4852' }}>
             {count}
           </p>
         </div>
@@ -55,8 +59,8 @@ export default function StageCard({
           onClick={() =>
             router.push(`/denim/admin/pipeline?stage=${stage}`)
           }
-          className="text-xs text-zinc-400 hover:text-blue-600
-            flex items-center gap-0.5 transition-colors"
+          className="text-xs flex items-center gap-0.5 transition-colors"
+          style={{ color: '#6B7280' }}
         >
           View all
           <ChevronRight className="w-3 h-3" />
@@ -64,9 +68,9 @@ export default function StageCard({
       </div>
 
       {/* Recent orders list */}
-      <div className="flex-1 divide-y divide-zinc-50">
+      <div className="flex-1">
         {recent.length === 0 ? (
-          <p className="px-5 py-4 text-xs text-zinc-400 text-center">
+          <p className="px-5 py-4 text-xs text-center" style={{ color: '#9CA3AF' }}>
             No orders at this stage
           </p>
         ) : (
@@ -76,42 +80,33 @@ export default function StageCard({
               onClick={() =>
                 router.push(`/denim/admin/orders/${order.kp}`)
               }
-              className="w-full px-5 py-2.5 flex items-center
-                justify-between hover:bg-zinc-50 transition-colors
-                text-left group"
+              className="w-full px-5 py-2.5 flex items-center justify-between text-left group"
+              style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-semibold
-                    text-zinc-800">
+                  <span className="text-xs font-mono font-semibold" style={{ color: '#3D4852' }}>
                     {order.kp}
                   </span>
                   {order.kat_kode && (
-                    <span className={`inline-flex items-center
-                      rounded border px-1.5 py-px text-[10px]
-                      font-medium leading-none
-                      ${TYPE_COLORS[order.kat_kode]
-                        ?? 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                      }`}>
+                    <span className="inline-flex items-center rounded-[9999px] px-1.5 py-px text-[10px] font-medium leading-none" style={{ background: '#E0E5EC', color: TYPE_COLORS[order.kat_kode] || '#6B7280', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' }}>
                       {order.kat_kode}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-zinc-500 truncate mt-0.5">
+                <p className="text-xs truncate mt-0.5" style={{ color: '#6B7280' }}>
                   {order.codename || '—'}
                   {order.permintaan
                     ? ` · ${order.permintaan}` : ''}
                 </p>
               </div>
               <div className="flex-shrink-0 ml-3 text-right">
-                <p className="text-[10px] text-zinc-400">
+                <p className="text-[10px]" style={{ color: '#9CA3AF' }}>
                   {order.tgl
                     ? format(new Date(order.tgl), 'd MMM')
                     : '—'}
                 </p>
-                <ChevronRight className="w-3 h-3 text-zinc-200
-                  group-hover:text-zinc-400 ml-auto mt-0.5
-                  transition-colors" />
+                <ChevronRight className="w-3 h-3 ml-auto mt-0.5 transition-colors" style={{ color: '#9CA3AF' }} />
               </div>
             </button>
           ))

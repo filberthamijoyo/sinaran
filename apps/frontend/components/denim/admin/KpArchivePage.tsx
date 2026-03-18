@@ -36,9 +36,9 @@ const formatDate = (iso: string) => {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  PO1: 'bg-blue-50 text-blue-700 border-blue-200',
-  RP:  'bg-violet-50 text-violet-700 border-violet-200',
-  SCN: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+  PO1: 'bg-blue-500/15 text-blue-400 border border-blue-500/20',
+  RP:  'bg-violet-500/15 text-violet-400 border border-violet-500/20',
+  SCN: ''
 };
 
 export default function KpArchivePage() {
@@ -99,13 +99,19 @@ export default function KpArchivePage() {
       {/* Search Bar */}
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
           <input
             type="text"
             placeholder="Search by original KP code..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full pl-9 pr-4 h-10 rounded-[16px] text-sm"
+            style={{
+              background: '#E0E5EC',
+              color: '#3D4852',
+              boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+              border: 'none',
+            }}
           />
         </div>
         <Button type="submit" variant="default">
@@ -114,18 +120,23 @@ export default function KpArchivePage() {
       </form>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div style={{
+        background: '#E0E5EC',
+        borderRadius: '32px',
+        overflow: 'hidden',
+        boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+      }}>
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
               <TableHead className="w-12"></TableHead>
-              <TableHead>Original KP</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Construction</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Shifts</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Original KP</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Date</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Construction</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Type</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Status</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Shifts</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -167,18 +178,18 @@ export default function KpArchivePage() {
                         )}
                       </button>
                     </TableCell>
-                    <TableCell className="font-mono font-medium">{row.original_kp}</TableCell>
+                    <TableCell className="font-mono font-semibold text-amber-400 text-sm">{row.original_kp}</TableCell>
                     <TableCell>{formatDate(row.tgl)}</TableCell>
                     <TableCell>{row.codename || '—'}</TableCell>
                     <TableCell>
                       {row.status && (
-                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium border ${TYPE_COLORS[row.status] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                        <span className={`inline-flex px-2 py-0.5 rounded-[9999px] text-xs font-medium ${TYPE_COLORS[row.status] || ''}`} style={TYPE_COLORS[row.status] ? {} : { background: '#E0E5EC', color: '#6B7280', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' }}>
                           {row.status}
                         </span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                      <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
                         REJECTED
                       </span>
                     </TableCell>
@@ -195,44 +206,44 @@ export default function KpArchivePage() {
                   </TableRow>
                   {expandedId === row.id && (
                     <TableRow key={`${row.id}-detail`}>
-                      <TableCell colSpan={8} className="bg-muted/30 p-4">
+                      <TableCell colSpan={8} className="p-4" style={{ background: '#E0E5EC' }}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {/* Sales Contract Details */}
                           <div className="space-y-3">
-                            <h4 className="font-semibold text-sm">Sales Contract Details</h4>
+                            <h4 className="font-semibold text-sm" style={{ color: '#3D4852' }}>Sales Contract Details</h4>
                             <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div><span className="text-muted-foreground">KP:</span> <span className="font-mono">{row.original_kp}</span></div>
-                              <div><span className="text-muted-foreground">Date:</span> {formatDate(row.tgl)}</div>
-                              <div><span className="text-muted-foreground">Construction:</span> {row.codename || '—'}</div>
-                              <div><span className="text-muted-foreground">Type:</span> {row.status || '—'}</div>
-                              <div><span className="text-muted-foreground">Width:</span> {row.lebar ? `${row.lebar} cm` : '—'}</div>
-                              <div><span className="text-muted-foreground">TE:</span> {row.te || '—'}</div>
-                              <div><span className="text-muted-foreground">QR:</span> {row.qr || '—'}</div>
-                              <div><span className="text-muted-foreground">PCS:</span> {row.pcs || '—'}</div>
-                              <div><span className="text-muted-foreground">Color:</span> {row.ket_warna || '—'}</div>
-                              <div><span className="text-muted-foreground">Category:</span> {row.kat_kode || '—'}</div>
-                              <div><span className="text-muted-foreground">ACC:</span> {row.acc || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>KP:</span> <span className="font-mono font-semibold" style={{ color: '#D97706' }}>{row.original_kp}</span></div>
+                              <div><span style={{ color: '#6B7280' }}>Date:</span> {formatDate(row.tgl)}</div>
+                              <div><span style={{ color: '#6B7280' }}>Construction:</span> {row.codename || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>Type:</span> {row.status || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>Width:</span> {row.lebar ? `${row.lebar} cm` : '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>TE:</span> {row.te || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>QR:</span> {row.qr || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>PCS:</span> {row.pcs || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>Color:</span> {row.ket_warna || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>Category:</span> {row.kat_kode || '—'}</div>
+                              <div><span style={{ color: '#6B7280' }}>ACC:</span> {row.acc || '—'}</div>
                             </div>
                           </div>
 
                           {/* Production Stats */}
                           <div className="space-y-3">
-                            <h4 className="font-semibold text-sm">Production Summary</h4>
+                            <h4 className="font-semibold text-sm" style={{ color: '#3D4852' }}>Production Summary</h4>
                             <div className="grid grid-cols-3 gap-4">
-                              <div className="bg-blue-50 rounded p-3 text-center">
-                                <div className="text-2xl font-bold text-blue-700">{getWarpingStats(row).runs}</div>
-                                <div className="text-xs text-blue-600">Warping Runs</div>
-                                <div className="text-xs text-blue-500">{getWarpingStats(row).beams} beams</div>
+                              <div className="rounded-[16px] p-3 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}>
+                                <div className="text-2xl font-bold" style={{ color: '#6C63FF' }}>{getWarpingStats(row).runs}</div>
+                                <div className="text-xs" style={{ color: '#6B7280' }}>Warping Runs</div>
+                                <div className="text-xs" style={{ color: '#9CA3AF' }}>{getWarpingStats(row).beams} beams</div>
                               </div>
-                              <div className="bg-indigo-50 rounded p-3 text-center">
-                                <div className="text-2xl font-bold text-indigo-700">{getIndigoStats(row).runs}</div>
-                                <div className="text-xs text-indigo-600">Indigo Runs</div>
+                              <div className="rounded-[16px] p-3 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}>
+                                <div className="text-2xl font-bold" style={{ color: '#6C63FF' }}>{getIndigoStats(row).runs}</div>
+                                <div className="text-xs" style={{ color: '#6B7280' }}>Indigo Runs</div>
                               </div>
-                              <div className="bg-amber-50 rounded p-3 text-center">
-                                <div className="text-2xl font-bold text-amber-700">{getWeavingStats(row).count}</div>
-                                <div className="text-xs text-amber-600">Weaving Shifts</div>
+                              <div className="rounded-[16px] p-3 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}>
+                                <div className="text-2xl font-bold" style={{ color: '#D97706' }}>{getWeavingStats(row).count}</div>
+                                <div className="text-xs" style={{ color: '#6B7280' }}>Weaving Shifts</div>
                                 {getWeavingStats(row).avgEff && (
-                                  <div className="text-xs text-amber-500">{getWeavingStats(row).avgEff}% eff</div>
+                                  <div className="text-xs" style={{ color: '#9CA3AF' }}>{getWeavingStats(row).avgEff}% eff</div>
                                 )}
                               </div>
                             </div>
@@ -240,7 +251,8 @@ export default function KpArchivePage() {
                         </div>
                         <button
                           onClick={() => setExpandedId(null)}
-                          className="mt-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                          className="mt-4 flex items-center gap-1 text-sm"
+                          style={{ color: '#6B7280' }}
                         >
                           <X className="h-4 w-4" /> Close
                         </button>

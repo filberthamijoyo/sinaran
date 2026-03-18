@@ -1,0 +1,29 @@
+=== Import BBSF Records ===
+
+Excel file: /Users/filberthamijoyo/Downloads/erp/DATA BBSF.xlsx
+Min date: 2024-12-31
+
+Loading valid KPs...
+Loaded 1337 valid KPs
+
+Clearing existing BBSF records...
+Cleared.
+
+Reading Excel...
+
+Processing WASHING sheet (22593 rows)...
+  Processed: 10404, Inserted/Updated: 10404
+
+Processing SANFOR PERTAMA sheet (12151 rows)...
+  Processed: 10361, Inserted/Updated: 10361
+
+Processing SANFOR KEDUA sheet (10455 rows)...
+  Processed: 9799, Inserted/Updated: 9799
+
+=== Verifying ===
+
+Results:
+  Total records: 1012
+  Has washing data: 966
+  Has Sanfor 1 data: 976
+  Has Sanfor 2 data: 945

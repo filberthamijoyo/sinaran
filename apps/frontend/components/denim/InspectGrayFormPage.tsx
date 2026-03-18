@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authFetch } from '../../lib/authFetch';
 import PageHeader from '../layout/PageHeader';
 import KpContextBanner from './KpContextBanner';
@@ -9,7 +9,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Skeleton } from '../ui/skeleton';
-import { Clock, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Clock, Loader2, Plus, Trash2, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SCData {
@@ -22,6 +22,41 @@ interface SCData {
   te: number | null;
 }
 
+// Defect type definitions grouped by severity
+const DEFECT_CRITICAL = [
+  'btl', 'bts', 'pp', 'pks', 'ko', 'db', 'bl', 'ptr', 'pkt', 'fly', 'ls', 'lpb', 
+  'p_bulu', 'smg', 'sms', 'aw', 'pl', 'na'
+];
+const DEFECT_MEDIUM = [
+  'lm', 'lkc', 'lks', 'ld', 'pts', 'pd', 'lkt', 'pk', 'lp', 'plc', 'j', 'kk', 'bta', 
+  'pj', 'rp', 'pb', 'xpd'
+];
+const DEFECT_LOW = [
+  'br', 'pss', 'luper', 'ptn', 'b_bercak', 'r_rusak', 'sl', 'p_timbul', 'b_celup', 
+  'p_tumpuk', 'b_bar', 'sml', 'p_slub', 'p_belang', 'crossing', 'x_sambang', 'p_jelek', 'lipatan'
+];
+
+const ALL_DEFECTS = [...DEFECT_CRITICAL, ...DEFECT_MEDIUM, ...DEFECT_LOW];
+
+// Display labels for defect codes
+const DEFECT_LABELS: Record<string, string> = {
+  btl: 'BTL', bts: 'BTS', pp: 'PP', pks: 'PKS', ko: 'KO', db: 'DB', bl: 'BL', 
+  ptr: 'PTR', pkt: 'PKT', fly: 'FLY', ls: 'LS', lpb: 'LPB', p_bulu: 'P.BULU', 
+  smg: 'SMG', sms: 'SMS', aw: 'AW', pl: 'PL', na: 'NA',
+  lm: 'LM', lkc: 'LKC', lks: 'LKS', ld: 'LD', pts: 'PTS', pd: 'PD', lkt: 'LKT', 
+  pk: 'PK', lp: 'LP', plc: 'PLC', j: 'J', kk: 'KK', bta: 'BTA', pj: 'PJ', rp: 'RP', 
+  pb: 'PB', xpd: 'XPD',
+  br: 'BR', pss: 'PSS', luper: 'LUPER', ptn: 'PTN', b_bercak: 'B.BERKAK', 
+  r_rusak: 'R.RUSAK', sl: 'SL', p_timbul: 'P.TIMBUL', b_celup: 'B.CELUP', 
+  p_tumpuk: 'P.TUMPUK', b_bar: 'B.BAR', sml: 'SML', p_slub: 'P.SLUB', 
+  p_belang: 'P.BELANG', crossing: 'CROSSING', x_sambang: 'X.SAMBUNG', 
+  p_jelek: 'P.JELEK', lipatan: 'LIPATAN'
+};
+
+interface DefectFields {
+  [key: string]: string;
+}
+
 interface RollRow {
   no_roll: string;
   panjang: string;
@@ -29,10 +64,14 @@ interface RollRow {
   berat: string;
   grade: string;
   cacat: string;
+  defects: DefectFields;
+  expanded: boolean;
 }
 
 interface InspectGrayFormState {
   inspector_name: string;
+  sj: string;
+  opg: string;
   rolls: RollRow[];
 }
 
@@ -43,18 +82,38 @@ const emptyRoll = (): RollRow => ({
   berat: '',
   grade: '',
   cacat: '',
+  defects: {},
+  expanded: false,
 });
 
-export default function InspectGrayFormPage({ kp }: { kp: string }) {
+const emptyDefects = (): DefectFields => {
+  const defects: DefectFields = {};
+  ALL_DEFECTS.forEach(d => { defects[d] = ''; });
+  return defects;
+};
+
+export default function InspectGrayFormPage({ kp, editMode = false }: { kp: string; editMode?: boolean }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isEditMode = editMode || searchParams.get('edit') === '1';
   const [sc, setSc] = useState<SCData | null>(null);
   const [loadingSc, setLoadingSc] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(isEditMode);
 
   const [form, setForm] = useState<InspectGrayFormState>({
     inspector_name: '',
+    sj: '',
+    opg: '',
     rolls: [emptyRoll()],
   });
+
+  // Calculate BMC for a single roll
+  const calculateBMC = (defects: DefectFields): number => {
+    return ALL_DEFECTS.reduce((sum, key) => {
+      return sum + (parseInt(defects[key]) || 0);
+    }, 0);
+  };
 
   // Auto-calculate summary statistics
   const summary = useMemo(() => {
@@ -63,6 +122,7 @@ export default function InspectGrayFormPage({ kp }: { kp: string }) {
       totalRolls: validRolls.length,
       totalPanjang: validRolls.reduce((sum, r) => sum + (parseFloat(r.panjang) || 0), 0),
       totalBerat: validRolls.reduce((sum, r) => sum + (parseFloat(r.berat) || 0), 0),
+      totalBMC: validRolls.reduce((sum, r) => sum + calculateBMC(r.defects), 0),
       gradeACount: validRolls.filter(r => r.grade === 'A').length,
       gradeBCount: validRolls.filter(r => r.grade === 'B').length,
       gradeCCount: validRolls.filter(r => r.grade === 'C').length,
@@ -86,6 +146,56 @@ export default function InspectGrayFormPage({ kp }: { kp: string }) {
     load();
   }, [kp]);
 
+  // Load existing InspectGray data when in edit mode
+  useEffect(() => {
+    if (!isEditMode) return;
+    
+    const loadExisting = async () => {
+      try {
+        const data = await authFetch(`/denim/admin/pipeline/${kp}`) as any;
+        if (data?.inspectGray && data.inspectGray.length > 0) {
+          // Group by date and inspector
+          const groupedByDate = data.inspectGray.reduce((acc: any, r: any) => {
+            const key = r.tg ? new Date(r.tg).toISOString().split('T')[0] : 'unknown';
+            if (!acc[key]) {
+              acc[key] = { inspector: r.mc || '', rolls: [] };
+            }
+            acc[key].rolls.push({
+              no_roll: r.no_roll?.toString() || '',
+              panjang: r.panjang?.toString() || '',
+              lebar: r.w?.toString() || r.lebar?.toString() || '',
+              berat: r.berat?.toString() || '',
+              grade: r.gd || '',
+              cacat: r.cacat || '',
+              defects: {},
+              expanded: false,
+            });
+            return acc;
+          }, {});
+          
+          // Use the first date's data
+          const firstKey = Object.keys(groupedByDate)[0];
+          if (firstKey && groupedByDate[firstKey]) {
+            setForm({
+              inspector_name: groupedByDate[firstKey].inspector,
+              sj: '', // SJ not stored in inspectGray
+              opg: '',
+              rolls: groupedByDate[firstKey].rolls.length > 0 
+                ? groupedByDate[firstKey].rolls 
+                : [emptyRoll()],
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load existing data:', e);
+      } finally {
+        setLoadingExisting(false);
+      }
+    };
+    
+    loadExisting();
+  }, [isEditMode, kp]);
+
   const setField = (key: keyof InspectGrayFormState, value: string) =>
     setForm(f => ({ ...f, [key]: value }));
 
@@ -97,6 +207,28 @@ export default function InspectGrayFormPage({ kp }: { kp: string }) {
     setForm(f => {
       const rolls = [...f.rolls];
       rolls[index] = { ...rolls[index], [key]: value };
+      return { ...f, rolls };
+    });
+  };
+
+  const setDefectField = (rollIndex: number, defectKey: string, value: string) => {
+    setForm(f => {
+      const rolls = [...f.rolls];
+      rolls[rollIndex] = {
+        ...rolls[rollIndex],
+        defects: {
+          ...rolls[rollIndex].defects,
+          [defectKey]: value,
+        },
+      };
+      return { ...f, rolls };
+    });
+  };
+
+  const toggleExpand = (index: number) => {
+    setForm(f => {
+      const rolls = [...f.rolls];
+      rolls[index] = { ...rolls[index], expanded: !rolls[index].expanded };
       return { ...f, rolls };
     });
   };
@@ -119,23 +251,38 @@ export default function InspectGrayFormPage({ kp }: { kp: string }) {
     }
     setSubmitting(true);
     try {
+      // Build defect fields for API
+      const rollsWithDefects = validRolls.map(r => {
+        const defectData: Record<string, number> = {};
+        ALL_DEFECTS.forEach(d => {
+          if (r.defects[d] && parseInt(r.defects[d]) > 0) {
+            defectData[d] = parseInt(r.defects[d]);
+          }
+        });
+        return {
+          no_roll: parseInt(r.no_roll),
+          panjang: r.panjang ? parseFloat(r.panjang) : null,
+          lebar: r.lebar ? parseFloat(r.lebar) : null,
+          berat: r.berat ? parseFloat(r.berat) : null,
+          grade: r.grade || null,
+          cacat: r.cacat || null,
+          ...defectData,
+          bmc: calculateBMC(r.defects),
+        };
+      });
+
       await authFetch('/denim/inspect-gray', {
-        method: 'POST',
+        method: isEditMode ? 'PUT' : 'POST',
         body: JSON.stringify({
           kp,
           inspector_name: form.inspector_name || null,
-          rolls: validRolls.map(r => ({
-            no_roll: parseInt(r.no_roll),
-            panjang: r.panjang ? parseFloat(r.panjang) : null,
-            lebar: r.lebar ? parseFloat(r.lebar) : null,
-            berat: r.berat ? parseFloat(r.berat) : null,
-            grade: r.grade || null,
-            cacat: r.cacat || null,
-          })),
+          sj: form.sj ? parseFloat(form.sj) : null,
+          opg: form.opg || null,
+          rolls: rollsWithDefects,
         }),
       });
-      toast.success(`Inspection complete for KP ${kp}. Order marked Complete.`);
-      router.push('/denim/inbox/inspect-gray');
+      toast.success(isEditMode ? `Inspection updated for KP ${kp}.` : `Inspection complete for KP ${kp}. Order moved to BBSF.`);
+      router.push(isEditMode ? `/denim/admin/orders/${kp}` : '/denim/inbox/inspect-gray');
     } catch (err: any) {
       toast.error(err.message || 'Failed to save inspection data.');
     } finally {
@@ -143,9 +290,55 @@ export default function InspectGrayFormPage({ kp }: { kp: string }) {
     }
   };
 
+  // Render defect input grid
+  const renderDefectInputs = (rollIndex: number, defects: DefectFields) => {
+    const renderGroup = (defectsList: string[], severity: string, color: string) => (
+      <div className="mb-3">
+        <p className={`text-xs font-semibold ${color} mb-2`}>{severity}</p>
+        <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+          {defectsList.map(key => (
+            <div key={key} className="space-y-1">
+              <Label className="text-[10px] block" style={{ color: '#6B7280' }}>
+                {DEFECT_LABELS[key] || key}
+              </Label>
+              <Input
+                type="number"
+                min="0"
+                value={defects[key] || ''}
+                onChange={e => setDefectField(rollIndex, key, e.target.value)}
+                className="h-7 text-xs font-mono"
+                placeholder="0"
+                style={{
+                  background: '#E0E5EC',
+                  color: '#3D4852',
+                  boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                  border: 'none',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    return (
+      <div
+        className="rounded-lg p-3 mt-2"
+        style={{
+          background: '#E0E5EC',
+          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+        }}
+      >
+        {renderGroup(DEFECT_CRITICAL, 'CRITICAL (Severity 4)', 'text-red-500')}
+        {renderGroup(DEFECT_MEDIUM, 'MEDIUM (Severity 2)', 'text-yellow-500')}
+        {renderGroup(DEFECT_LOW, 'LOW (Severity 1)', 'text-green-500')}
+      </div>
+    );
+  };
+
   if (loadingSc) {
     return (
-      <div className="px-8 py-8 space-y-4">
+      <div className="px-4 sm:px-8 py-8 space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-64 w-full" />
@@ -171,229 +364,331 @@ export default function InspectGrayFormPage({ kp }: { kp: string }) {
       />
 
       <form onSubmit={handleSubmit}>
-        <div className="px-8 pb-8 space-y-5">
+        <div className="px-4 sm:px-8 pb-8 space-y-5">
 
           {/* Section 1: Inspection Details */}
-          <div className="bg-white rounded-xl border border-zinc-200/80
-            shadow-sm p-6">
-            <h2 className="text-sm font-semibold text-zinc-800 mb-1
-              flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-blue-600
-                text-white text-xs flex items-center justify-center
-                font-bold">1</span>
+          <div
+            className="rounded-[32px] p-6"
+            style={{
+              background: '#E0E5EC',
+              boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            }}
+          >
+            <h2 className="text-sm font-semibold mb-1 flex items-center gap-2" style={{ color: '#3D4852' }}>
+              <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold" style={{ background: '#6C63FF' }}>1</span>
               Inspection Details
             </h2>
-            <p className="text-xs text-zinc-400 mb-5 flex items-center gap-1">
+            <p className="text-xs mb-5 flex items-center gap-1" style={{ color: '#6B7280' }}>
               <Clock className="w-3 h-3" />
               Date and time recorded automatically on submit
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-600">
+                <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>
                   Inspector Name
                 </Label>
                 <Input type="text" value={form.inspector_name}
                   onChange={e => setField('inspector_name', e.target.value)}
                   placeholder="Inspector name"
-                  className="h-9 text-sm" />
+                  className="h-9 text-sm"
+                  style={{
+                    background: '#E0E5EC',
+                    color: '#3D4852',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    border: 'none',
+                  }}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>
+                  SJ (Surat Jalan)
+                </Label>
+                <Input type="text" value={form.sj}
+                  onChange={e => setField('sj', e.target.value)}
+                  placeholder="Delivery note number"
+                  className="h-9 text-sm"
+                  style={{
+                    background: '#E0E5EC',
+                    color: '#3D4852',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    border: 'none',
+                  }}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>
+                  OPG
+                </Label>
+                <Input type="text" value={form.opg}
+                  onChange={e => setField('opg', e.target.value)}
+                  placeholder="OPG reference"
+                  className="h-9 text-sm"
+                  style={{
+                    background: '#E0E5EC',
+                    color: '#3D4852',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    border: 'none',
+                  }}
+                />
               </div>
             </div>
           </div>
 
           {/* Section 2: Roll-by-Roll Inspection */}
-          <div className="bg-white rounded-xl border border-zinc-200/80
-            shadow-sm p-6">
+          <div
+            className="rounded-[32px] p-6"
+            style={{
+              background: '#E0E5EC',
+              boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            }}
+          >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold text-zinc-800
-                flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-blue-600
-                  text-white text-xs flex items-center justify-center
-                  font-bold">2</span>
+              <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#3D4852' }}>
+                <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold" style={{ background: '#6C63FF' }}>2</span>
                 Roll-by-Roll Inspection
-                <span className="ml-1 text-xs font-normal
-                  text-zinc-400">
+                <span className="ml-1 text-xs font-normal" style={{ color: '#6B7280' }}>
                   ({form.rolls.length})
                 </span>
               </h2>
-              <Button type="button" variant="outline" size="sm"
-                onClick={addRoll} className="h-7 text-xs gap-1">
+              <Button type="button" size="sm"
+                onClick={addRoll}
+                className="h-7 text-xs gap-1"
+                style={{
+                  background: '#E0E5EC',
+                  color: '#3D4852',
+                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                  border: 'none',
+                }}
+              >
                 <Plus className="w-3 h-3" /> Add Roll
               </Button>
             </div>
 
             <div className="space-y-2">
               {/* Header */}
-              <div className="grid grid-cols-12 gap-3 px-1">
-                <p className="col-span-1 text-xs text-zinc-400">#</p>
-                <p className="col-span-1 text-xs font-medium
-                  text-zinc-500">Roll No.</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Length (m)</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Width (cm)</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Weight (kg)</p>
-                <p className="col-span-1 text-xs font-medium
-                  text-zinc-500">Grade</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Defects</p>
+              <div className="grid grid-cols-13 gap-3 px-1">
+                <p className="col-span-1 text-xs" style={{ color: '#6B7280' }}>#</p>
+                <p className="col-span-1 text-xs font-medium" style={{ color: '#6B7280' }}>Roll No.</p>
+                <p className="col-span-1 text-xs font-medium" style={{ color: '#6B7280' }}>Length (m)</p>
+                <p className="col-span-1 text-xs font-medium" style={{ color: '#6B7280' }}>Width (cm)</p>
+                <p className="col-span-1 text-xs font-medium" style={{ color: '#6B7280' }}>Weight (kg)</p>
+                <p className="col-span-1 text-xs font-medium" style={{ color: '#6B7280' }}>Grade</p>
+                <p className="col-span-1 text-xs font-medium" style={{ color: '#6B7280' }}>BMC</p>
+                <p className="col-span-1 text-xs font-medium" style={{ color: '#6B7280' }}>Defects</p>
+                <p className="col-span-2 text-xs font-medium" style={{ color: '#6B7280' }}>Notes</p>
                 <p className="col-span-1" />
               </div>
 
-              {form.rolls.map((roll, i) => (
-                <div key={i}
-                  className="grid grid-cols-12 gap-3 items-center">
-                  <span className="col-span-1 text-xs text-zinc-400
-                    font-mono text-center">
-                    {i + 1}
-                  </span>
-                  <div className="col-span-1">
-                    <Input
-                      type="number"
-                      value={roll.no_roll}
-                      onChange={e =>
-                        setRollField(i, 'no_roll', e.target.value)
-                      }
-                      placeholder="e.g. 1"
-                      className="h-8 text-sm font-mono"
-                    />
+              {form.rolls.map((roll, i) => {
+                const bmc = calculateBMC(roll.defects);
+                const hasDefects = bmc > 0;
+
+                return (
+                  <div key={i} className="space-y-2">
+                    <div className="grid grid-cols-13 gap-3 items-center">
+                      <span className="col-span-1 text-xs font-mono text-center" style={{ color: '#6B7280' }}>
+                        {i + 1}
+                      </span>
+                      <div className="col-span-1">
+                        <Input
+                          type="number"
+                          value={roll.no_roll}
+                          onChange={e => setRollField(i, 'no_roll', e.target.value)}
+                          placeholder="e.g. 1"
+                          className="h-8 text-sm font-mono"
+                          style={{
+                            background: '#E0E5EC',
+                            color: '#3D4852',
+                            boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                            border: 'none',
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={roll.panjang}
+                          onChange={e => setRollField(i, 'panjang', e.target.value)}
+                          placeholder="e.g. 50"
+                          className="h-8 text-sm font-mono"
+                          style={{
+                            background: '#E0E5EC',
+                            color: '#3D4852',
+                            boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                            border: 'none',
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={roll.lebar}
+                          onChange={e => setRollField(i, 'lebar', e.target.value)}
+                          placeholder="e.g. 150"
+                          className="h-8 text-sm font-mono"
+                          style={{
+                            background: '#E0E5EC',
+                            color: '#3D4852',
+                            boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                            border: 'none',
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={roll.berat}
+                          onChange={e => setRollField(i, 'berat', e.target.value)}
+                          placeholder="e.g. 25"
+                          className="h-8 text-sm font-mono"
+                          style={{
+                            background: '#E0E5EC',
+                            color: '#3D4852',
+                            boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                            border: 'none',
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <select
+                          value={roll.grade}
+                          onChange={e => setRollField(i, 'grade', e.target.value)}
+                          className="w-full h-8 px-2 text-sm rounded-md"
+                          style={{
+                            background: '#E0E5EC',
+                            color: '#3D4852',
+                            boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                            border: 'none',
+                          }}
+                        >
+                          <option value="">Select...</option>
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="Reject">Reject</option>
+                        </select>
+                      </div>
+                      <div className={`col-span-1 flex items-center justify-center font-bold text-sm ${hasDefects ? '' : ''}`} style={{ color: hasDefects ? '#D97706' : '#6B7280' }}>
+                        {hasDefects ? (
+                          <span className="flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" style={{ color: '#D97706' }} />
+                            {bmc}
+                          </span>
+                        ) : '-'}
+                      </div>
+                      <div className="col-span-1 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => toggleExpand(i)}
+                          className="h-7 px-2 text-xs"
+                          style={{ color: '#6B7280' }}
+                        >
+                          {roll.expanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                          {hasDefects ? `${bmc} defects` : 'Add'}
+                        </Button>
+                      </div>
+                      <div className="col-span-2">
+                        <Input
+                          value={roll.cacat}
+                          onChange={e => setRollField(i, 'cacat', e.target.value)}
+                          placeholder="Defect notes..."
+                          className="h-8 text-sm"
+                          style={{
+                            background: '#E0E5EC',
+                            color: '#3D4852',
+                            boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                            border: 'none',
+                          }}
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        {form.rolls.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeRoll(i)}
+                            style={{ color: '#6B7280' }}
+                            className="hover:opacity-70 transition-opacity"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Collapsible Defect Detail Section */}
+                    {roll.expanded && renderDefectInputs(i, roll.defects)}
                   </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={roll.panjang}
-                      onChange={e =>
-                        setRollField(i, 'panjang', e.target.value)
-                      }
-                      placeholder="e.g. 50"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={roll.lebar}
-                      onChange={e =>
-                        setRollField(i, 'lebar', e.target.value)
-                      }
-                      placeholder="e.g. 150"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={roll.berat}
-                      onChange={e =>
-                        setRollField(i, 'berat', e.target.value)
-                      }
-                      placeholder="e.g. 25"
-                      className="h-8 text-sm font-mono"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <select
-                      value={roll.grade}
-                      onChange={e =>
-                        setRollField(i, 'grade', e.target.value)
-                      }
-                      className="w-full h-8 px-2 text-sm border border-zinc-200 
-                        rounded-md focus:outline-none focus:ring-2 
-                        focus:ring-blue-500 bg-white"
-                    >
-                      <option value="">Select...</option>
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                      <option value="Reject">Reject</option>
-                    </select>
-                  </div>
-                  <div className="col-span-2">
-                    <Input
-                      value={roll.cacat}
-                      onChange={e =>
-                        setRollField(i, 'cacat', e.target.value)
-                      }
-                      placeholder="Defect notes..."
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="col-span-1 flex justify-center">
-                    {form.rolls.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeRoll(i)}
-                        className="text-zinc-300 hover:text-red-400
-                          transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           {/* Section 3: Summary */}
-          <div className="bg-white rounded-xl border border-zinc-200/80
-            shadow-sm p-6">
-            <h2 className="text-sm font-semibold text-zinc-800 mb-5
-              flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-blue-600
-                text-white text-xs flex items-center justify-center
-                font-bold">3</span>
+          <div
+            className="rounded-[32px] p-6"
+            style={{
+              background: '#E0E5EC',
+              boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            }}
+          >
+            <h2 className="text-sm font-semibold mb-5 flex items-center gap-2" style={{ color: '#3D4852' }}>
+              <span className="w-5 h-5 rounded-full text-white text-xs flex items-center justify-center font-bold" style={{ background: '#6C63FF' }}>3</span>
               Summary
             </h2>
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-              <div className="bg-zinc-50 rounded-lg p-4 text-center
-                border border-zinc-100">
-                <p className="text-xs text-zinc-500 mb-1">Total Rolls</p>
-                <p className="text-2xl font-bold text-zinc-800">
+            <div className="grid grid-cols-3 md:grid-cols-7 gap-4">
+              <div className="rounded-lg p-4 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)' }}>
+                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Total Rolls</p>
+                <p className="text-2xl font-bold" style={{ color: '#3D4852' }}>
                   {summary.totalRolls}
                 </p>
               </div>
-              <div className="bg-zinc-50 rounded-lg p-4 text-center
-                border border-zinc-100">
-                <p className="text-xs text-zinc-500 mb-1">Total Length</p>
-                <p className="text-2xl font-bold text-zinc-800">
+              <div className="rounded-lg p-4 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)' }}>
+                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Total Length</p>
+                <p className="text-2xl font-bold" style={{ color: '#3D4852' }}>
                   {summary.totalPanjang.toLocaleString(undefined, {
                     maximumFractionDigits: 1
                   })}
                 </p>
-                <p className="text-xs text-zinc-400">m</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>m</p>
               </div>
-              <div className="bg-zinc-50 rounded-lg p-4 text-center
-                border border-zinc-100">
-                <p className="text-xs text-zinc-500 mb-1">Total Weight</p>
-                <p className="text-2xl font-bold text-zinc-800">
+              <div className="rounded-lg p-4 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)' }}>
+                <p className="text-xs mb-1" style={{ color: '#6B7280' }}>Total Weight</p>
+                <p className="text-2xl font-bold" style={{ color: '#3D4852' }}>
                   {summary.totalBerat.toLocaleString(undefined, {
                     maximumFractionDigits: 1
                   })}
                 </p>
-                <p className="text-xs text-zinc-400">kg</p>
+                <p className="text-xs" style={{ color: '#6B7280' }}>kg</p>
               </div>
-              <div className="bg-green-50 rounded-lg p-4 text-center
-                border border-green-100">
-                <p className="text-xs text-green-600 mb-1">Grade A</p>
-                <p className="text-2xl font-bold text-green-700">
+              <div className="rounded-lg p-4 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)' }}>
+                <p className="text-xs mb-1" style={{ color: '#D97706' }}>Total BMC</p>
+                <p className="text-2xl font-bold" style={{ color: '#D97706' }}>
+                  {summary.totalBMC}
+                </p>
+              </div>
+              <div className="rounded-lg p-4 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)' }}>
+                <p className="text-xs mb-1" style={{ color: '#16A34A' }}>Grade A</p>
+                <p className="text-2xl font-bold" style={{ color: '#16A34A' }}>
                   {summary.gradeACount}
                 </p>
               </div>
-              <div className="bg-yellow-50 rounded-lg p-4 text-center
-                border border-yellow-100">
-                <p className="text-xs text-yellow-600 mb-1">Grade B</p>
-                <p className="text-2xl font-bold text-yellow-700">
+              <div className="rounded-lg p-4 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)' }}>
+                <p className="text-xs mb-1" style={{ color: '#D97706' }}>Grade B</p>
+                <p className="text-2xl font-bold" style={{ color: '#D97706' }}>
                   {summary.gradeBCount}
                 </p>
               </div>
-              <div className="bg-red-50 rounded-lg p-4 text-center
-                border border-red-100">
-                <p className="text-xs text-red-600 mb-1">Reject</p>
-                <p className="text-2xl font-bold text-red-700">
+              <div className="rounded-lg p-4 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)' }}>
+                <p className="text-xs mb-1" style={{ color: '#DC2626' }}>Reject</p>
+                <p className="text-2xl font-bold" style={{ color: '#DC2626' }}>
                   {summary.rejectCount}
                 </p>
               </div>
@@ -402,18 +697,29 @@ export default function InspectGrayFormPage({ kp }: { kp: string }) {
 
           {/* Submit row */}
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline"
+            <Button type="button"
               onClick={() => router.back()}
-              className="text-zinc-500">
+              style={{
+                background: '#E0E5EC',
+                color: '#6B7280',
+                boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                border: 'none',
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}
-              className="bg-blue-600 hover:bg-blue-500 text-white
-                min-w-32">
+              style={{
+                background: '#6C63FF',
+                color: '#FFFFFF',
+                border: 'none',
+              }}
+              className="min-w-32"
+            >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Saving...</>
-              ) : 'Complete Inspection'}
+              ) : 'Complete & Send to BBSF'}
             </Button>
           </div>
 

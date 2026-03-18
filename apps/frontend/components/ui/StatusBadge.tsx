@@ -1,53 +1,22 @@
 import { cn } from '../../lib/utils';
 
 type Status =
-  | 'DRAFT'
-  | 'PENDING_APPROVAL'
-  | 'APPROVED'
-  | 'REJECTED'
-  | 'WARPING'
-  | 'INDIGO'
-  | 'WEAVING'
-  | 'INSPECT_GRAY'
-  | 'COMPLETE';
+  | 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'
+  | 'WARPING' | 'INDIGO' | 'WEAVING' | 'INSPECT_GRAY'
+  | 'BBSF' | 'INSPECT_FINISH' | 'COMPLETE';
 
-const config: Record<Status, { label: string; className: string }> = {
-  DRAFT: {
-    label: 'Draft',
-    className: 'bg-zinc-100 text-zinc-600 border-zinc-200',
-  },
-  PENDING_APPROVAL: {
-    label: 'Pending',
-    className: 'bg-amber-50 text-amber-700 border-amber-200',
-  },
-  APPROVED: {
-    label: 'Approved',
-    className: 'bg-green-50 text-green-700 border-green-200',
-  },
-  REJECTED: {
-    label: 'Rejected',
-    className: 'bg-red-50 text-red-700 border-red-200',
-  },
-  WARPING: {
-    label: 'Warping',
-    className: 'bg-violet-50 text-violet-700 border-violet-200',
-  },
-  INDIGO: {
-    label: 'Indigo',
-    className: 'bg-cyan-50 text-cyan-700 border-cyan-200',
-  },
-  WEAVING: {
-    label: 'Weaving',
-    className: 'bg-teal-50 text-teal-700 border-teal-200',
-  },
-  INSPECT_GRAY: {
-    label: 'Inspect Gray',
-    className: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  },
-  COMPLETE: {
-    label: 'Complete',
-    className: 'bg-green-50 text-green-700 border-green-200',
-  },
+const config: Record<Status, { label: string; color: string; dot: string }> = {
+  DRAFT:           { label: 'Draft',          color: '#6B7280', dot: '#9CA3AF' },
+  PENDING_APPROVAL:{ label: 'Pending',        color: '#D97706', dot: '#F59E0B' },
+  APPROVED:        { label: 'Approved',       color: '#16A34A', dot: '#22C55E' },
+  REJECTED:        { label: 'Rejected',       color: '#DC2626', dot: '#EF4444' },
+  WARPING:         { label: 'Warping',        color: '#6C63FF', dot: '#8B84FF' },
+  INDIGO:          { label: 'Indigo',         color: '#0891B2', dot: '#22D3EE' },
+  WEAVING:         { label: 'Weaving',        color: '#16A34A', dot: '#22C55E' },
+  INSPECT_GRAY:    { label: 'Inspect Gray',   color: '#D97706', dot: '#FBBF24' },
+  BBSF:            { label: 'BBSF',           color: '#7C3AED', dot: '#A78BFA' },
+  INSPECT_FINISH:  { label: 'Inspect Finish', color: '#EA580C', dot: '#FB923C' },
+  COMPLETE:        { label: 'Complete',       color: '#16A34A', dot: '#22C55E' },
 };
 
 interface StatusBadgeProps {
@@ -55,24 +24,23 @@ interface StatusBadgeProps {
   size?: 'sm' | 'md';
 }
 
-export default function StatusBadge({
-  status,
-  size = 'sm',
-}: StatusBadgeProps) {
+export default function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
   const s = status as Status;
-  const c = config[s] ?? {
-    label: status,
-    className: 'bg-zinc-100 text-zinc-600 border-zinc-200',
-  };
+  const c = config[s] ?? { label: status, color: '#6B7280', dot: '#9CA3AF' };
 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-md border font-medium',
-        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm',
-        c.className
+        'inline-flex items-center gap-1.5 rounded-full font-semibold',
+        size === 'sm' ? 'px-2.5 py-0.5 text-xs' : 'px-3 py-1 text-sm'
       )}
+      style={{
+        background: '#E0E5EC',
+        color: c.color,
+        boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)',
+      }}
     >
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: c.dot }} />
       {c.label}
     </span>
   );

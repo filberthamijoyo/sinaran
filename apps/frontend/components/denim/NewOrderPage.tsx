@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Loader2, Search, CheckCircle2, ChevronRight, X } from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
 
 type FabricSpec = {
@@ -46,6 +45,8 @@ type FormState = {
   proses: string;
   te: string;
   catatan: string;
+  anyaman: string;
+  arah: string;
 };
 
 const today = () => {
@@ -62,8 +63,8 @@ function SpecField({
 }) {
   return (
     <div>
-      <p className="text-xs text-zinc-500 mb-0.5">{label}</p>
-      <p className="text-sm font-medium text-zinc-800">
+      <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#9CA3AF' }}>{label}</p>
+      <p className="text-sm font-medium" style={{ color: '#3D4852' }}>
         {value ?? '—'}
       </p>
     </div>
@@ -81,6 +82,8 @@ export default function NewOrderPage() {
     proses: 'PROSES',
     te: '',
     catatan: '',
+    anyaman: '',
+    arah: '',
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,10 +94,20 @@ export default function NewOrderPage() {
 
   const [submitting, setSubmitting] = useState(false);
 
+  // Customer autocomplete state
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [customerResults, setCustomerResults] = useState<string[]>([]);
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const customerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchOpen(false);
+      }
+      if (customerRef.current && !customerRef.current.contains(e.target as Node)) {
+        setCustomerOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -124,19 +137,55 @@ export default function NewOrderPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Customer autocomplete search
+  useEffect(() => {
+    if (customerQuery.length < 1) {
+      setCustomerResults([]);
+      setCustomerOpen(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setCustomerLoading(true);
+      try {
+        const data = await authFetch(
+          `/denim/sales-contracts?limit=5&permintaan=${encodeURIComponent(customerQuery)}`
+        ) as any;
+        // Extract unique permintaan values
+        const uniqueCustomers = Array.from(
+          new Set((data?.items?.map((sc: any) => sc.permintaan).filter(Boolean) || []) as string[])
+        );
+        setCustomerResults(uniqueCustomers);
+        setCustomerOpen(true);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setCustomerLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customerQuery]);
+
+  const selectCustomer = (customer: string) => {
+    setForm(f => ({ ...f, permintaan: customer }));
+    setCustomerQuery(customer);
+    setCustomerOpen(false);
+  };
+
   const selectSpec = (spec: FabricSpec) => {
     setForm(f => ({
       ...f,
       selectedSpec: spec,
       ket_warna: spec.warna || '',
       te: spec.te ? String(spec.te) : '',
+      anyaman: spec.anyaman || '',
+      arah: spec.arah || '',
     }));
     setSearchQuery(spec.item);
     setSearchOpen(false);
   };
 
   const clearSpec = () => {
-    setForm(f => ({ ...f, selectedSpec: null, ket_warna: '', te: '' }));
+    setForm(f => ({ ...f, selectedSpec: null, ket_warna: '', te: '', anyaman: '', arah: '' }));
     setSearchQuery('');
     setSearchResults([]);
   };
@@ -173,8 +222,8 @@ export default function NewOrderPage() {
         ne_pakan: spec.pakan_ne,
         sisir: spec.sisir,
         pick: spec.pick,
-        anyaman: spec.anyaman,
-        arah: spec.arah,
+        anyaman: form.anyaman,
+        arah: form.arah,
         oz_g: spec.oz_g,
         oz_f: spec.oz_f,
       };
@@ -202,68 +251,121 @@ export default function NewOrderPage() {
         subtitle="Create a new sales contract and send it for approval"
       />
 
-      <div className="px-8 pb-8">
+      <div className="px-4 sm:px-8 pb-8">
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-5">
-              {/* Section 1: Order identity */}
-              <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-zinc-800 mb-5 flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">1</span>
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* LEFT: Form sections - compact vertical flow */}
+            <div className="flex-1 space-y-3">
+              {/* Section 1: Order Details */}
+              <div
+                className="rounded-[32px] p-4"
+                style={{
+                  background: '#E0E5EC',
+                  boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                }}
+              >
+                <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#3D4852' }}>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0" style={{ background: '#6C63FF', color: '#fff', fontSize: '10px' }}>1</span>
                   Order Details
                 </h2>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-zinc-600">Date</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#9CA3AF' }}>Date</Label>
                     <Input
                       type="date"
                       value={form.tgl}
                       onChange={e => setField('tgl', e.target.value)}
                       required
-                      className="h-9 text-sm"
+                      className="h-8 text-sm"
+                      style={{
+                        background: '#E0E5EC',
+                        color: '#3D4852',
+                        boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        border: 'none',
+                        borderRadius: '16px',
+                      }}
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-zinc-600">Order Type</Label>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#9CA3AF' }}>Order Type</Label>
                     <Select value={form.status} onValueChange={v => setField('status', v)}>
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className="h-8 text-sm" style={{ background: '#E0E5EC', color: '#3D4852', boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)', border: 'none', borderRadius: '16px' }}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PO1">PO1 — Priority (Buyer Order)</SelectItem>
-                        <SelectItem value="RP">RP — Running Process</SelectItem>
-                        <SelectItem value="SCN">SCN — Self Order / Testing</SelectItem>
+                      <SelectContent style={{ background: '#E0E5EC', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', border: 'none', borderRadius: '16px' }}>
+                        <SelectItem value="PO1" style={{ color: '#3D4852' }}>PO1 — Priority</SelectItem>
+                        <SelectItem value="RP" style={{ color: '#3D4852' }}>RP — Running Process</SelectItem>
+                        <SelectItem value="SCN" style={{ color: '#3D4852' }}>SCN — Self Order</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-1.5 col-span-2">
-                    <Label className="text-xs font-medium text-zinc-600">Customer / Buyer</Label>
-                    <Input
-                      placeholder="e.g. Prince Yuji, Levi's..."
-                      value={form.permintaan}
-                      onChange={e => setField('permintaan', e.target.value)}
-                      className="h-9 text-sm"
-                    />
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#9CA3AF' }}>Customer / Buyer</Label>
+                    <div className="relative" ref={customerRef}>
+                      <Input
+                        placeholder="e.g. Prince Yuji, Levi's..."
+                        value={customerQuery}
+                        onChange={e => {
+                          setCustomerQuery(e.target.value);
+                          setField('permintaan', e.target.value);
+                        }}
+                        className="h-8 text-sm"
+                        style={{
+                          background: '#E0E5EC',
+                          color: '#3D4852',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                          border: 'none',
+                          borderRadius: '16px',
+                        }}
+                      />
+                      {customerOpen && customerResults.length > 0 && (
+                        <div 
+                          className="absolute top-full left-0 right-0 mt-1 rounded-[16px] z-50 overflow-hidden"
+                          style={{
+                            background: '#E0E5EC',
+                            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                          }}
+                        >
+                          {customerResults.map((customer, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => selectCustomer(customer)}
+                              className="w-full px-3 py-2 text-sm text-left transition-colors"
+                              style={{ color: '#3D4852' }}
+                            >
+                              {customer}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Section 2: Construction code lookup */}
-              <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-zinc-800 mb-5 flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">2</span>
+              {/* Section 2: Construction Code - between Order Details and Adjustments */}
+              <div
+                className="rounded-[32px] p-4"
+                style={{
+                  background: '#E0E5EC',
+                  boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                }}
+              >
+                <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#3D4852' }}>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0" style={{ background: '#6C63FF', color: '#fff', fontSize: '10px' }}>2</span>
                   Construction Code
                 </h2>
 
                 <div className="relative" ref={searchRef}>
                   <div className="relative">
                     {searchLoading ? (
-                      <Loader2 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 animate-spin" />
+                      <Loader2 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin" style={{ color: '#9CA3AF' }} />
                     ) : (
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#9CA3AF' }} />
                     )}
                     <Input
                       placeholder="Type KODE to search (e.g. VIRGO, DTR...)"
@@ -272,13 +374,21 @@ export default function NewOrderPage() {
                         setSearchQuery(e.target.value);
                         if (form.selectedSpec) clearSpec();
                       }}
-                      className="pl-8 h-9 text-sm pr-8"
+                      className="pl-8 h-8 text-sm"
+                      style={{
+                        background: '#E0E5EC',
+                        color: '#3D4852',
+                        boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        border: 'none',
+                        borderRadius: '16px',
+                      }}
                     />
                     {searchQuery && (
                       <button
                         type="button"
                         onClick={clearSpec}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                        style={{ color: '#9CA3AF' }}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -286,35 +396,42 @@ export default function NewOrderPage() {
                   </div>
 
                   {searchOpen && searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-lg shadow-lg z-50 overflow-hidden max-h-64 overflow-y-auto">
+                    <div 
+                      className="absolute top-full left-0 right-0 mt-1 rounded-[16px] z-50 overflow-hidden max-h-56 overflow-y-auto"
+                      style={{
+                        background: '#E0E5EC',
+                        boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                      }}
+                    >
                       {searchResults.map(s => (
                         <button
                           key={s.id}
                           type="button"
                           onClick={() => selectSpec(s)}
-                          className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-zinc-50 text-left border-b border-zinc-100 last:border-0 transition-colors"
+                          className="w-full flex items-center justify-between px-4 py-2 text-left transition-colors"
+                          style={{ color: '#3D4852' }}
                         >
                           <div className="flex items-center justify-between w-full">
                             <div>
-                              <p className="text-sm font-medium text-zinc-800">{s.item}</p>
-                              <p className="text-xs text-zinc-400 mt-0.5">{s.kons_kode} · {s.kat_kode}</p>
+                              <p className="text-sm font-medium" style={{ color: '#3D4852' }}>{s.item}</p>
+                              <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>{s.kons_kode} · {s.kat_kode}</p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0 ml-3">
                               {s.te && (
-                                <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded font-medium">
+                                <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: '#E0E5EC', color: '#6B7280', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)' }}>
                                   TE {s.te}
                                 </span>
                               )}
                               {(s as any).usage_count > 10 && (
-                                <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded font-medium">
+                                <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ background: '#D97706', color: '#fff' }}>
                                   🔥 {(s as any).usage_count}
                                 </span>
                               )}
                               <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                                s.kat_kode === 'SC' ? 'bg-blue-50 text-blue-600' :
-                                s.kat_kode === 'WS' ? 'bg-amber-50 text-amber-600' :
-                                'bg-zinc-100 text-zinc-500'
-                              }`}>{s.kat_kode}</span>
+                                s.kat_kode === 'SC' ? 'text-[#6C63FF]' :
+                                s.kat_kode === 'WS' ? 'text-[#D97706]' :
+                                'text-[#9CA3AF]'
+                              }`} style={{ background: '#E0E5EC', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)' }}>{s.kat_kode}</span>
                             </div>
                           </div>
                         </button>
@@ -323,118 +440,157 @@ export default function NewOrderPage() {
                   )}
                 </div>
 
+                {/* Expanded spec detail - fills the section */}
                 {spec && (
-                  <div className="mt-4 rounded-lg bg-zinc-50 border border-zinc-200 p-4">
-                    <div className="flex items-center justify-between mb-3">
+                  <div 
+                    className="mt-3 rounded-[16px] p-3"
+                    style={{
+                      background: '#E0E5EC',
+                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span className="text-sm font-semibold text-zinc-800">{spec.kode}</span>
-                        <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-600">{spec.kat_kode}</span>
+                        <CheckCircle2 className="w-4 h-4" style={{ color: '#6C63FF' }} />
+                        <span className="text-sm font-bold" style={{ color: '#3D4852' }}>{spec.kode}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded-[9999px]" style={{ background: '#6C63FF', color: '#fff' }}>{spec.kat_kode}</span>
                       </div>
-                      <button type="button" onClick={clearSpec} className="text-zinc-400 hover:text-zinc-600">
+                      <button type="button" onClick={clearSpec} style={{ color: '#6C63FF' }}>
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-5 gap-x-3 gap-y-1.5">
                       <SpecField label="TE" value={spec.te?.toLocaleString()} />
                       <SpecField label="Ne Lusi" value={spec.lusi_ne} />
                       <SpecField label="Ne Pakan" value={spec.pakan_ne} />
-                      <SpecField label="Sisir" value={spec.sisir} />
+                      <SpecField label="SISIR" value={spec.sisir} />
                       <SpecField label="Pick" value={spec.pick} />
+                      <SpecField label="Warna" value={spec.warna} />
                       <SpecField label="Anyaman" value={spec.anyaman} />
                       <SpecField label="Arah" value={spec.arah} />
-                      <SpecField label="Warna" value={spec.warna} />
-                      <SpecField label="OZ G" value={spec.oz_g} />
-                      <SpecField label="OZ F" value={spec.oz_f} />
+                      <SpecField label="OZ" value={spec.oz_g ? `${spec.oz_g}/${spec.oz_f}` : null} />
+                      <SpecField label="Konstruksi" value={spec.kons_kode} />
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Section 3: Adjustments */}
-              <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-6">
-                <h2 className="text-sm font-semibold text-zinc-800 mb-5 flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">3</span>
+              <div
+                className="rounded-[32px] p-4"
+                style={{
+                  background: '#E0E5EC',
+                  boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                }}
+              >
+                <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#3D4852' }}>
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0" style={{ background: '#6C63FF', color: '#fff', fontSize: '10px' }}>3</span>
                   Adjustments & Notes
                 </h2>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-zinc-600">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#9CA3AF' }}>
                       Color Notes
-                      <span className="text-zinc-400 font-normal ml-1">(auto-filled from spec)</span>
+                      <span className="font-normal ml-1" style={{ color: '#9CA3AF' }}>(from spec)</span>
                     </Label>
                     <Input
                       placeholder="e.g. Indigo S300"
                       value={form.ket_warna}
                       onChange={e => setField('ket_warna', e.target.value)}
-                      className="h-9 text-sm"
+                      className="h-8 text-sm"
+                      style={{
+                        background: '#E0E5EC',
+                        color: '#3D4852',
+                        boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        border: 'none',
+                        borderRadius: '16px',
+                      }}
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-zinc-600">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#9CA3AF' }}>
                       TE Override
-                      <span className="text-zinc-400 font-normal ml-1">(leave blank to use spec value)</span>
+                      <span className="font-normal ml-1" style={{ color: '#9CA3AF' }}>(from spec)</span>
                     </Label>
                     <Input
                       type="number"
                       placeholder={spec?.te?.toString() || 'from spec'}
                       value={form.te}
                       onChange={e => setField('te', e.target.value)}
-                      className="h-9 text-sm font-mono"
+                      className="h-8 text-sm font-mono"
+                      style={{
+                        background: '#E0E5EC',
+                        color: '#3D4852',
+                        boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        border: 'none',
+                        borderRadius: '16px',
+                      }}
                     />
                   </div>
 
-                  <div className="space-y-1.5 col-span-2">
-                    <Label className="text-xs font-medium text-zinc-600">Internal Notes</Label>
+                  <div className="space-y-1 col-span-2">
+                    <Label className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#9CA3AF' }}>Internal Notes</Label>
                     <textarea
                       placeholder="Optional notes for Jakarta..."
                       value={form.catatan}
                       onChange={e => setField('catatan', e.target.value)}
-                      rows={3}
-                      className={cn(
-                        'w-full px-3 py-2 text-sm rounded-md border border-input bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 resize-none'
-                      )}
+                      rows={2}
+                      className="w-full px-2.5 py-1.5 text-sm rounded-[16px]"
+                      style={{
+                        background: '#E0E5EC',
+                        color: '#3D4852',
+                        boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        border: 'none',
+                      }}
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT: Summary + submit */}
-            <div className="space-y-4">
-              <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-5 sticky top-8">
-                <h3 className="text-sm font-semibold text-zinc-800 mb-4">Order Summary</h3>
+            {/* RIGHT: Order Summary - flush at top */}
+            <div className="w-full lg:w-72 shrink-0">
+              <div
+                className="lg:sticky lg:top-8"
+                style={{
+                  background: '#E0E5EC',
+                  borderRadius: '32px',
+                  padding: '16px',
+                  boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                }}
+              >
+                <h3 className="text-sm font-semibold mb-3" style={{ color: '#3D4852' }}>Order Summary</h3>
 
-                <div className="space-y-3 text-sm">
+                <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-zinc-500">Date</span>
-                    <span className="text-zinc-800 font-medium">{form.tgl || '—'}</span>
+                    <span style={{ color: '#9CA3AF' }}>Date</span>
+                    <span className="font-medium" style={{ color: '#3D4852' }}>{form.tgl || '—'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-500">Type</span>
-                    <span className="text-zinc-800 font-medium">{form.status}</span>
+                    <span style={{ color: '#9CA3AF' }}>Type</span>
+                    <span className="font-medium" style={{ color: '#3D4852' }}>{form.status}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-500">Customer</span>
-                    <span className="text-zinc-800 font-medium truncate max-w-[120px] text-right">{form.permintaan || '—'}</span>
+                    <span style={{ color: '#9CA3AF' }}>Customer</span>
+                    <span className="font-medium truncate max-w-[100px] text-right" style={{ color: '#3D4852' }}>{form.permintaan || '—'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-500">Construction</span>
-                    <span className="text-zinc-800 font-medium truncate max-w-[120px] text-right">{spec?.kode || '—'}</span>
+                    <span style={{ color: '#9CA3AF' }}>Construction</span>
+                    <span className="font-medium truncate max-w-[100px] text-right" style={{ color: '#3D4852' }}>{spec?.kode || '—'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-zinc-500">TE</span>
-                    <span className="text-zinc-800 font-mono font-medium">{form.te || spec?.te?.toLocaleString() || '—'}</span>
+                    <span style={{ color: '#9CA3AF' }}>TE</span>
+                    <span className="font-mono font-medium" style={{ color: '#3D4852' }}>{form.te || spec?.te?.toLocaleString() || '—'}</span>
                   </div>
 
-                  <div className="pt-3 mt-3 border-t border-zinc-100">
-                    <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2.5 mb-4">
-                      <p className="text-xs text-amber-700">This order will be sent to Jakarta for approval. You will be notified when it&apos;s reviewed.</p>
+                  <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgb(163 177 198 / 0.3)' }}>
+                    <div className="rounded-[16px] px-3 py-2 mb-3" style={{ background: '#E0E5EC', boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)' }}>
+                      <p className="text-xs" style={{ color: '#D97706' }}>This order will be sent to Jakarta for approval.</p>
                     </div>
 
-                    <Button type="submit" disabled={submitting || !spec} className="w-full bg-blue-600 hover:bg-blue-500 text-white">
+                    <Button type="submit" disabled={submitting || !spec} className="w-full h-9" style={{ background: '#6C63FF', color: '#fff', borderRadius: '16px', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)' }}>
                       {submitting ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -445,7 +601,7 @@ export default function NewOrderPage() {
                       )}
                     </Button>
 
-                    <Button type="button" variant="ghost" className="w-full mt-2 text-zinc-500 hover:text-zinc-700" onClick={() => router.back()}>
+                    <Button type="button" variant="ghost" className="w-full mt-1.5 h-8" onClick={() => router.back()} style={{ color: '#9CA3AF' }}>
                       Cancel
                     </Button>
                   </div>

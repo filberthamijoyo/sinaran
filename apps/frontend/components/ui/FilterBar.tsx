@@ -26,13 +26,28 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`filter-bar ${className}`.trim()}>
+    <div
+      className={`filter-bar ${className}`.trim()}
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '16px',
+        alignItems: 'flex-end',
+      }}
+    >
       {filterConfigs.map((config) => {
         if (config.type === 'select') {
           return (
-            <div key={config.key} className="filter-group">
+            <div
+              key={config.key}
+              className="filter-group"
+              style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+            >
               {config.label && (
-                <label className="text-xs font-medium text-zinc-600 mb-1 block">
+                <label
+                  className="text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: '#9CA3AF' }}
+                >
                   {config.label}
                 </label>
               )}
@@ -47,9 +62,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         }
 
         return (
-          <div key={config.key} className="filter-group">
+          <div
+            key={config.key}
+            className="filter-group"
+            style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+          >
             {config.label && (
-              <label className="text-xs font-medium text-zinc-600 mb-1 block">
+              <label
+                className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: '#9CA3AF' }}
+              >
                 {config.label}
               </label>
             )}

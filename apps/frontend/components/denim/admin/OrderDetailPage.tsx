@@ -10,8 +10,10 @@ import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from '../../ui/table';
-import { ArrowLeft, Check, Circle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Check, Circle, CheckCircle2, GitCompare } from 'lucide-react';
+import StatusBadge from '../../ui/StatusBadge';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 type SalesContract = {
   kp: string;
@@ -206,13 +208,160 @@ type InspectGrayRecord = {
   gd: string | null;
 };
 
-// API response shape from /api/denim/pipeline/:kp
+type InspectGrayRecordFull = {
+  id: number;
+  kp: string;
+  tg: string;
+  mc: string | null;
+  bm: number | null;
+  sn: string | null;
+  gd: string | null;
+  w: string | null;
+  bmc: number | null;
+};
+
+type BBSFWashingRun = {
+  id: number;
+  kp: string;
+  tgl: string;
+  shift: string | null;
+  mc: string | null;
+  speed: string | null;
+  lebar_awal: string | null;
+  permasalahan: string | null;
+};
+
+type BBSFSanforRun = {
+  id: number;
+  kp: string;
+  tgl: string;
+  shift: string | null;
+  sanfor_type: string | null;
+  speed: string | null;
+  susut: number | null;
+  permasalahan: string | null;
+};
+
+// API response shape from /api/denim/admin/pipeline/:kp
 type PipelineApiResponse = {
   salesContract: SalesContract | null;
   warping_run: WarpingRun | null;
   indigo_run: IndigoRun | null;
   weaving_records: WeavingRecord[];
-  inspection?: InspectGrayRecord[];
+  inspectGray?: InspectGrayRecordFull[];
+  bbsfWashing?: BBSFWashingRun[];
+  bbsfSanfor?: BBSFSanforRun[];
+  inspectFinish?: InspectFinishRecord[];
+};
+
+type BBSFRecord = {
+  id: number;
+  kp: string;
+  tgl: string;
+  // Washing
+  ws_shift: string | null;
+  ws_mc: string | null;
+  ws_speed: string | null;
+  ws_larutan_1: string | null;
+  ws_temp_1: string | null;
+  ws_padder_1: string | null;
+  ws_dancing_1: string | null;
+  ws_larutan_2: string | null;
+  ws_temp_2: string | null;
+  ws_padder_2: string | null;
+  ws_dancing_2: string | null;
+  ws_skew: string | null;
+  ws_tekanan_boiler: string | null;
+  ws_temp_1_zone: string | null;
+  ws_temp_2_zone: string | null;
+  ws_temp_3_zone: string | null;
+  ws_temp_4_zone: string | null;
+  ws_temp_5_zone: string | null;
+  ws_temp_6_zone: string | null;
+  ws_lebar_awal: string | null;
+  ws_panjang_awal: string | null;
+  ws_permasalahan: string | null;
+  ws_pelaksana: string | null;
+  // Sanfor 1
+  sf1_shift: string | null;
+  sf1_mc: string | null;
+  sf1_speed: string | null;
+  sf1_damping: string | null;
+  sf1_press: string | null;
+  sf1_tension: string | null;
+  sf1_tension_limit: string | null;
+  sf1_temperatur: string | null;
+  sf1_susut: string | null;
+  sf1_permasalahan: string | null;
+  sf1_pelaksana: string | null;
+  // Sanfor 2
+  sf2_shift: string | null;
+  sf2_mc: string | null;
+  sf2_speed: string | null;
+  sf2_damping: string | null;
+  sf2_press: string | null;
+  sf2_tension: string | null;
+  sf2_temperatur: string | null;
+  sf2_susut: string | null;
+  sf2_awal: string | null;
+  sf2_akhir: string | null;
+  sf2_panjang: string | null;
+  sf2_permasalahan: string | null;
+  sf2_pelaksana: string | null;
+};
+
+type InspectFinishRecord = {
+  id: number;
+  kp: string;
+  tgl: string;
+  shift: string | null;
+  operator: string | null;
+  no_roll: number | null;
+  sn: string | null;
+  tgl_potong: string | null;
+  lebar: number | null;
+  kg: number | null;
+  susut_lusi: number | null;
+  grade: string | null;
+  point: number | null;
+  // Defects
+  btl: number | null;
+  bts: number | null;
+  slub: number | null;
+  snl: number | null;
+  losp: number | null;
+  lb: number | null;
+  ptr: number | null;
+  p_slub: number | null;
+  pb: number | null;
+  lm: number | null;
+  aw: number | null;
+  ptm: number | null;
+  j: number | null;
+  bta: number | null;
+  pts: number | null;
+  pd: number | null;
+  pp: number | null;
+  pks: number | null;
+  pss: number | null;
+  pkl: number | null;
+  pk: number | null;
+  plc: number | null;
+  lp: number | null;
+  lks: number | null;
+  lkc: number | null;
+  ld: number | null;
+  lkt: number | null;
+  lki: number | null;
+  lptd: number | null;
+  bmc: number | null;
+  exst: number | null;
+  smg: number | null;
+  // Quality flags
+  noda: string | null;
+  kotor: string | null;
+  bkrt: string | null;
+  ket: string | null;
 };
 
 // Internal shape used throughout the component
@@ -221,7 +370,10 @@ type PipelineData = {
   warping: WarpingRun | null;
   indigo: IndigoRun | null;
   weaving: WeavingRecord[];
-  inspection: InspectGrayRecord[];
+  inspectGray: InspectGrayRecordFull[];
+  bbsfWashing: BBSFWashingRun[];
+  bbsfSanfor: BBSFSanforRun[];
+  inspectFinish: InspectFinishRecord[];
 };
 
 // Determine pipeline stages based on actual data presence, not just approval status
@@ -230,8 +382,10 @@ function getPipelineStages(data: PipelineData) {
   const hasWarping = !!data.warping;
   const hasIndigo = !!data.indigo;
   const hasWeaving = data.weaving && data.weaving.length > 0;
-  const hasInspect = data.inspection && data.inspection.length > 0;
-  const isComplete = hasWarping && hasIndigo && hasWeaving;
+  const hasInspect = data.inspectGray && data.inspectGray.length > 0;
+  const hasBBSF = (data.bbsfWashing && data.bbsfWashing.length > 0) || (data.bbsfSanfor && data.bbsfSanfor.length > 0);
+  const hasInspectFinish = data.inspectFinish && data.inspectFinish.length > 0;
+  const isComplete = hasInspectFinish;
 
   return {
     approval: hasApproval,
@@ -239,6 +393,8 @@ function getPipelineStages(data: PipelineData) {
     indigo: hasIndigo,
     weaving: hasWeaving,
     inspect: hasInspect,
+    bbsf: hasBBSF,
+    inspectFinish: hasInspectFinish,
     complete: isComplete,
   };
 }
@@ -248,7 +404,9 @@ const STAGES = [
   { key: 'WARPING', label: 'Warping' },
   { key: 'INDIGO', label: 'Indigo' },
   { key: 'WEAVING', label: 'Weaving' },
-  { key: 'INSPECT_GRAY', label: 'Inspect' },
+  { key: 'INSPECT_GRAY', label: 'Inspect Gray' },
+  { key: 'BBSF', label: 'BBSF' },
+  { key: 'INSPECT_FINISH', label: 'Inspect Finish' },
   { key: 'COMPLETE', label: 'Complete' },
 ];
 
@@ -256,10 +414,14 @@ function PipelineProgressBar({ pipelineData }: { pipelineData: PipelineData }) {
   const stages = getPipelineStages(pipelineData);
   
   // Determine the current stage based on what has data
-  // Priority: complete > inspect > weaving > indigo > warping > approval
+  // Priority: complete > inspectFinish > bbsf > inspect > weaving > indigo > warping > approval
   let currentStage = 'PENDING_APPROVAL';
   if (stages.complete) {
     currentStage = 'COMPLETE';
+  } else if (stages.inspectFinish) {
+    currentStage = 'INSPECT_FINISH';
+  } else if (stages.bbsf) {
+    currentStage = 'BBSF';
   } else if (stages.inspect) {
     currentStage = 'INSPECT_GRAY';
   } else if (stages.weaving) {
@@ -275,7 +437,13 @@ function PipelineProgressBar({ pipelineData }: { pipelineData: PipelineData }) {
   const currentIdx = STAGES.findIndex(s => s.key === currentStage);
 
   return (
-    <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm p-6 mb-6">
+    <div
+      className="rounded-[32px] p-6 mb-6"
+      style={{
+        background: '#E0E5EC',
+        boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+      }}
+    >
       <div className="flex items-center justify-between">
         {STAGES.map((stage, idx) => {
           // Determine stage completion based on actual data presence
@@ -285,6 +453,8 @@ function PipelineProgressBar({ pipelineData }: { pipelineData: PipelineData }) {
           else if (stage.key === 'INDIGO') isComplete = stages.indigo;
           else if (stage.key === 'WEAVING') isComplete = stages.weaving;
           else if (stage.key === 'INSPECT_GRAY') isComplete = stages.inspect;
+          else if (stage.key === 'BBSF') isComplete = stages.bbsf;
+          else if (stage.key === 'INSPECT_FINISH') isComplete = stages.inspectFinish;
           else if (stage.key === 'COMPLETE') isComplete = stages.complete;
 
           const isCurrent = idx === currentIdx;
@@ -293,13 +463,16 @@ function PipelineProgressBar({ pipelineData }: { pipelineData: PipelineData }) {
             <div key={stage.key} className="flex items-center">
               <div className="flex flex-col items-center">
                 <div
-                  className={`
-                    w-10 h-10 rounded-full flex items-center justify-center
-                    transition-all
-                    ${isComplete && !isCurrent ? 'bg-green-500 text-white' : ''}
-                    ${isCurrent ? 'bg-blue-500 text-white ring-4 ring-blue-100' : ''}
-                    ${!isComplete && !isCurrent ? 'bg-zinc-200 text-zinc-400' : ''}
-                  `}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+                  style={{
+                    background: isComplete && !isCurrent ? '#16A34A' : isCurrent ? '#6C63FF' : '#E0E5EC',
+                    color: isComplete && !isCurrent ? '#fff' : isCurrent ? '#fff' : '#9CA3AF',
+                    boxShadow: isComplete && !isCurrent 
+                      ? '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)'
+                      : isCurrent
+                        ? 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)'
+                        : '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                  }}
                 >
                   {isComplete && !isCurrent ? (
                     <Check className="w-5 h-5" />
@@ -310,22 +483,20 @@ function PipelineProgressBar({ pipelineData }: { pipelineData: PipelineData }) {
                   )}
                 </div>
                 <span
-                  className={`
-                    text-xs mt-2 font-medium
-                    ${isComplete && !isCurrent ? 'text-green-600' : ''}
-                    ${isCurrent ? 'text-blue-600' : ''}
-                    ${!isComplete && !isCurrent ? 'text-zinc-400' : ''}
-                  `}
+                  className="text-xs mt-2 font-medium"
+                  style={{
+                    color: isComplete && !isCurrent ? '#16A34A' : isCurrent ? '#6C63FF' : '#9CA3AF',
+                  }}
                 >
                   {stage.label}
                 </span>
               </div>
               {idx < STAGES.length - 1 && (
                 <div
-                  className={`
-                    w-16 md:w-24 h-0.5 mx-2
-                    ${isComplete && !isCurrent ? 'bg-green-500' : 'bg-zinc-200'}
-                  `}
+                  className="w-16 md:w-24 h-0.5 mx-2"
+                  style={{
+                    background: isComplete && !isCurrent ? 'rgb(22 163 74 / 0.3)' : 'rgb(163 177 198 / 0.3)',
+                  }}
                 />
               )}
             </div>
@@ -338,9 +509,9 @@ function PipelineProgressBar({ pipelineData }: { pipelineData: PipelineData }) {
 
 function SectionIcon({ hasData }: { hasData: boolean }) {
   return hasData ? (
-    <CheckCircle2 className="w-5 h-5 text-green-500" />
+    <CheckCircle2 className="w-5 h-5" style={{ color: '#16A34A' }} />
   ) : (
-    <Circle className="w-5 h-5 text-zinc-300" />
+    <Circle className="w-5 h-5" style={{ color: '#9CA3AF' }} />
   );
 }
 
@@ -348,16 +519,47 @@ function SectionCard({
   title,
   icon,
   children,
+  onEdit,
 }: {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  onEdit?: () => void;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-zinc-200/80 shadow-sm overflow-hidden">
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-zinc-100 bg-zinc-50/50">
-        {icon}
-        <h3 className="text-sm font-semibold text-zinc-800">{title}</h3>
+    <div
+      className="rounded-[32px] overflow-hidden"
+      style={{
+        background: '#E0E5EC',
+        boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+      }}
+    >
+      <div
+        className="flex items-center justify-between px-5 py-3"
+        style={{
+          background: '#E0E5EC',
+          borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+        }}
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <h3 className="text-sm font-semibold" style={{ color: '#3D4852' }}>{title}</h3>
+        </div>
+        {onEdit && (
+          <Button
+            size="sm"
+            onClick={onEdit}
+            className="h-7 text-xs"
+            style={{
+              background: '#E0E5EC',
+              borderRadius: '16px',
+              boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+              color: '#6B7280',
+            }}
+          >
+            Edit
+          </Button>
+        )}
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -378,10 +580,13 @@ const formatDateTime = (iso: string | null) => {
 
 export default function OrderDetailPage({ kp }: { kp: string }) {
   const router = useRouter();
-  const [data, setData] = useState<PipelineApiResponse | null>(null);
+  const [data, setData] = useState<PipelineData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showIndigoFormula, setShowIndigoFormula] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -390,15 +595,26 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
         const hasToken = !!token;
         
         const result = await authFetch(
-          `/denim/pipeline/${kp}`
+          `/denim/admin/pipeline/${kp}`
         );
         
         if (!result) {
           setError('No data returned from API');
-        } else if (!result.salesContract) {
-          setError('Sales contract not found. Result keys: ' + Object.keys(result).join(', '));
+        } else if (!result.sc) {
+          setError('Order not found. Result keys: ' + Object.keys(result).join(', '));
         } else {
-          setData(result);
+        // Transform API response to internal shape
+        const transformed = {
+          sc: result.sc,
+          warping: result.warping,
+          indigo: result.indigo,
+          weaving: result.weaving,
+          inspectGray: result.inspectGray || [],
+          bbsfWashing: result.bbsfWashing || [],
+          bbsfSanfor: result.bbsfSanfor || [],
+          inspectFinish: result.inspectFinish || [],
+        };
+        setData(transformed);
         }
       } catch (e: any) {
         setError('Error: ' + (e.message || e.toString()));
@@ -409,9 +625,50 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
     load();
   }, [kp]);
 
+  const handleEdit = () => {
+    if (data?.sc) {
+      setEditForm({ ...data.sc });
+      setEditing(true);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await authFetch(`/denim/sales-contracts/${kp}`, {
+        method: 'PUT',
+        body: JSON.stringify(editForm),
+      });
+      toast.success('Saved successfully');
+      setEditing(false);
+      // Reload data
+      const result = await authFetch(`/denim/admin/pipeline/${kp}`);
+      const transformed = {
+        sc: result.sc,
+        warping: result.warping,
+        indigo: result.indigo,
+        weaving: result.weaving,
+        inspectGray: result.inspectGray || [],
+        bbsfWashing: result.bbsfWashing || [],
+        bbsfSanfor: result.bbsfSanfor || [],
+        inspectFinish: result.inspectFinish || [],
+      };
+      setData(transformed);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setEditForm({});
+  };
+
   if (loading) {
     return (
-      <div className="px-8 pb-8">
+      <div className="px-4 sm:px-8 pb-8">
         <Skeleton className="h-8 w-48 mb-6" />
         <Skeleton className="h-32 rounded-xl mb-6" />
         <div className="space-y-4">
@@ -422,12 +679,12 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
     );
   }
 
-  if (error || !data?.salesContract) {
+  if (error || !data?.sc) {
     return (
-      <div className="px-8 pb-8">
+      <div className="px-4 sm:px-8 pb-8">
         <div className="text-center py-16">
           <p className="text-red-500 font-mono text-sm mb-2">ERROR: {error || 'Order not found'}</p>
-          <p className="text-zinc-400 text-xs">data exists: {!!data}, keys: {data ? Object.keys(data).join(', ') : 'none'}</p>
+          <p className="text-zinc-600 text-xs">data exists: {!!data}, keys: {data ? Object.keys(data).join(', ') : 'none'}</p>
           <Button
             variant="outline"
             size="sm"
@@ -442,32 +699,59 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
     );
   }
 
-  // API returns: salesContract, warping_run, indigo_run, weaving_records
-  const { salesContract: sc, warping_run: warping, indigo_run: indigo, weaving_records: weaving, inspection = [] } = data;
+  // Internal shape: sc, warping, indigo, weaving, inspectGray, bbsfWashing, bbsfSanfor, inspectFinish
+  const { sc, warping, indigo, weaving, inspectGray = [], bbsfWashing = [], bbsfSanfor = [], inspectFinish = [] } = data;
 
   return (
     <div>
       <PageHeader
         title={`Order ${kp}`}
         subtitle="Pipeline details"
+        backHref="/denim/admin/orders"
         actions={
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
+          editing ? (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleCancel} disabled={saving}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/denim/admin/analytics?tab=comparison&kp=${kp}`)}
+              >
+                <GitCompare className="w-4 h-4 mr-2" />
+                Compare KPs
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleEdit}>
+                Edit
+              </Button>
+            </div>
+          )
         }
       />
 
-      <div className="px-8 pb-8 space-y-6">
-        <PipelineProgressBar pipelineData={{ sc, warping, indigo, weaving, inspection }} />
+      <div className="px-4 sm:px-8 pb-8 space-y-6">
+        <PipelineProgressBar pipelineData={{ sc, warping, indigo, weaving, inspectGray: data.inspectGray, bbsfWashing: data.bbsfWashing, bbsfSanfor: data.bbsfSanfor, inspectFinish }} />
 
         {sc?.pipeline_status === 'COMPLETE' &&
           (!warping || !indigo || !weaving?.length) && (
-          <div className="mx-8 mb-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
-            <span className="text-amber-500 text-sm mt-0.5">⚠️</span>
+          <div 
+            className="mx-8 mb-2 px-4 py-3 rounded-[16px] flex items-start gap-2"
+            style={{
+              background: '#E0E5EC',
+              boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+            }}
+          >
+            <span className="text-sm mt-0.5" style={{ color: '#D97706' }}>⚠️</span>
             <div>
-              <p className="text-sm font-medium text-amber-800">Incomplete historical data</p>
-              <p className="text-xs text-amber-600 mt-0.5">
+              <p className="text-sm font-medium" style={{ color: '#D97706' }}>Incomplete historical data</p>
+              <p className="text-xs mt-0.5" style={{ color: '#D97706', opacity: 0.7 }}>
                 This order is marked Complete but some stages were not captured in the historical import:
                 {!warping && <span className="font-medium"> Warping</span>}
                 {!indigo && <span className="font-medium"> · Indigo</span>}
@@ -483,37 +767,133 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
           icon={<SectionIcon hasData={!!sc} />}
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Read-only fields */}
             <div>
-              <p className="text-xs text-zinc-500">KP</p>
-              <p className="text-sm font-mono font-semibold text-zinc-900">{sc.kp}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>KP</p>
+              <p className="text-sm font-mono font-semibold" style={{ color: '#3D4852' }}>{sc.kp}</p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Date</p>
-              <p className="text-sm text-zinc-900">{formatDate(sc.tgl)}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Status</p>
+              <StatusBadge status={sc.pipeline_status || 'DRAFT'} />
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Construction</p>
-              <p className="text-sm text-zinc-900">{sc.codename || '—'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Type</p>
+              <p className="text-sm" style={{ color: '#3D4852' }}>{sc.kat_kode || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Type</p>
-              <p className="text-sm text-zinc-900">{sc.kat_kode || '—'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>ACC</p>
+              <p className="text-sm" style={{ color: '#3D4852' }}>{sc.acc || '—'}</p>
+            </div>
+            {/* Editable fields */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</p>
+              {editing ? (
+                <input
+                  type="date"
+                  value={editForm.tgl ? editForm.tgl.split('T')[0] : ''}
+                  onChange={(e) => setEditForm({ ...editForm, tgl: e.target.value })}
+                  style={{
+                    background: '#E0E5EC',
+                    border: 'none',
+                    borderRadius: '16px',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    padding: '4px 8px',
+                    fontSize: '14px',
+                    color: '#3D4852',
+                    width: '100%',
+                  }}
+                />
+              ) : (
+                <p className="text-sm" style={{ color: '#3D4852' }}>{formatDate(sc.tgl)}</p>
+              )}
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Customer</p>
-              <p className="text-sm text-zinc-900">{sc.permintaan || '—'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Construction</p>
+              {editing ? (
+                <input
+                  type="text"
+                  value={editForm.codename || ''}
+                  onChange={(e) => setEditForm({ ...editForm, codename: e.target.value })}
+                  style={{
+                    background: '#E0E5EC',
+                    border: 'none',
+                    borderRadius: '16px',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    padding: '4px 8px',
+                    fontSize: '14px',
+                    color: '#3D4852',
+                    width: '100%',
+                  }}
+                />
+              ) : (
+                <p className="text-sm" style={{ color: '#3D4852' }}>{sc.codename || '—'}</p>
+              )}
             </div>
             <div>
-              <p className="text-xs text-zinc-500">TE</p>
-              <p className="text-sm font-mono text-zinc-900">{sc.te?.toLocaleString() || '—'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Customer</p>
+              {editing ? (
+                <input
+                  type="text"
+                  value={editForm.permintaan || ''}
+                  onChange={(e) => setEditForm({ ...editForm, permintaan: e.target.value })}
+                  style={{
+                    background: '#E0E5EC',
+                    border: 'none',
+                    borderRadius: '16px',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    padding: '4px 8px',
+                    fontSize: '14px',
+                    color: '#3D4852',
+                    width: '100%',
+                  }}
+                />
+              ) : (
+                <p className="text-sm" style={{ color: '#3D4852' }}>{sc.permintaan || '—'}</p>
+              )}
             </div>
             <div>
-              <p className="text-xs text-zinc-500">Color</p>
-              <p className="text-sm text-zinc-900">{sc.ket_warna || '—'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Color</p>
+              {editing ? (
+                <input
+                  type="text"
+                  value={editForm.ket_warna || ''}
+                  onChange={(e) => setEditForm({ ...editForm, ket_warna: e.target.value })}
+                  style={{
+                    background: '#E0E5EC',
+                    border: 'none',
+                    borderRadius: '16px',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    padding: '4px 8px',
+                    fontSize: '14px',
+                    color: '#3D4852',
+                    width: '100%',
+                  }}
+                />
+              ) : (
+                <p className="text-sm" style={{ color: '#3D4852' }}>{sc.ket_warna || '—'}</p>
+              )}
             </div>
             <div>
-              <p className="text-xs text-zinc-500">ACC</p>
-              <p className="text-sm text-zinc-900">{sc.acc || '—'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>TE</p>
+              {editing ? (
+                <input
+                  type="number"
+                  value={editForm.te || ''}
+                  onChange={(e) => setEditForm({ ...editForm, te: e.target.value ? parseInt(e.target.value) : null })}
+                  style={{
+                    background: '#E0E5EC',
+                    border: 'none',
+                    borderRadius: '16px',
+                    boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    padding: '4px 8px',
+                    fontSize: '14px',
+                    color: '#3D4852',
+                    width: '100%',
+                  }}
+                />
+              ) : (
+                <p className="text-sm font-mono" style={{ color: '#3D4852' }}>{sc.te?.toLocaleString() || '—'}</p>
+              )}
             </div>
           </div>
         </SectionCard>
@@ -522,95 +902,122 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
         <SectionCard
           title="Warping"
           icon={<SectionIcon hasData={!!warping} />}
+          onEdit={warping ? () => router.push('/denim/inbox/warping/' + kp + '?edit=1') : undefined}
         >
           {warping ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-zinc-500">Date</p>
-                  <p className="text-sm text-zinc-900">{formatDate(warping.tgl)}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{formatDate(warping.tgl)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Start Time</p>
-                  <p className="text-sm text-zinc-900">{warping.start_time || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Start Time</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.start_time || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Stop Time</p>
-                  <p className="text-sm text-zinc-900">{warping.stop_time || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Stop Time</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.stop_time || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">RPM</p>
-                  <p className="text-sm text-zinc-900">{warping.rpm || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>RPM</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.rpm || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Meters/Min</p>
-                  <p className="text-sm text-zinc-900">{warping.mtr_min || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Meters/Min</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.mtr_min || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Total Putusan</p>
-                  <p className="text-sm text-zinc-900">{warping.total_putusan?.toLocaleString() || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Putusan</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.total_putusan?.toLocaleString() || '—'}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <p className="text-xs text-zinc-500">Machine No</p>
-                  <p className="text-sm text-zinc-900">{warping.no_mc || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Machine No</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.no_mc || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Total Beam</p>
-                  <p className="text-sm text-zinc-900">{warping.total_beam || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Beam</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.total_beam || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Elongasi</p>
-                  <p className="text-sm text-zinc-900">{warping.elongasi || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Elongasi</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.elongasi || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Strength</p>
-                  <p className="text-sm text-zinc-900">{warping.strength || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Strength</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.strength || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">CV%</p>
-                  <p className="text-sm text-zinc-900">{warping.cv_pct || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>CV%</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.cv_pct || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Tension Badan</p>
-                  <p className="text-sm text-zinc-900">{warping.tension_badan || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Tension Badan</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.tension_badan || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Tension Pinggir</p>
-                  <p className="text-sm text-zinc-900">{warping.tension_pinggir || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Tension Pinggir</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.tension_pinggir || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Lebar Creel</p>
-                  <p className="text-sm text-zinc-900">{warping.lebar_creel || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Lebar Creel</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.lebar_creel || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Jam</p>
-                  <p className="text-sm text-zinc-900">{warping.jam || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Jam</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.jam || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Eff Warping</p>
-                  <p className="text-sm text-zinc-900">{warping.eff_warping || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Eff Warping</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{warping.eff_warping || '—'}</p>
                 </div>
               </div>
               {warping.beams && warping.beams.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-xs text-zinc-500 mb-2">Beams</p>
-                  <div className="border rounded-lg overflow-hidden">
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: '#9CA3AF' }}>Beams</p>
+                  <div
+                    className="rounded-[16px] overflow-hidden"
+                    style={{
+                      background: '#E0E5EC',
+                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    }}
+                  >
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-zinc-50">
-                          <TableHead className="text-xs">#</TableHead>
-                          <TableHead className="text-xs">Beam No</TableHead>
-                          <TableHead className="text-xs">Putusan</TableHead>
+                        <TableRow
+                          style={{
+                            background: '#E0E5EC',
+                            borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                          }}
+                        >
+                          <TableHead
+                            className="text-[10px] font-bold uppercase tracking-widest"
+                            style={{ color: '#9CA3AF' }}
+                          >#</TableHead>
+                          <TableHead
+                            className="text-[10px] font-bold uppercase tracking-widest"
+                            style={{ color: '#9CA3AF' }}
+                          >Beam No</TableHead>
+                          <TableHead
+                            className="text-[10px] font-bold uppercase tracking-widest"
+                            style={{ color: '#9CA3AF' }}
+                          >Putusan</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {warping.beams.map((beam, idx) => (
-                          <TableRow key={beam.id}>
-                            <TableCell className="text-xs">{idx + 1}</TableCell>
-                            <TableCell className="text-sm font-mono">{beam.beam_number}</TableCell>
-                            <TableCell className="text-sm">{beam.putusan?.toLocaleString() || '—'}</TableCell>
+                          <TableRow
+                            key={beam.id}
+                            style={{
+                              background: '#E0E5EC',
+                              borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                            }}
+                          >
+                            <TableCell className="text-xs" style={{ color: '#6B7280' }}>{idx + 1}</TableCell>
+                            <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{beam.beam_number}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#3D4852' }}>{beam.putusan?.toLocaleString() || '—'}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -620,7 +1027,7 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
               )}
             </div>
           ) : (
-            <p className="text-sm text-zinc-400">No warping data yet</p>
+            <p className="text-sm" style={{ color: '#6B7280' }}>No warping data yet</p>
           )}
         </SectionCard>
 
@@ -628,233 +1035,235 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
         <SectionCard
           title="Indigo"
           icon={<SectionIcon hasData={!!indigo} />}
+          onEdit={indigo ? () => router.push('/denim/inbox/indigo/' + kp + '?edit=1') : undefined}
         >
           {indigo ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-xs text-zinc-500">Date</p>
-                <p className="text-sm text-zinc-900">{formatDate(indigo.tgl) || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{formatDate(indigo.tgl) || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Machine</p>
-                <p className="text-sm text-zinc-900">{indigo.mc || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Machine</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.mc || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Speed (m/min)</p>
-                <p className="text-sm text-zinc-900">{indigo.speed || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Speed (m/min)</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.speed || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Bak Celup</p>
-                <p className="text-sm text-zinc-900">{indigo.bak_celup || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Bak Celup</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.bak_celup || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Indigo (g/L)</p>
-                <p className="text-sm text-zinc-900">{indigo.indigo || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Indigo (g/L)</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.indigo || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Caustic (g/L)</p>
-                <p className="text-sm text-zinc-900">{indigo.caustic || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Caustic (g/L)</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.caustic || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Hydro (g/L)</p>
-                <p className="text-sm text-zinc-900">{indigo.hydro || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Hydro (g/L)</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.hydro || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Temp Dryer (°C)</p>
-                <p className="text-sm text-zinc-900">{indigo.temp_dryer || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Temp Dryer (°C)</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.temp_dryer || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Moisture Mahlo</p>
-                <p className="text-sm text-zinc-900">{indigo.moisture_mahlo || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Moisture Mahlo</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.moisture_mahlo || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Strength</p>
-                <p className="text-sm text-zinc-900">{indigo.strength || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Strength</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.strength || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">Elongasi</p>
-                <p className="text-sm text-zinc-900">{indigo.elongasi_idg || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Elongasi</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.elongasi_idg || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">BB</p>
-                <p className="text-sm text-zinc-900">{indigo.bb || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>BB</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.bb || '—'}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-500">P</p>
-                <p className="text-sm text-zinc-900">{indigo.p || '—'}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>P</p>
+                <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.p || '—'}</p>
               </div>
             </div>
-            <div className="border-t border-gray-200 my-4"></div>
+            <div style={{ borderTop: '1px solid rgb(163 177 198 / 0.3)', margin: '16px 0' }}></div>
             <button
               onClick={() => setShowIndigoFormula(!showIndigoFormula)}
-              className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
+              className="text-xs underline cursor-pointer"
+              style={{ color: '#6C63FF' }}
             >
               {showIndigoFormula ? '▼ Full Formula' : '▶ Full Formula'}
             </button>
             {showIndigoFormula && (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                 <div>
-                  <p className="text-xs text-zinc-500">Bak Sulfur</p>
-                  <p className="text-sm text-zinc-900">{indigo.bak_sulfur || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Bak Sulfur</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.bak_sulfur || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Konst Indigo</p>
-                  <p className="text-sm text-zinc-900">{indigo.konst_idg || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Konst Indigo</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.konst_idg || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Konst Sulfur</p>
-                  <p className="text-sm text-zinc-900">{indigo.konst_sulfur || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Konst Sulfur</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.konst_sulfur || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Viscosity</p>
-                  <p className="text-sm text-zinc-900">{indigo.visc || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Viscosity</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.visc || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Refraktometer</p>
-                  <p className="text-sm text-zinc-900">{indigo.ref || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Refraktometer</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.ref || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Scoring</p>
-                  <p className="text-sm text-zinc-900">{indigo.scoring || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Scoring</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.scoring || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Size Box</p>
-                  <p className="text-sm text-zinc-900">{indigo.size_box || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Size Box</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.size_box || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Jetsize</p>
-                  <p className="text-sm text-zinc-900">{indigo.jetsize || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Jetsize</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.jetsize || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Temp Mid Dryer</p>
-                  <p className="text-sm text-zinc-900">{indigo.temp_mid_dryer || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Temp Mid Dryer</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.temp_mid_dryer || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Temp Size Box 1</p>
-                  <p className="text-sm text-zinc-900">{indigo.temp_size_box_1 || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Temp Size Box 1</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.temp_size_box_1 || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Temp Size Box 2</p>
-                  <p className="text-sm text-zinc-900">{indigo.temp_size_box_2 || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Temp Size Box 2</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.temp_size_box_2 || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Size Box 1</p>
-                  <p className="text-sm text-zinc-900">{indigo.size_box_1 || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Size Box 1</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.size_box_1 || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Size Box 2</p>
-                  <p className="text-sm text-zinc-900">{indigo.size_box_2 || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Size Box 2</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.size_box_2 || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Squeezing Roll 1</p>
-                  <p className="text-sm text-zinc-900">{indigo.squeezing_roll_1 || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Squeezing Roll 1</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.squeezing_roll_1 || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Squeezing Roll 2</p>
-                  <p className="text-sm text-zinc-900">{indigo.squeezing_roll_2 || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Squeezing Roll 2</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.squeezing_roll_2 || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Immersion Roll</p>
-                  <p className="text-sm text-zinc-900">{indigo.immersion_roll || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Immersion Roll</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.immersion_roll || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Dryer</p>
-                  <p className="text-sm text-zinc-900">{indigo.dryer || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Dryer</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.dryer || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Take Off</p>
-                  <p className="text-sm text-zinc-900">{indigo.take_off || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Take Off</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.take_off || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Winding</p>
-                  <p className="text-sm text-zinc-900">{indigo.winding || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Winding</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.winding || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Press Beam</p>
-                  <p className="text-sm text-zinc-900">{indigo.press_beam || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Press Beam</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.press_beam || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Hardness</p>
-                  <p className="text-sm text-zinc-900">{indigo.hardness || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Hardness</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.hardness || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Unwinder</p>
-                  <p className="text-sm text-zinc-900">{indigo.unwinder || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Unwinder</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.unwinder || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Dyeing Tens Wash</p>
-                  <p className="text-sm text-zinc-900">{indigo.dyeing_tens_wash || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Dyeing Tens Wash</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.dyeing_tens_wash || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Dyeing Tens Warna</p>
-                  <p className="text-sm text-zinc-900">{indigo.dyeing_tens_warna || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Dyeing Tens Warna</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.dyeing_tens_warna || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">MC IDG</p>
-                  <p className="text-sm text-zinc-900">{indigo.mc_idg || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>MC IDG</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.mc_idg || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Tenacity</p>
-                  <p className="text-sm text-zinc-900">{indigo.tenacity || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Tenacity</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.tenacity || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Polisize HS</p>
-                  <p className="text-sm text-zinc-900">{indigo.polisize_hs || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Polisize HS</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.polisize_hs || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Polisize 1/2</p>
-                  <p className="text-sm text-zinc-900">{indigo.polisize_1_2 || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Polisize 1/2</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.polisize_1_2 || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Armosize</p>
-                  <p className="text-sm text-zinc-900">{indigo.armosize || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Armosize</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.armosize || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Solopol</p>
-                  <p className="text-sm text-zinc-900">{indigo.solopol || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Solopol</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.solopol || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Serawet</p>
-                  <p className="text-sm text-zinc-900">{indigo.serawet || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Serawet</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.serawet || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Primasol</p>
-                  <p className="text-sm text-zinc-900">{indigo.primasol || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Primasol</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.primasol || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Cottoclarin</p>
-                  <p className="text-sm text-zinc-900">{indigo.cottoclarin || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Cottoclarin</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.cottoclarin || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Setamol</p>
-                  <p className="text-sm text-zinc-900">{indigo.setamol || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Setamol</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.setamol || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Granular</p>
-                  <p className="text-sm text-zinc-900">{indigo.granular || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Granular</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.granular || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Indigo Conc</p>
-                  <p className="text-sm text-zinc-900">{indigo.indigo_conc || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Indigo Conc</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.indigo_conc || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Sulfur Bak</p>
-                  <p className="text-sm text-zinc-900">{indigo.sulfur_bak || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Sulfur Bak</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.sulfur_bak || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Sulfur Conc</p>
-                  <p className="text-sm text-zinc-900">{indigo.sulfur_conc || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Sulfur Conc</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.sulfur_conc || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Keterangan</p>
-                  <p className="text-sm text-zinc-900">{indigo.keterangan || '—'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Keterangan</p>
+                  <p className="text-sm" style={{ color: '#3D4852' }}>{indigo.keterangan || '—'}</p>
                 </div>
               </div>
             )}
             </>
           ) : (
-            <p className="text-sm text-zinc-400">No indigo data yet</p>
+            <p className="text-sm" style={{ color: '#6B7280' }}>No indigo data yet</p>
           )}
         </SectionCard>
 
@@ -906,26 +1315,50 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
 
                 return (
                   <>
-                    <div className="grid grid-cols-4 gap-3 mb-4">
-                      <div className="bg-zinc-100 rounded px-3 py-2">
-                        <p className="text-xs text-zinc-500">Records</p>
-                        <p className="text-sm font-semibold text-zinc-900">{totalRecords}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      <div
+                        className="rounded-[16px] px-3 py-2"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Records</p>
+                        <p className="text-sm font-semibold" style={{ color: '#3D4852' }}>{totalRecords}</p>
                       </div>
-                      <div className="bg-zinc-100 rounded px-3 py-2">
-                        <p className="text-xs text-zinc-500">Avg Efficiency</p>
-                        <p className="text-sm font-semibold text-zinc-900">{avgEfficiency}</p>
+                      <div
+                        className="rounded-[16px] px-3 py-2"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Efficiency</p>
+                        <p className="text-sm font-semibold" style={{ color: '#3D4852' }}>{avgEfficiency}</p>
                       </div>
-                      <div className="bg-zinc-100 rounded px-3 py-2">
-                        <p className="text-xs text-zinc-500">Total Meters</p>
-                        <p className="text-sm font-semibold text-zinc-900">{totalMeters.toLocaleString()}</p>
+                      <div
+                        className="rounded-[16px] px-3 py-2"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Meters</p>
+                        <p className="text-sm font-semibold" style={{ color: '#3D4852' }}>{totalMeters.toLocaleString()}</p>
                       </div>
-                      <div className="bg-zinc-100 rounded px-3 py-2">
-                        <p className="text-xs text-zinc-500">Period</p>
-                        <p className="text-sm font-semibold text-zinc-900">{formatDateRange()}</p>
+                      <div
+                        className="rounded-[16px] px-3 py-2"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Period</p>
+                        <p className="text-sm font-semibold" style={{ color: '#3D4852' }}>{formatDateRange()}</p>
                       </div>
                     </div>
                     {machineBreakdown.length > 0 && (
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs text-zinc-600">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs" style={{ color: '#6B7280' }}>
                         {machineBreakdown.map(m => (
                           <span key={m.machine}>
                             {m.machine} · {m.count} shifts · Avg {m.avg ? m.avg + '%' : '—'}
@@ -936,29 +1369,67 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                   </>
                 );
               })()}
-              <div className="border rounded-lg overflow-hidden">
+              <div
+                className="rounded-[16px] overflow-hidden"
+                style={{
+                  background: '#E0E5EC',
+                  boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                }}
+              >
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-zinc-50">
-                    <TableHead className="text-xs">Date</TableHead>
-                    <TableHead className="text-xs">Shift</TableHead>
-                    <TableHead className="text-xs">Machine</TableHead>
-                    <TableHead className="text-xs">Beam</TableHead>
-                    <TableHead className="text-xs">Picks</TableHead>
-                    <TableHead className="text-xs">Meters</TableHead>
-                    <TableHead className="text-xs">Efficiency %</TableHead>
+                  <TableRow
+                    style={{
+                      background: '#E0E5EC',
+                      borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                    }}
+                  >
+                    <TableHead
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: '#9CA3AF' }}
+                    >Date</TableHead>
+                    <TableHead
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: '#9CA3AF' }}
+                    >Shift</TableHead>
+                    <TableHead
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: '#9CA3AF' }}
+                    >Machine</TableHead>
+                    <TableHead
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: '#9CA3AF' }}
+                    >Beam</TableHead>
+                    <TableHead
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: '#9CA3AF' }}
+                    >Picks</TableHead>
+                    <TableHead
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: '#9CA3AF' }}
+                    >Meters</TableHead>
+                    <TableHead
+                      className="text-[10px] font-bold uppercase tracking-widest"
+                      style={{ color: '#9CA3AF' }}
+                    >Efficiency %</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {weaving.slice(0, 50).map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell className="text-sm">{formatDate(record.tanggal)}</TableCell>
-                      <TableCell className="text-sm">{record.shift || '—'}</TableCell>
-                      <TableCell className="text-sm font-mono">{record.machine || '—'}</TableCell>
-                      <TableCell className="text-sm">{record.beam || '—'}</TableCell>
-                      <TableCell className="text-sm">{record.kpicks?.toLocaleString() || '—'}</TableCell>
-                      <TableCell className="text-sm">{record.meters?.toLocaleString() || '—'}</TableCell>
-                      <TableCell className="text-sm">{record.a_pct != null ? Number(record.a_pct).toFixed(1) + '%' : '—'}</TableCell>
+                    <TableRow
+                      key={record.id}
+                      style={{
+                        background: '#E0E5EC',
+                        borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                      }}
+                    >
+                      <TableCell className="text-sm" style={{ color: '#6B7280' }}>{formatDate(record.tanggal)}</TableCell>
+                      <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.shift || '—'}</TableCell>
+                      <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.machine || '—'}</TableCell>
+                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.beam || '—'}</TableCell>
+                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.kpicks?.toLocaleString() || '—'}</TableCell>
+                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.meters?.toLocaleString() || '—'}</TableCell>
+                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.a_pct != null ? Number(record.a_pct).toFixed(1) + '%' : '—'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -966,57 +1437,131 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
             </div>
             </>
           ) : (
-            <p className="text-sm text-zinc-400">No weaving data yet</p>
+            <p className="text-sm" style={{ color: '#6B7280' }}>No weaving data yet</p>
           )}
         </SectionCard>
 
         {/* Inspect Gray Section */}
         <SectionCard
           title="Inspect Gray"
-          icon={<SectionIcon hasData={inspection.length > 0} />}
+          icon={<SectionIcon hasData={inspectGray.length > 0} />}
+          onEdit={inspectGray.length > 0 ? () => router.push('/denim/inbox/inspect-gray/' + kp + '?edit=1') : undefined}
         >
-          {inspection.length > 0 ? (
+          {inspectGray.length > 0 ? (
             <div className="space-y-4">
               {/* Summary stats */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="bg-zinc-50 rounded-lg p-3">
-                  <p className="text-xs text-zinc-500">Total Rolls</p>
-                  <p className="text-xl font-semibold text-zinc-900">{inspection.length}</p>
-                </div>
-                <div className="bg-zinc-50 rounded-lg p-3">
-                  <p className="text-xs text-zinc-500">Total Length</p>
-                  <p className="text-xl font-semibold text-zinc-900">
-                    {inspection.reduce((sum, r) => sum + (r.panjang || 0), 0).toLocaleString()}
-                  </p>
-                </div>
-                <div className="bg-zinc-50 rounded-lg p-3">
-                  <p className="text-xs text-zinc-500">Total Weight</p>
-                  <p className="text-xl font-semibold text-zinc-900">
-                    {inspection.reduce((sum, r) => sum + (r.berat || 0), 0).toLocaleString()}
-                  </p>
-                </div>
-              </div>
+              {(() => {
+                const totalRolls = inspectGray.length;
+                const gradeBreakdown = inspectGray.reduce((acc, r) => {
+                  const g = r.gd || 'Unknown';
+                  acc[g] = (acc[g] || 0) + 1;
+                  return acc;
+                }, {} as Record<string, number>);
+                const widths = inspectGray.filter(r => r.w != null).map(r => parseFloat(r.w!));
+                const avgWidth = widths.length > 0 
+                  ? (widths.reduce((a, b) => a + b, 0) / widths.length).toFixed(1)
+                  : null;
+                return (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      <div
+                        className="rounded-[16px] p-3"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Rolls</p>
+                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{totalRolls}</p>
+                      </div>
+                      <div
+                        className="rounded-[16px] p-3"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Width</p>
+                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgWidth ? avgWidth + '″' : '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {Object.entries(gradeBreakdown).sort((a, b) => b[1] - a[1]).map(([grade, count]) => {
+                        const colors: Record<string, string> = {
+                          A: '#16A34A',
+                          B: '#D97706',
+                          C: '#EA580C',
+                          R: '#DC2626',
+                        };
+                        return (
+                          <span
+                            key={grade}
+                            className="px-2 py-1 rounded-[9999px] text-xs font-bold"
+                            style={{
+                              background: '#E0E5EC',
+                              color: colors[grade] || '#6B7280',
+                              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                            }}
+                          >
+                            {grade}: {count}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Rolls table */}
-              <div className="border rounded-lg overflow-hidden">
+              <div
+                className="rounded-[16px] overflow-hidden"
+                style={{
+                  background: '#E0E5EC',
+                  boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                }}
+              >
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-zinc-50">
-                      <TableHead className="text-xs">Roll No</TableHead>
-                      <TableHead className="text-xs">Length</TableHead>
-                      <TableHead className="text-xs">Width</TableHead>
-                      <TableHead className="text-xs">Weight</TableHead>
-                      <TableHead className="text-xs">Grade</TableHead>
+                    <TableRow
+                      style={{
+                        background: '#E0E5EC',
+                        borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                      }}
+                    >
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Machine</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Beam</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Grade</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Width</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>BMC</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {inspection.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="text-sm font-mono">{record.no_roll || '—'}</TableCell>
-                        <TableCell className="text-sm">{record.panjang?.toLocaleString() || '—'}</TableCell>
-                        <TableCell className="text-sm">{record.lebar?.toLocaleString() || '—'}</TableCell>
-                        <TableCell className="text-sm">{record.berat?.toLocaleString() || '—'}</TableCell>
-                        <TableCell className="text-sm">{record.gd || '—'}</TableCell>
+                    {inspectGray.map((record) => (
+                      <TableRow
+                        key={record.id}
+                        style={{
+                          background: '#E0E5EC',
+                          borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                        }}
+                      >
+                        <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.tg ? new Date(record.tg).toLocaleDateString('en-GB') : '—'}</TableCell>
+                        <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.mc || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.bm ?? '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.gd || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.w || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>
+                          {record.bmc != null ? (
+                            record.bmc > 50 ? (
+                              <span className="inline-flex items-center gap-1" style={{ color: '#D97706' }}>
+                                <span className="w-2 h-2 rounded-full" style={{ background: '#D97706' }}></span>
+                                {record.bmc}
+                              </span>
+                            ) : (
+                              record.bmc
+                            )
+                          ) : '—'}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -1024,7 +1569,303 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-zinc-400">No inspection data yet</p>
+            <p className="text-sm" style={{ color: '#6B7280' }}>No inspect gray data yet</p>
+          )}
+        </SectionCard>
+
+        {/* BBSF Section */}
+        <SectionCard
+          title="BBSF (Washing & Sanfor)"
+          icon={<SectionIcon hasData={(bbsfWashing.length > 0) || (bbsfSanfor.length > 0)} />}
+          onEdit={(bbsfWashing.length > 0 || bbsfSanfor.length > 0) ? () => router.push('/denim/inbox/bbsf/' + kp + '?edit=1') : undefined}
+        >
+          {(bbsfWashing.length > 0) || (bbsfSanfor.length > 0) ? (
+            <div className="space-y-6">
+              {/* Washing Section */}
+              {bbsfWashing.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#6B7280' }}>Washing</h4>
+                  <div
+                    className="rounded-[16px] overflow-hidden"
+                    style={{
+                      background: '#E0E5EC',
+                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    <Table>
+                      <TableHeader>
+                        <TableRow
+                          style={{
+                            background: '#E0E5EC',
+                            borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                          }}
+                        >
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Date</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Shift</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Machine</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Speed</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Lebar Awal</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Permasalahan</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bbsfWashing.map((record) => (
+                          <TableRow
+                            key={record.id}
+                            style={{
+                              background: '#E0E5EC',
+                              borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                            }}
+                          >
+                            <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.tgl ? new Date(record.tgl).toLocaleDateString('en-GB') : '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.shift || '—'}</TableCell>
+                            <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.mc || '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.speed || '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.lebar_awal || '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#D97706' }}>{record.permasalahan || '—'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+
+              {/* Sanfor Section */}
+              {bbsfSanfor.length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#6B7280' }}>Sanfor</h4>
+                  <div
+                    className="rounded-[16px] overflow-hidden"
+                    style={{
+                      background: '#E0E5EC',
+                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    <Table>
+                      <TableHeader>
+                        <TableRow
+                          style={{
+                            background: '#E0E5EC',
+                            borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                          }}
+                        >
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Date</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Shift</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Type</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Speed</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Susut %</TableHead>
+                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Permasalahan</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bbsfSanfor.map((record) => (
+                          <TableRow
+                            key={record.id}
+                            style={{
+                              background: '#E0E5EC',
+                              borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                            }}
+                          >
+                            <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.tgl ? new Date(record.tgl).toLocaleDateString('en-GB') : '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.shift || '—'}</TableCell>
+                            <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.sanfor_type || '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.speed || '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.susut != null ? record.susut + '%' : '—'}</TableCell>
+                            <TableCell className="text-sm" style={{ color: '#D97706' }}>{record.permasalahan || '—'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: '#6B7280' }}>No BBSF data</p>
+          )}
+        </SectionCard>
+
+        {/* Inspect Finish Section */}
+        <SectionCard
+          title="Inspect Finish"
+          icon={<SectionIcon hasData={inspectFinish.length > 0} />}
+          onEdit={inspectFinish.length > 0 ? () => router.push('/denim/inbox/inspect-finish/' + kp + '?edit=1') : undefined}
+        >
+          {inspectFinish.length > 0 ? (
+            <div className="space-y-4">
+              {/* Summary Stats */}
+              {(() => {
+                const totalRolls = inspectFinish.length;
+                const gradeBreakdown = inspectFinish.reduce((acc, r) => {
+                  const g = r.grade || 'Unknown';
+                  acc[g] = (acc[g] || 0) + 1;
+                  return acc;
+                }, {} as Record<string, number>);
+                const lebarArr = inspectFinish.filter(r => r.lebar != null).map(r => r.lebar!);
+                const avgLebar = lebarArr.length > 0 
+                  ? (lebarArr.reduce((a, b) => a + b, 0) / lebarArr.length).toFixed(1)
+                  : null;
+                const kgArr = inspectFinish.filter(r => r.kg != null).map(r => r.kg!);
+                const avgKg = kgArr.length > 0
+                  ? (kgArr.reduce((a, b) => a + b, 0) / kgArr.length).toFixed(1)
+                  : null;
+                const susutArr = inspectFinish.filter(r => r.susut_lusi != null).map(r => r.susut_lusi!);
+                const avgSusut = susutArr.length > 0
+                  ? (susutArr.reduce((a, b) => a + b, 0) / susutArr.length).toFixed(1)
+                  : null;
+                const pointArr = inspectFinish.filter(r => r.point != null).map(r => r.point!);
+                const avgPoint = pointArr.length > 0
+                  ? (pointArr.reduce((a, b) => a + b, 0) / pointArr.length).toFixed(2)
+                  : null;
+                return (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-4">
+                      <div
+                        className="rounded-[16px] p-3"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Rolls</p>
+                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{totalRolls}</p>
+                      </div>
+                      <div
+                        className="rounded-[16px] p-3"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Lebar</p>
+                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgLebar ? avgLebar + ' cm' : '—'}</p>
+                      </div>
+                      <div
+                        className="rounded-[16px] p-3"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg KG</p>
+                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgKg || '—'}</p>
+                      </div>
+                      <div
+                        className="rounded-[16px] p-3"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Susut</p>
+                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgSusut ? avgSusut + '%' : '—'}</p>
+                      </div>
+                      <div
+                        className="rounded-[16px] p-3"
+                        style={{
+                          background: '#E0E5EC',
+                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Point</p>
+                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgPoint || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {Object.entries(gradeBreakdown).sort((a, b) => b[1] - a[1]).map(([grade, count]) => {
+                        const colors: Record<string, string> = {
+                          A: '#16A34A',
+                          B: '#D97706',
+                          C: '#EA580C',
+                          R: '#DC2626',
+                        };
+                        return (
+                          <span
+                            key={grade}
+                            className="px-2 py-1 rounded-[9999px] text-xs font-bold"
+                            style={{
+                              background: '#E0E5EC',
+                              color: colors[grade] || '#6B7280',
+                              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                            }}
+                          >
+                            {grade}: {count}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* Rolls table */}
+              <div
+                className="rounded-[16px] overflow-hidden"
+                style={{
+                  background: '#E0E5EC',
+                  boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                }}
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow
+                      style={{
+                        background: '#E0E5EC',
+                        borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                      }}
+                    >
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>SN</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Shift</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Operator</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Lebar</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>KG</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Susut</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Grade</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Point</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inspectFinish.slice(0, 50).map((record) => (
+                      <TableRow
+                        key={record.id}
+                        style={{
+                          background: '#E0E5EC',
+                          borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                        }}
+                      >
+                        <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.sn || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.shift || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.operator || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.lebar?.toLocaleString() || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.kg?.toLocaleString() || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.susut_lusi != null ? record.susut_lusi + '%' : '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.grade || '—'}</TableCell>
+                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>
+                          {record.point != null ? (
+                            record.point > 4.0 ? (
+                              <span className="inline-flex items-center gap-1" style={{ color: '#DC2626' }}>
+                                <span className="w-2 h-2 rounded-full" style={{ background: '#DC2626' }}></span>
+                                {record.point}
+                              </span>
+                            ) : record.point > 2.0 ? (
+                              <span className="inline-flex items-center gap-1" style={{ color: '#D97706' }}>
+                                <span className="w-2 h-2 rounded-full" style={{ background: '#D97706' }}></span>
+                                {record.point}
+                              </span>
+                            ) : (
+                              record.point
+                            )
+                          ) : '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: '#6B7280' }}>No inspect finish data yet</p>
           )}
         </SectionCard>
       </div>

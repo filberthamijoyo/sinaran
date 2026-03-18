@@ -49,12 +49,11 @@ export default function ApprovedPage() {
           </Button>
         }
       />
-      <div className="px-8 pb-8">
-        <div className="bg-white rounded-xl border
-          border-zinc-200/80 shadow-sm overflow-hidden">
+      <div className="px-4 sm:px-8 pb-8">
+        <div className="card-glow rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-zinc-50/80 hover:bg-zinc-50/80">
+              <TableRow className="bg-[hsl(var(--muted))] hover:bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))]">
                 <TableHead className="text-xs font-semibold text-zinc-500">Date</TableHead>
                 <TableHead className="text-xs font-semibold text-zinc-500">KP</TableHead>
                 <TableHead className="text-xs font-semibold text-zinc-500">Construction</TableHead>
@@ -77,26 +76,26 @@ export default function ApprovedPage() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-16">
-                    <CheckCircle2 className="w-8 h-8 text-zinc-200 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-400">No approved orders yet.</p>
+                    <CheckCircle2 className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-500">No approved orders yet.</p>
                   </TableCell>
                 </TableRow>
               ) : (
                 rows.map((row: any) => (
                   <TableRow
                     key={row.id}
-                    className="table-row-hover border-zinc-100"
+                    className="table-row-hover border-[hsl(var(--border))]"
                     onClick={() => router.push(`/denim/orders/${row.kp}`)}
                   >
                     <TableCell className="text-sm text-zinc-500">{fmt(row.tgl)}</TableCell>
                     <TableCell>
-                      <span className="text-sm font-mono font-semibold text-zinc-800">
+                      <span className="text-sm font-mono font-semibold text-zinc-200">
                         {row.kp}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-zinc-700">{row.codename || '—'}</TableCell>
-                    <TableCell className="text-sm text-zinc-600">{row.permintaan || '—'}</TableCell>
-                    <TableCell className="text-sm font-mono text-zinc-600">
+                    <TableCell className="text-sm text-zinc-300">{row.codename || '—'}</TableCell>
+                    <TableCell className="text-sm text-zinc-400">{row.permintaan || '—'}</TableCell>
+                    <TableCell className="text-sm font-mono text-zinc-400">
                       {row.te?.toLocaleString() || '—'}
                     </TableCell>
                     <TableCell>

@@ -7,6 +7,7 @@ import PageHeader from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, RefreshCw, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { StatCard } from '@/components/ui/stat-card';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -46,16 +47,6 @@ function effColor(v: number | null) {
   if (v >= 80) return 'text-emerald-600';
   if (v >= 70) return 'text-amber-500';
   return 'text-red-500';
-}
-
-function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
-  return (
-    <div className="bg-white border border-zinc-200 rounded-xl p-5">
-      <p className="text-xs font-medium text-zinc-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className="text-2xl font-semibold text-zinc-900 tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-zinc-400 mt-1">{sub}</p>}
-    </div>
-  );
 }
 
 export default function WeavingFormPage({ kp }: { kp?: string }) {
@@ -133,7 +124,7 @@ export default function WeavingFormPage({ kp }: { kp?: string }) {
 
       {/* Empty state */}
       {!loading && !hasData && (
-        <div className="flex flex-col items-center justify-center py-24 border border-dashed border-zinc-200 rounded-2xl text-zinc-400 gap-3">
+        <div className="flex flex-col items-center justify-center py-24 border border-dashed border-[hsl(var(--border))] rounded-2xl text-zinc-400 gap-3">
           <Clock className="w-8 h-8" />
           <p className="font-medium text-zinc-600">Waiting for production data</p>
           <p className="text-sm text-center max-w-xs">
@@ -174,8 +165,8 @@ export default function WeavingFormPage({ kp }: { kp?: string }) {
                 </p>
                 <div className="space-y-2">
                   {Object.entries(shifts).sort(([a],[b]) => a.localeCompare(b)).map(([shift, rows]) => (
-                    <div key={shift} className="border border-zinc-200 rounded-xl overflow-hidden">
-                      <div className="flex items-center justify-between bg-zinc-50 px-4 py-2.5 border-b border-zinc-200">
+                    <div key={shift} className="border border-[hsl(var(--border))] rounded-xl overflow-hidden">
+                      <div className="flex items-center justify-between bg-[hsl(var(--muted))] px-4 py-2.5 border-b border-[hsl(var(--border))]">
                         <p className="text-xs font-semibold text-zinc-600">
                           {SHIFT_LABEL[shift] ?? `Shift ${shift}`}
                         </p>
@@ -192,7 +183,7 @@ export default function WeavingFormPage({ kp }: { kp?: string }) {
                         </thead>
                         <tbody>
                           {rows.map(r => (
-                            <tr key={r.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50 transition-colors">
+                            <tr key={r.id} className="border-b border-[hsl(var(--border))] last:border-0 hover:bg-[hsl(var(--muted))] transition-colors">
                               <td className="px-4 py-3 font-medium text-zinc-800">{r.machine ?? '—'}</td>
                               <td className={`px-4 py-3 text-right font-semibold tabular-nums ${effColor(r.a_pct)}`}>
                                 {r.a_pct != null ? `${Number(r.a_pct).toFixed(1)}%` : '—'}
@@ -203,8 +194,8 @@ export default function WeavingFormPage({ kp }: { kp?: string }) {
                               <td className="px-4 py-3 text-right">
                                 <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium ${
                                   r.source === 'TRIPUTRA'
-                                    ? 'bg-blue-50 text-blue-600 ring-1 ring-blue-100'
-                                    : 'bg-zinc-100 text-zinc-500'
+                                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
+                                    : 'bg-zinc-800/50 text-zinc-500'
                                 }`}>
                                   {r.source ?? 'MANUAL'}
                                 </span>
@@ -221,7 +212,7 @@ export default function WeavingFormPage({ kp }: { kp?: string }) {
           </div>
 
           {/* Confirm action */}
-          <div className="border border-zinc-200 rounded-2xl p-6 bg-zinc-50">
+          <div className="border border-[hsl(var(--border))] rounded-2xl p-6 bg-[hsl(var(--muted))]">
             <div className="flex items-start justify-between gap-6">
               <div className="flex gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />

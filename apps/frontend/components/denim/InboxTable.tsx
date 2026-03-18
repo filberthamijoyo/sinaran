@@ -8,7 +8,7 @@ import {
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
-import { ChevronRight, Inbox } from 'lucide-react';
+import { ChevronRight, Inbox, CheckCircle2 } from 'lucide-react';
 
 export type InboxRow = {
   id: number;
@@ -37,9 +37,9 @@ const formatDate = (iso: string) => {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  PO1: 'bg-blue-50 text-blue-700 border-blue-200',
-  RP:  'bg-violet-50 text-violet-700 border-violet-200',
-  SCN: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+  PO1: 'bg-blue-500/15 text-blue-400',
+  RP:  'bg-violet-500/15 text-violet-400',
+  SCN: ''
 };
 
 export default function InboxTable({
@@ -51,95 +51,177 @@ export default function InboxTable({
   const router = useRouter();
 
   return (
-    <div className="bg-white rounded-xl border border-zinc-200/80
-      shadow-sm overflow-hidden">
+    <div
+      className="rounded-[32px] p-6 overflow-hidden"
+      style={{
+        background: '#E0E5EC',
+        boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+      }}
+    >
       <Table>
         <TableHeader>
-          <TableRow className="bg-zinc-50/80 hover:bg-zinc-50/80">
-            <TableHead className="text-xs font-semibold
-              text-zinc-500 w-28">Date</TableHead>
-            <TableHead className="text-xs font-semibold
-              text-zinc-500 w-24">KP</TableHead>
-            <TableHead className="text-xs font-semibold
-              text-zinc-500">Construction</TableHead>
-            <TableHead className="text-xs font-semibold
-              text-zinc-500 w-16">Type</TableHead>
-            <TableHead className="text-xs font-semibold
-              text-zinc-500">Customer</TableHead>
-            <TableHead className="text-xs font-semibold
-              text-zinc-500 w-24">TE</TableHead>
-            <TableHead className="text-xs font-semibold
-              text-zinc-500">Color</TableHead>
+          <TableRow
+            style={{
+              background: '#E0E5EC',
+              borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+            }}
+          >
+            <TableHead
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: '#9CA3AF' }}
+            >
+              Date
+            </TableHead>
+            <TableHead
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: '#9CA3AF' }}
+            >
+              KP
+            </TableHead>
+            <TableHead
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: '#9CA3AF' }}
+            >
+              Construction
+            </TableHead>
+            <TableHead
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: '#9CA3AF' }}
+            >
+              Type
+            </TableHead>
+            <TableHead
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: '#9CA3AF' }}
+            >
+              Customer
+            </TableHead>
+            <TableHead
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: '#9CA3AF' }}
+            >
+              TE
+            </TableHead>
+            <TableHead
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: '#9CA3AF' }}
+            >
+              Color
+            </TableHead>
             <TableHead className="w-8" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <TableRow key={i}>
+              <TableRow
+                key={i}
+                style={{
+                  background: '#E0E5EC',
+                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                }}
+              >
                 {Array.from({ length: 8 }).map((_, j) => (
                   <TableCell key={j}>
-                    <Skeleton className="h-4 w-full" />
+                    <Skeleton
+                      className="h-4 w-full"
+                      style={{
+                        background: '#E0E5EC',
+                        boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                      }}
+                    />
                   </TableCell>
                 ))}
               </TableRow>
             ))
           ) : rows.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8}
-                className="text-center py-20">
-                <Inbox className="w-8 h-8 text-zinc-200
-                  mx-auto mb-3" />
-                <p className="text-sm text-zinc-400">
-                  {emptyMessage}
-                </p>
+            <TableRow
+              style={{
+                background: '#E0E5EC',
+                borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+              }}
+            >
+              <TableCell colSpan={8}>
+                <div
+                  className="flex flex-col items-center justify-center py-20 gap-3"
+                  style={{ color: '#6B7280' }}
+                >
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{
+                      background: '#E0E5EC',
+                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    <CheckCircle2 className="w-6 h-6" style={{ color: '#9CA3AF' }} />
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: '#6B7280' }}>
+                    Queue is clear
+                  </p>
+                  <p className="text-xs" style={{ color: '#9CA3AF' }}>
+                    No orders waiting in this stage.
+                  </p>
+                </div>
               </TableCell>
             </TableRow>
           ) : (
             rows.map(row => (
               <TableRow
                 key={row.id}
-                className="table-row-hover border-zinc-100"
+                style={{
+                  background: '#E0E5EC',
+                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                }}
+                className="cursor-pointer transition-all duration-100 hover:translate-y-[-1px]"
                 onClick={() =>
                   router.push(`${formBasePath}/${row.kp}`)
                 }
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
-                <TableCell className="text-sm text-zinc-500">
+                <TableCell className="text-sm" style={{ color: '#6B7280' }}>
                   {formatDate(row.tgl)}
                 </TableCell>
                 <TableCell>
-                  <span className="text-sm font-mono font-semibold
-                    text-zinc-800">
+                  <span
+                    className="text-sm font-mono font-semibold"
+                    style={{ color: '#3D4852' }}
+                  >
                     {row.kp}
                   </span>
                 </TableCell>
-                <TableCell className="text-sm text-zinc-700">
+                <TableCell className="text-sm" style={{ color: '#3D4852' }}>
                   {row.codename || '—'}
                 </TableCell>
                 <TableCell>
                   {row.kat_kode && (
-                    <span className={`inline-flex items-center
-                      rounded-md border px-2 py-0.5 text-xs
-                      font-medium
-                      ${TYPE_COLORS[row.kat_kode]
-                        ?? 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                      }`}>
+                    <span
+                      className="inline-flex items-center rounded-[9999px] px-3 py-1 text-xs font-bold"
+                      style={{
+                        background: '#E0E5EC',
+                        color: '#3D4852',
+                        boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                      }}
+                    >
                       {row.kat_kode}
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="text-sm text-zinc-600">
+                <TableCell className="text-sm" style={{ color: '#6B7280' }}>
                   {row.permintaan || '—'}
                 </TableCell>
-                <TableCell className="text-sm font-mono
-                  text-zinc-600">
+                <TableCell className="text-sm font-mono" style={{ color: '#6B7280' }}>
                   {row.te?.toLocaleString() || '—'}
                 </TableCell>
-                <TableCell className="text-sm text-zinc-600">
+                <TableCell className="text-sm" style={{ color: '#6B7280' }}>
                   {row.ket_warna || '—'}
                 </TableCell>
                 <TableCell>
-                  <ChevronRight className="w-4 h-4 text-zinc-300" />
+                  <ChevronRight className="w-4 h-4" style={{ color: '#9CA3AF' }} />
                 </TableCell>
               </TableRow>
             ))
