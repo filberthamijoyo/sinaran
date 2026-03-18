@@ -2312,145 +2312,85 @@ router.get('/weaving/records',
   }
 });
 
-// ============== ROLL TRACEABILITY ==============
-
-function decodeSN(sn: string): { machine: string; beam: number; lot: string } | null {
-  if (!sn) return null;
-  const m = sn.trim().match(/^([A-Z]{1,3}\d{2})(\d+)([A-Z]\d+[A-Z N])$/);
-  if (!m) return null;
-  return { machine: m[1], beam: parseInt(m[2]), lot: m[3] };
-}
-
-// GET /api/denim/roll-trace/search?q=xxx
-// Search for SNs - returns matching records from InspectGray and InspectFinish
-router.get('/roll-trace/search',
-  requireAuth,
-  async (req: Request, res: Response) => {
+// GET /api/denim/pipeline-graph?kp=BRSE
+// GET /api/denim/pipeline-graph?sn=AE04182D03L
+// GET /api/denim/pipeline-graph?kp=BRSE&beam=182
+router.get('/pipeline-graph', requireAuth, requireRole('admin'), async (req: Request, res: Response) => {
   try {
-    const q = (req.query.q as string)?.trim() || '';
-    if (q.length < 2) {
-      return res.json({ results: [] });
-    }
+    const { kp: kpParam, sn: snParam, beam: beamParam } = req.query as Record<string, string>;
 
-    const searchPattern = `%${q}%`;
+    // Decode SN if provided
+    let kp: string | undefined = kpParam;
+    let beamNumber: number | null = beamParam ? parseInt(beamParam) : null;
+    let machine: string | null = null;
 
-    // Search in InspectGrayRecord
-    const grayResults = await prisma.$queryRaw<Array<{ id: number; sn: string; kp: string; mc: string; grade: string }>>`
-      SELECT id, COALESCE(sn_combined, sn, '') as sn, kp, mc, grade
-      FROM "InspectGrayRecord"
-      WHERE (sn_combined ILIKE ${searchPattern} OR sn ILIKE ${searchPattern})
-      LIMIT 20
-    `;
-
-    // Search in InspectFinishRecord
-    const finishResults = await prisma.$queryRaw<Array<{ id: number; sn: string; kp: string; grade: string }>>`
-      SELECT id, sn_combined as sn, kp, grade
-      FROM "InspectFinishRecord"
-      WHERE sn_combined ILIKE ${searchPattern}
-      LIMIT 20
-    `;
-
-    // Combine and dedupe
-    const seen = new Set<string>();
-    const results: Array<{ sn: string; source: 'gray' | 'finish'; kp: string; grade: string }> = [];
-
-    for (const r of grayResults) {
-      if (r.sn && !seen.has(r.sn)) {
-        seen.add(r.sn);
-        results.push({ sn: r.sn, source: 'gray', kp: r.kp || '', grade: r.grade || '' });
+    if (snParam) {
+      const m = String(snParam).trim().match(/^([A-Z]{1,3}\d{2})(\d+)([A-Z]\d+[A-Z N])$/);
+      if (m) {
+        machine = m[1];
+        beamNumber = parseInt(m[2]);
       }
-    }
-    for (const r of finishResults) {
-      if (r.sn && !seen.has(r.sn)) {
-        seen.add(r.sn);
-        results.push({ sn: r.sn, source: 'finish', kp: r.kp || '', grade: r.grade || '' });
+      // Find KP from InspectFinish or InspectGray
+      if (!kp) {
+        const finish = await prisma.inspectFinishRecord.findFirst({ where: { sn: snParam }, select: { kp: true } });
+        const gray = await prisma.inspectGrayRecord.findFirst({ where: { sn_full: snParam }, select: { kp: true } });
+        kp = (finish?.kp || gray?.kp) ?? undefined;
       }
     }
 
-    return res.json({ results: results.slice(0, 20) });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
-  }
-});
+    if (!kp) return res.status(400).json({ error: 'kp or sn required' });
 
-// GET /api/denim/roll-trace/:sn
-// Returns the complete production history of that roll
-router.get('/roll-trace/:sn',
-  requireAuth,
-  async (req: Request, res: Response) => {
-  try {
-    const sn = req.params.sn?.trim();
-    if (!sn) {
-      return res.status(400).json({ error: 'SN is required' });
+    // Fetch all stages in parallel
+    const [sc, warpingRun, indigoRun, allBeams, allWeaving, allInspectGray, bbsfWashing, bbsfSanfor, allInspectFinish] = await Promise.all([
+      prisma.salesContract.findUnique({ where: { kp } }),
+      prisma.warpingRun.findUnique({ where: { kp }, include: { beams: { orderBy: { position: 'asc' } } } }),
+      prisma.indigoRun.findUnique({ where: { kp } }),
+      prisma.warpingBeam.findMany({ where: { kp }, orderBy: { position: 'asc' } }),
+      prisma.weavingRecord.findMany({ where: { kp }, orderBy: [{ tanggal: 'asc' }, { machine: 'asc' }] }),
+      prisma.inspectGrayRecord.findMany({ where: { kp }, orderBy: { tg: 'asc' } }),
+      prisma.bBSFWashingRun.findMany({ where: { kp }, orderBy: { tgl: 'asc' } }),
+      prisma.bBSFSanforRun.findMany({ where: { kp }, orderBy: [{ tgl: 'asc' }, { sanfor_type: 'asc' }] }),
+      prisma.inspectFinishRecord.findMany({ where: { kp }, orderBy: { tgl: 'asc' } }),
+    ]);
+
+    // Beam-level filter if beam specified
+    let beamTrace: {
+      beam_number: number;
+      machine: string | null;
+      warpingBeam: (typeof allBeams)[number] | null;
+      weavingRecords: typeof allWeaving;
+      inspectGrayRecords: typeof allInspectGray;
+      bbsfNote: string;
+      inspectFinishRecords: typeof allInspectFinish;
+    } | null = null;
+    if (beamNumber) {
+      const selectedBeam = allBeams.find(b => b.beam_number === beamNumber);
+      beamTrace = {
+        beam_number: beamNumber,
+        machine,
+        warpingBeam: selectedBeam || null,
+        weavingRecords: machine
+          ? allWeaving.filter(w => w.machine === machine)
+          : allWeaving.filter(w => w.warping_beam_id === selectedBeam?.id),
+        inspectGrayRecords: allInspectGray.filter(g => g.bm === beamNumber),
+        bbsfNote: 'BBSF data is tracked at order level only',
+        inspectFinishRecords: allInspectFinish.filter(f => f.sn_beam === beamNumber),
+      };
     }
-
-    const decoded = decodeSN(sn);
-
-    // 1. Find InspectGray record
-    const grayRecord = await prisma.inspectGrayRecord.findFirst({
-      where: {
-        OR: [
-          { sn_combined: sn },
-          { sn_full: sn },
-          { sn: sn },
-        ],
-      },
-    });
-
-    // 2. Find InspectFinish records (multiple rolls can share same SN)
-    const finishRecords = await prisma.inspectFinishRecord.findMany({
-      where: { sn_combined: sn },
-      orderBy: { tgl: 'desc' },
-    });
-
-    // 3. Get KP from gray or finish records
-    const kp = grayRecord?.kp || finishRecords[0]?.kp;
-
-    // 4. Find WeavingRecords via kp + machine
-    const weavingRecords = decoded ? await prisma.weavingRecord.findMany({
-      where: {
-        kp,
-        machine: decoded.machine,
-      },
-      orderBy: { tanggal: 'desc' },
-      take: 10,
-    }) : [];
-
-    // 5. Find WarpingBeam via kp + beam_number
-    const beam = decoded ? await prisma.warpingBeam.findFirst({
-      where: {
-        kp,
-        beam_number: decoded.beam,
-      },
-    }) : null;
-
-    // 6. Full pipeline data
-    const sc = kp ? await prisma.salesContract.findUnique({ where: { kp } }) : null;
-    const warping = kp ? await prisma.warpingRun.findUnique({ where: { kp } }) : null;
-    const indigo = kp ? await prisma.indigoRun.findUnique({ where: { kp } }) : null;
-    const bbsfWashing = kp ? await prisma.bBSFWashingRun.findMany({ 
-      where: { kp },
-      orderBy: { tgl: 'desc' },
-      take: 5,
-    }) : [];
-    const bbsfSanfor = kp ? await prisma.bBSFSanforRun.findMany({ 
-      where: { kp },
-      orderBy: { tgl: 'desc' },
-      take: 5,
-    }) : [];
 
     return res.json({
-      sn,
-      decoded,
+      anchor: snParam ? { type: 'sn', value: snParam } : beamNumber ? { type: 'beam', value: String(beamNumber) } : { type: 'kp', value: kp },
+      kp,
       salesContract: sc,
-      warping,
-      beam,
-      weavingRecords,
-      indigoRun: indigo,
-      inspectGray: grayRecord,
+      warpingRun,
+      indigoRun,
+      allBeams,
+      allWeavingRecords: allWeaving,
+      allInspectGray,
       bbsfWashing,
       bbsfSanfor,
-      inspectFinish: finishRecords,
+      allInspectFinish,
+      beamTrace,
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });

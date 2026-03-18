@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:prisma && npm run build:frontend",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install"

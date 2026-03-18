@@ -10,7 +10,7 @@ import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from '../../ui/table';
-import { ArrowLeft, Check, Circle, CheckCircle2, GitCompare } from 'lucide-react';
+import { ArrowLeft, Check, Circle, CheckCircle2, GitCompare, Network } from 'lucide-react';
 import StatusBadge from '../../ui/StatusBadge';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -727,6 +727,14 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
               >
                 <GitCompare className="w-4 h-4 mr-2" />
                 Compare KPs
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/denim/admin/pipeline-graph?kp=${kp}`)}
+              >
+                <Network className="w-4 h-4 mr-2" />
+                Pipeline Graph
               </Button>
               <Button variant="outline" size="sm" onClick={handleEdit}>
                 Edit

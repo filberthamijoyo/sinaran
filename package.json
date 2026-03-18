@@ -12,7 +12,7 @@
     "dev:frontend": "npm run start --workspace=apps/frontend",
     "dev:api": "npm run dev --workspace=apps/api",
     "build": "npm run build --workspaces --if-present",
-    "build:packages": "npm run build --workspace=packages/prisma",
+    "build:prisma": "npm run generate --workspace=@erp-sinaran/prisma",
     "build:frontend": "npm run build --workspace=apps/frontend",
     "build:api": "npm run build --workspace=apps/api",
     "start": "npm run start --workspace=apps/api",

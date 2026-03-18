@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/AuthContext';
 import {
   LayoutDashboard, FilePlus, FileText, Inbox, CheckSquare,
   XSquare, ClipboardList, LogOut, BarChart2, Archive,
-  FlaskConical, X, Search,
+  FlaskConical, X, Network,
 } from 'lucide-react';
 
 interface NavItem { label: string; href: string; icon: React.ElementType; badge?: number; }
@@ -17,7 +17,6 @@ const factoryNav: NavGroup[] = [
     { label: 'Dashboard', href: '/denim', icon: LayoutDashboard },
     { label: 'My Orders', href: '/denim/my-orders', icon: FileText },
     { label: 'New Order', href: '/denim/new-order', icon: FilePlus },
-    { label: 'Roll Trace', href: '/denim/roll-trace', icon: Search },
   ]},
   { title: 'Production Inbox', items: [
     { label: 'Warping', href: '/denim/inbox/warping', icon: Inbox },
@@ -35,7 +34,6 @@ const jakartaNav: NavGroup[] = [
     { label: 'Pending Approval', href: '/denim/approvals/pending', icon: ClipboardList },
     { label: 'Approved', href: '/denim/approvals/approved', icon: CheckSquare },
     { label: 'Rejected', href: '/denim/approvals/rejected', icon: XSquare },
-    { label: 'Roll Trace', href: '/denim/roll-trace', icon: Search },
   ]},
 ];
 
@@ -45,8 +43,8 @@ const adminNav: NavGroup[] = [
     { label: 'All Orders', href: '/denim/admin/orders', icon: FileText },
     { label: 'KP Archive', href: '/denim/admin/kp-archive', icon: Archive },
     { label: 'Fabric Specs', href: '/denim/admin/fabric-specs', icon: FlaskConical },
+    { label: 'Pipeline Graph', href: '/denim/admin/pipeline-graph', icon: Network },
     { label: 'Analytics', href: '/denim/admin/analytics', icon: BarChart2 },
-    { label: 'Roll Trace', href: '/denim/roll-trace', icon: Search },
   ]},
   { title: 'Pipeline', items: [
     { label: 'Warping', href: '/denim/admin/warping', icon: ClipboardList },
