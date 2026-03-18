@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build:prisma && npm run build:frontend",
+  "buildCommand": "npm run generate --workspace=@erp-sinaran/prisma && npm run build --workspace=apps/frontend",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install"
