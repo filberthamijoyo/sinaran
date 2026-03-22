@@ -250,7 +250,7 @@ export default function FabricSpecsPage() {
         }
       />
 
-      <div className="px-4 sm:px-8 pb-8">
+      <div className="px-4 py-4 sm:px-8 pb-8">
         {/* Filters */}
         <div className="flex items-center gap-3 mb-4">
           <div className="relative flex-1 max-w-sm">
@@ -372,7 +372,8 @@ export default function FabricSpecsPage() {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40 bg-black/40"
+            className="fixed inset-0 z-40"
+            style={{ background: 'rgba(0,0,0,0.3)' }}
             onClick={closePanel}
           />
 

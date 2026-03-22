@@ -42,13 +42,6 @@ const SHIFT_LABEL: Record<string, string> = {
   '3': 'Shift 3  ·  22:00 – 05:59',
 };
 
-function effColor(v: number | null) {
-  if (v == null) return 'text-zinc-500';
-  if (v >= 80) return 'text-emerald-400';
-  if (v >= 70) return 'text-amber-400';
-  return 'text-red-400';
-}
-
 export default function WeavingFormPage({ kp }: { kp: string }) {
   const router = useRouter();
   const [data, setData] = useState<PipelineData | null>(null);
@@ -231,10 +224,10 @@ export default function WeavingFormPage({ kp }: { kp: string }) {
             >
               <div className="flex items-start justify-between gap-6">
                 <div className="flex gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                  <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#D97706' }} />
                   <div>
                     <p className="text-sm font-semibold style={{ color: '#3D4852' }}">Ready to close this weaving job?</p>
-                    <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                    <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9CA3AF' }}>
                       Review all production records above before confirming. Once marked complete, this order moves to
                       <span className="font-medium style={{ color: '#6B7280' }}"> Inspect Gray</span> and cannot be undone.
                     </p>
@@ -243,7 +236,8 @@ export default function WeavingFormPage({ kp }: { kp: string }) {
                 <Button
                   onClick={handleConfirm}
                   disabled={confirming}
-                  className="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white px-5"
+                  className="shrink-0 px-5"
+                  style={{ background: '#6C63FF', color: '#fff', border: 'none', borderRadius: '16px', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', fontWeight: 600, cursor: confirming ? 'not-allowed' : 'pointer', opacity: confirming ? 0.7 : 1 }}
                 >
                   {confirming
                     ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Confirming…</>

@@ -40,34 +40,37 @@ const formatDate = (iso: string) => {
   catch { return '—'; }
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  PO1: 'bg-indigo-500/10 text-indigo-400',
-  RP:  'bg-violet-500/10 text-violet-400',
-  SCN: '',
-};
-
 const stageBadge = (status: string) => {
-  const map: Record<string, string> = {
-    PENDING_APPROVAL: 'bg-amber-500/10 text-amber-400',
-    WARPING:   'bg-indigo-500/10 text-indigo-400',
-    INDIGO:    'bg-cyan-500/10 text-cyan-400',
-    WEAVING:   'bg-emerald-500/10 text-emerald-400',
-    INSPECT_GRAY: 'bg-orange-500/10 text-orange-400',
-    COMPLETE:  'bg-emerald-500/10 text-emerald-400',
-    REJECTED:  'bg-red-500/10 text-red-400',
-  };
   const label: Record<string, string> = {
     PENDING_APPROVAL: 'Pending', WARPING: 'Warping',
     INDIGO: 'Indigo', WEAVING: 'Weaving', INSPECT_GRAY: 'Inspect',
     COMPLETE: 'Complete', REJECTED: 'Rejected',
   };
+  const bgMap: Record<string, string> = {
+    PENDING_APPROVAL: 'rgba(217, 119, 6, 0.15)',
+    WARPING: 'rgba(108, 99, 255, 0.15)',
+    INDIGO: 'rgba(6, 182, 212, 0.15)',
+    WEAVING: 'rgba(22, 163, 74, 0.15)',
+    INSPECT_GRAY: 'rgba(249, 115, 22, 0.15)',
+    COMPLETE: 'rgba(22, 163, 74, 0.15)',
+    REJECTED: 'rgba(220, 38, 38, 0.15)',
+  };
+  const colorMap: Record<string, string> = {
+    PENDING_APPROVAL: '#D97706',
+    WARPING: '#6C63FF',
+    INDIGO: '#06B6D4',
+    WEAVING: '#16A34A',
+    INSPECT_GRAY: '#F97316',
+    COMPLETE: '#16A34A',
+    REJECTED: '#DC2626',
+  };
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-[9999px] text-xs font-medium"
       style={{
-        background: '#E0E5EC',
-        color: '#3D4852',
-        boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+        background: bgMap[status] ?? 'rgba(163, 177, 198, 0.2)',
+        color: colorMap[status] ?? '#6B7280',
+        boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)',
       }}
     >
       {label[status] ?? status}
@@ -189,67 +192,112 @@ export default function AdminOrdersPage({ defaultStage = 'ALL', initialData }: P
           </Button>
         </div>
 
+        {totalPages > 1 && (
+          <div
+            className="flex items-center justify-between mt-4"
+            style={{
+              background: '#E0E5EC',
+              borderRadius: '16px',
+              padding: '10px 16px',
+              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+            }}
+          >
+            <p className="text-xs" style={{ color: '#9CA3AF' }}>
+              Page {page} of {totalPages}
+              {' '}· {total.toLocaleString()} orders
+            </p>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+                className="h-7 text-xs"
+                style={{
+                  background: '#E0E5EC',
+                  borderRadius: '16px',
+                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                  color: '#3D4852',
+                }}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+                className="h-7 text-xs"
+                style={{
+                  background: '#E0E5EC',
+                  borderRadius: '16px',
+                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                  color: '#3D4852',
+                }}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         <div
-          className="rounded-[32px] p-6 overflow-x-auto"
           style={{
             background: '#E0E5EC',
             boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            borderRadius: '32px',
+            overflow: 'hidden',
           }}
         >
           <Table>
             <TableHeader>
               <TableRow
-                style={{
-                  background: '#E0E5EC',
-                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                }}
+                style={{ background: '#E0E5EC' }}
               >
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   Date
                 </TableHead>
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   KP
                 </TableHead>
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   Construction
                 </TableHead>
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   Type
                 </TableHead>
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   Customer
                 </TableHead>
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   TE
                 </TableHead>
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   Color
                 </TableHead>
                 <TableHead
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: '#9CA3AF' }}
+                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
                 >
                   Stage
                 </TableHead>
@@ -262,7 +310,7 @@ export default function AdminOrdersPage({ defaultStage = 'ALL', initialData }: P
                     key={i}
                     style={{
                       background: '#E0E5EC',
-                      borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                      borderBottom: '1px solid rgb(163 177 198 / 0.4)',
                     }}
                   >
                     {Array.from({ length: 8 }).map((_, j) => (
@@ -282,7 +330,7 @@ export default function AdminOrdersPage({ defaultStage = 'ALL', initialData }: P
                 <TableRow
                   style={{
                     background: '#E0E5EC',
-                    borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                    borderBottom: '1px solid rgb(163 177 198 / 0.4)',
                   }}
                 >
                   <TableCell colSpan={8}>
@@ -302,17 +350,19 @@ export default function AdminOrdersPage({ defaultStage = 'ALL', initialData }: P
                     key={row.id}
                     style={{
                       background: '#E0E5EC',
-                      borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                      borderBottom: '1px solid rgb(163 177 198 / 0.4)',
                     }}
-                    className="cursor-pointer transition-all duration-100 hover:translate-y-[-1px]"
+                    className="cursor-pointer transition-all duration-100"
                     onClick={() =>
                       router.push(`/denim/admin/orders/${row.kp}`)
                     }
                     onMouseEnter={(e) => {
                       e.currentTarget.style.boxShadow = '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)';
+                      e.currentTarget.style.transform = 'translateX(2px)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.boxShadow = 'none';
+                      e.currentTarget.style.transform = 'translateX(0px)';
                     }}
                   >
                     <TableCell className="text-sm" style={{ color: '#6B7280' }}>
@@ -380,42 +430,6 @@ export default function AdminOrdersPage({ defaultStage = 'ALL', initialData }: P
           </Table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <p className="text-xs" style={{ color: '#9CA3AF' }}>
-              Page {page} of {totalPages}
-              {' '}· {total.toLocaleString()} orders
-            </p>
-            <div className="flex items-center gap-1.5">
-              <Button
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
-                className="h-7 text-xs"
-                style={{
-                  background: '#E0E5EC',
-                  borderRadius: '16px',
-                  boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                }}
-              >
-                Previous
-              </Button>
-              <Button
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => p + 1)}
-                className="h-7 text-xs"
-                style={{
-                  background: '#E0E5EC',
-                  borderRadius: '16px',
-                  boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                }}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

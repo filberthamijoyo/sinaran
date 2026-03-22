@@ -10,8 +10,9 @@ import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from '../../ui/table';
-import { ArrowLeft, Check, Circle, CheckCircle2, GitCompare, Network } from 'lucide-react';
+import { ArrowLeft, Check, Circle, CheckCircle2, GitCompare, Download, ChevronDown } from 'lucide-react';
 import StatusBadge from '../../ui/StatusBadge';
+import RollTraceDrawer from './RollTraceDrawer';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -26,6 +27,10 @@ type SalesContract = {
   te: number | null;
   acc: string | null;
   pipeline_status: string;
+  ne_lusi: string | number | null;
+  ne_pakan: string | number | null;
+  sisir: string | null;
+  pick: string | number | null;
 };
 
 type WarpingRun = {
@@ -215,9 +220,11 @@ type InspectGrayRecordFull = {
   mc: string | null;
   bm: number | null;
   sn: string | null;
+  sn_full: string | null;
   gd: string | null;
   w: string | null;
   bmc: number | null;
+  bme: number | null;
 };
 
 type BBSFWashingRun = {
@@ -254,63 +261,7 @@ type PipelineApiResponse = {
   inspectFinish?: InspectFinishRecord[];
 };
 
-type BBSFRecord = {
-  id: number;
-  kp: string;
-  tgl: string;
-  // Washing
-  ws_shift: string | null;
-  ws_mc: string | null;
-  ws_speed: string | null;
-  ws_larutan_1: string | null;
-  ws_temp_1: string | null;
-  ws_padder_1: string | null;
-  ws_dancing_1: string | null;
-  ws_larutan_2: string | null;
-  ws_temp_2: string | null;
-  ws_padder_2: string | null;
-  ws_dancing_2: string | null;
-  ws_skew: string | null;
-  ws_tekanan_boiler: string | null;
-  ws_temp_1_zone: string | null;
-  ws_temp_2_zone: string | null;
-  ws_temp_3_zone: string | null;
-  ws_temp_4_zone: string | null;
-  ws_temp_5_zone: string | null;
-  ws_temp_6_zone: string | null;
-  ws_lebar_awal: string | null;
-  ws_panjang_awal: string | null;
-  ws_permasalahan: string | null;
-  ws_pelaksana: string | null;
-  // Sanfor 1
-  sf1_shift: string | null;
-  sf1_mc: string | null;
-  sf1_speed: string | null;
-  sf1_damping: string | null;
-  sf1_press: string | null;
-  sf1_tension: string | null;
-  sf1_tension_limit: string | null;
-  sf1_temperatur: string | null;
-  sf1_susut: string | null;
-  sf1_permasalahan: string | null;
-  sf1_pelaksana: string | null;
-  // Sanfor 2
-  sf2_shift: string | null;
-  sf2_mc: string | null;
-  sf2_speed: string | null;
-  sf2_damping: string | null;
-  sf2_press: string | null;
-  sf2_tension: string | null;
-  sf2_temperatur: string | null;
-  sf2_susut: string | null;
-  sf2_awal: string | null;
-  sf2_akhir: string | null;
-  sf2_panjang: string | null;
-  sf2_permasalahan: string | null;
-  sf2_pelaksana: string | null;
-};
-
-type InspectFinishRecord = {
+export type InspectFinishRecord = {
   id: number;
   kp: string;
   tgl: string;
@@ -318,6 +269,7 @@ type InspectFinishRecord = {
   operator: string | null;
   no_roll: number | null;
   sn: string | null;
+  sn_machine: string | null;
   tgl_potong: string | null;
   lebar: number | null;
   kg: number | null;
@@ -365,7 +317,7 @@ type InspectFinishRecord = {
 };
 
 // Internal shape used throughout the component
-type PipelineData = {
+export type PipelineData = {
   sc: SalesContract | null;
   warping: WarpingRun | null;
   indigo: IndigoRun | null;
@@ -587,13 +539,25 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const [selectedSN, setSelectedSN] = useState<string | null>(null);
+  const [finishSnFilter, setFinishSnFilter] = useState('');
+  const [exportOpen, setExportOpen] = useState(false);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.export-dropdown-root')) {
+        setExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const token = localStorage.getItem('erp_token');
-        const hasToken = !!token;
-        
         const result = await authFetch(
           `/denim/admin/pipeline/${kp}`
         );
@@ -683,8 +647,8 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
     return (
       <div className="px-4 sm:px-8 pb-8">
         <div className="text-center py-16">
-          <p className="text-red-500 font-mono text-sm mb-2">ERROR: {error || 'Order not found'}</p>
-          <p className="text-zinc-600 text-xs">data exists: {!!data}, keys: {data ? Object.keys(data).join(', ') : 'none'}</p>
+          <p className="font-mono text-sm mb-2" style={{ color: '#DC2626' }}>ERROR: {error || 'Order not found'}</p>
+          <p className="text-xs" style={{ color: '#9CA3AF' }}>data exists: {!!data}, keys: {data ? Object.keys(data).join(', ') : 'none'}</p>
           <Button
             variant="outline"
             size="sm"
@@ -701,6 +665,184 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
 
   // Internal shape: sc, warping, indigo, weaving, inspectGray, bbsfWashing, bbsfSanfor, inspectFinish
   const { sc, warping, indigo, weaving, inspectGray = [], bbsfWashing = [], bbsfSanfor = [], inspectFinish = [] } = data;
+
+  const exportPDF = async () => {
+    setExportOpen(false);
+    const { jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+    doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+    doc.text(`Production Report — ${kp}`, 15, 20);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 15, 28);
+    doc.line(15, 32, 195, 32);
+
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.text('Sales Contract', 15, 40);
+    autoTable(doc, {
+      startY: 44, margin: { left: 15, right: 15 },
+      head: [['Field', 'Value']],
+      body: [
+        ['KP', sc?.kp || '—'],
+        ['Codename', sc?.codename || '—'],
+        ['Customer', sc?.permintaan || '—'],
+        ['Date', sc?.tgl ? new Date(sc.tgl).toLocaleDateString() : '—'],
+        ['Type', sc?.kat_kode || '—'],
+        ['TE', sc?.te?.toString() || '—'],
+        ['Color', sc?.ket_warna || '—'],
+        ['Status', sc?.pipeline_status || '—'],
+      ],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [30, 30, 40] },
+      alternateRowStyles: { fillColor: [245, 245, 248] },
+    });
+
+    if (warping) {
+      const y = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+      doc.text('Warping', 15, y);
+      autoTable(doc, {
+        startY: y + 4, margin: { left: 15, right: 15 },
+        head: [['Field', 'Value']],
+        body: [
+          ['Date', warping.tgl ? new Date(warping.tgl).toLocaleDateString() : '—'],
+          ['Machine No', warping.no_mc?.toString() || '—'],
+          ['RPM', warping.rpm?.toString() || '—'],
+          ['Total Beam', warping.total_beam?.toString() || '—'],
+          ['Elongasi', warping.elongasi?.toString() || '—'],
+          ['Strength', warping.strength?.toString() || '—'],
+          ['CV%', warping.cv_pct?.toString() || '—'],
+          ['Eff Warping', warping.eff_warping?.toString() || '—'],
+        ],
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [30, 30, 40] },
+      });
+    }
+
+    if (indigo) {
+      const y = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+      doc.text('Indigo', 15, y);
+      autoTable(doc, {
+        startY: y + 4, margin: { left: 15, right: 15 },
+        head: [['Field', 'Value']],
+        body: [
+          ['Date', indigo.tanggal ? new Date(indigo.tanggal).toLocaleDateString() : '—'],
+          ['Machine', indigo.mc?.toString() || '—'],
+          ['Speed', indigo.speed?.toString() || '—'],
+          ['Indigo g/L', indigo.indigo?.toString() || '—'],
+          ['Caustic g/L', indigo.caustic?.toString() || '—'],
+          ['Hydro g/L', indigo.hydro?.toString() || '—'],
+          ['BB', indigo.bb?.toString() || '—'],
+          ['Strength', indigo.strength?.toString() || '—'],
+          ['Elongasi', indigo.elongasi_idg?.toString() || '—'],
+        ],
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [30, 30, 40] },
+      });
+    }
+
+    if (weaving.length > 0) {
+      const y = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+      doc.text('Weaving Summary', 15, y);
+      const machines = [...new Set(weaving.map(r => r.machine))];
+      const machineRows = machines.map(m => {
+        const recs = weaving.filter(r => r.machine === m);
+        const avgEffRaw = recs.filter(r => r.a_pct != null && Number(r.a_pct) !== 0);
+        const avgEff = avgEffRaw.length > 0
+          ? avgEffRaw.reduce((s, r) => s + parseFloat(String(r.a_pct)), 0) / avgEffRaw.length
+          : NaN;
+        const totalM = recs.reduce((s, r) => s + parseFloat(String(r.meters || 0)), 0);
+        return [m, recs.length.toString(), isNaN(avgEff) ? '—' : avgEff.toFixed(1) + '%', totalM.toFixed(0) + 'm'];
+      });
+      autoTable(doc, {
+        startY: y + 4, margin: { left: 15, right: 15 },
+        head: [['Machine', 'Shifts', 'Avg Efficiency', 'Total Meters']],
+        body: machineRows,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [30, 30, 40] },
+      });
+    }
+
+    if (inspectFinish.length > 0) {
+      const y = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+      doc.text('Inspect Finish Summary', 15, y);
+      const avgPoint = inspectFinish.filter(r => r.point).reduce((s, r) => s + parseFloat(String(r.point)), 0) / inspectFinish.filter(r => r.point).length;
+      const totalKg = inspectFinish.reduce((s, r) => s + parseFloat(String(r.kg || 0)), 0);
+      autoTable(doc, {
+        startY: y + 4, margin: { left: 15, right: 15 },
+        head: [['SN', 'Shift', 'Lebar', 'KG', 'Susut', 'Grade', 'Point']],
+        body: inspectFinish.slice(0, 100).map(r => [
+          r.sn || '—', r.shift || '—',
+          r.lebar?.toString() || '—', r.kg?.toString() || '—',
+          r.susut_lusi ? r.susut_lusi + '%' : '—',
+          r.grade || '—',
+          parseFloat(String(r.point || 0)).toFixed(2),
+        ]),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [30, 30, 40] },
+        foot: [['', '', '', totalKg.toFixed(1) + ' kg total', '', '', isNaN(avgPoint) ? '—' : 'Avg: ' + avgPoint.toFixed(2)]],
+      });
+    }
+
+    doc.save(`${kp}_production_report.pdf`);
+  };
+
+  const exportExcel = async () => {
+    setExportOpen(false);
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+      ['Field', 'Value'],
+      ['KP', sc?.kp], ['Codename', sc?.codename], ['Customer', sc?.permintaan],
+      ['Date', sc?.tgl ? new Date(sc.tgl).toLocaleDateString() : ''],
+      ['Type', sc?.kat_kode], ['TE', sc?.te], ['Color', sc?.ket_warna],
+      ['Ne Lusi', sc?.ne_lusi], ['Ne Pakan', sc?.ne_pakan], ['Sisir', sc?.sisir],
+      ['Pick', sc?.pick], ['Status', sc?.pipeline_status],
+    ]), 'Sales Contract');
+
+    if (warping) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+      ['Field', 'Value'],
+      ['Date', warping.tgl], ['Machine', warping.no_mc], ['RPM', warping.rpm],
+      ['Total Beam', warping.total_beam], ['Elongasi', warping.elongasi],
+      ['Strength', warping.strength], ['CV%', warping.cv_pct],
+      ['Tension Badan', warping.tension_badan], ['Tension Pinggir', warping.tension_pinggir],
+      ['Lebar Creel', warping.lebar_creel], ['Eff Warping', warping.eff_warping],
+    ]), 'Warping');
+
+    if (indigo) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([indigo]), 'Indigo');
+
+    if (weaving.length) XLSX.utils.book_append_sheet(wb,
+      XLSX.utils.json_to_sheet(weaving.map(r => ({
+        Date: r.tanggal, Shift: r.shift, Machine: r.machine,
+        Efficiency: r.a_pct, Meters: r.meters, KPicks: r.kpicks,
+      }))), 'Weaving');
+
+    if (inspectGray.length) XLSX.utils.book_append_sheet(wb,
+      XLSX.utils.json_to_sheet(inspectGray.map(r => ({
+        Date: r.tg, Machine: r.mc, Beam: r.bm, SN: r.sn_full,
+        Grade: r.gd, Width: r.w, BME: r.bme, BMC: r.bmc,
+      }))), 'Inspect Gray');
+
+    if (bbsfWashing.length) XLSX.utils.book_append_sheet(wb,
+      XLSX.utils.json_to_sheet(bbsfWashing), 'BBSF Washing');
+
+    if (bbsfSanfor.length) XLSX.utils.book_append_sheet(wb,
+      XLSX.utils.json_to_sheet(bbsfSanfor), 'BBSF Sanfor');
+
+    if (inspectFinish.length) XLSX.utils.book_append_sheet(wb,
+      XLSX.utils.json_to_sheet(inspectFinish.map(r => ({
+        SN: r.sn, Date: r.tgl, Shift: r.shift, Operator: r.operator,
+        Lebar: r.lebar, KG: r.kg, SusutLusi: r.susut_lusi,
+        Grade: r.grade, Point: r.point,
+      }))), 'Inspect Finish');
+
+    XLSX.writeFile(wb, `${kp}_production_report.xlsx`);
+  };
 
   return (
     <div>
@@ -719,7 +861,27 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-2 export-dropdown-root">
+              <div className="relative">
+                <Button variant="outline" size="sm" onClick={() => setExportOpen(o => !o)}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+                {exportOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-50 min-w-[140px]" style={{ background: '#E0E5EC', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', borderRadius: '16px' }}>
+                    <button onClick={exportPDF} className="w-full text-left px-4 py-2.5 text-sm" style={{ color: '#3D4852', borderRadius: '16px' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgb(163 177 198 / 0.3)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >Export PDF</button>
+                    <button onClick={exportExcel} className="w-full text-left px-4 py-2.5 text-sm" style={{ color: '#3D4852', borderRadius: '16px' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgb(163 177 198 / 0.3)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      Export Excel
+                    </button>
+                  </div>
+                )}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -727,14 +889,6 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
               >
                 <GitCompare className="w-4 h-4 mr-2" />
                 Compare KPs
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push(`/denim/admin/pipeline-graph?kp=${kp}`)}
-              >
-                <Network className="w-4 h-4 mr-2" />
-                Pipeline Graph
               </Button>
               <Button variant="outline" size="sm" onClick={handleEdit}>
                 Edit
@@ -744,11 +898,11 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
         }
       />
 
-      <div className="px-4 sm:px-8 pb-8 space-y-6">
+      <div className="px-4 py-8 sm:px-8 pb-8 space-y-6">
         <PipelineProgressBar pipelineData={{ sc, warping, indigo, weaving, inspectGray: data.inspectGray, bbsfWashing: data.bbsfWashing, bbsfSanfor: data.bbsfSanfor, inspectFinish }} />
 
         {sc?.pipeline_status === 'COMPLETE' &&
-          (!warping || !indigo || !weaving?.length) && (
+          (!warping || !indigo          || !weaving?.length) && (
           <div 
             className="mx-8 mb-2 px-4 py-3 rounded-[16px] flex items-start gap-2"
             style={{
@@ -1285,12 +1439,12 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
               {/* Summary Stats */}
               {(() => {
                 const totalRecords = weaving.length;
-                const efficiencies = weaving.filter(r => r.a_pct != null).map(r => Number(r.a_pct));
-                const avgEfficiency = efficiencies.length > 0 
-                  ? (efficiencies.reduce((a, b) => a + b, 0) / efficiencies.length).toFixed(1) + '%'
-                  : '—';
-                const totalMeters = weaving.filter(r => r.meters != null)
-                  .reduce((sum, r) => sum + Number(r.meters || 0), 0);
+                const nonZeroEfficiencies = weaving.filter(r => r.a_pct != null && Number(r.a_pct) !== 0).map(r => Number(r.a_pct));
+                const avgEfficiency = nonZeroEfficiencies.length > 0
+                  ? (nonZeroEfficiencies.reduce((a, b) => a + b, 0) / nonZeroEfficiencies.length).toFixed(1) + '%'
+                  : weaving.some(r => r.a_pct != null) ? '0.0%' : '—';
+                const nonZeroRecords = weaving.filter(r => r.meters != null && Number(r.meters) !== 0);
+                const totalMeters = nonZeroRecords.reduce((sum, r) => sum + Number(r.meters || 0), 0);
                 const dates = weaving.filter(r => r.tanggal != null).map(r => new Date(r.tanggal!));
                 const minDate = dates.length > 0 ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
                 const maxDate = dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
@@ -1302,28 +1456,40 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                     : `${fmt(minDate)} ${minDate.getFullYear()} – ${fmt(maxDate)} ${maxDate.getFullYear()}`;
                 };
 
-                // Machine breakdown
-                const machineStats: Record<string, { count: number; effs: number[] }> = {};
+                // Group by machine, sort by total meters descending
+                const machineGroups: Record<string, typeof weaving> = {};
                 weaving.forEach(r => {
                   if (r.machine) {
-                    if (!machineStats[r.machine]) machineStats[r.machine] = { count: 0, effs: [] };
-                    machineStats[r.machine].count++;
-                    if (r.a_pct != null) machineStats[r.machine].effs.push(Number(r.a_pct));
+                    if (!machineGroups[r.machine]) machineGroups[r.machine] = [];
+                    machineGroups[r.machine].push(r);
                   }
                 });
-                const machineBreakdown = Object.entries(machineStats)
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([machine, stats]) => ({
-                    machine,
-                    count: stats.count,
-                    avg: stats.effs.length > 0 
-                      ? (stats.effs.reduce((a, b) => a + b, 0) / stats.effs.length).toFixed(1) 
-                      : null
-                  }));
+                const machineCards = Object.entries(machineGroups)
+                  .map(([machine, records]) => {
+                    const nzRecs = records.filter(r => r.a_pct != null && Number(r.a_pct) !== 0);
+                    const allZeroRecs = records.filter(r => r.a_pct != null && Number(r.a_pct) === 0);
+                    const effs = nzRecs.map(r => Number(r.a_pct));
+                    const avg = effs.length > 0
+                      ? effs.reduce((a, b) => a + b, 0) / effs.length
+                      : null;
+                    const meters = nzRecs.reduce((s, r) => s + Number(r.meters || 0), 0);
+                    const recDates = records.filter(r => r.tanggal != null).map(r => new Date(r.tanggal!));
+                    const mMin = recDates.length > 0 ? new Date(Math.min(...recDates.map(d => d.getTime()))) : null;
+                    const mMax = recDates.length > 0 ? new Date(Math.max(...recDates.map(d => d.getTime()))) : null;
+                    const machineDateRange = () => {
+                      if (!mMin || !mMax) return '—';
+                      const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                      return mMin.getFullYear() === mMax.getFullYear()
+                        ? `${fmt(mMin)} – ${fmt(mMax)}`
+                        : `${fmt(mMin)} – ${fmt(mMax)}`;
+                    };
+                    return { machine, records, nzRecs, allZeroRecs, avg, meters, machineDateRange };
+                  })
+                  .sort((a, b) => b.meters - a.meters);
 
                 return (
                   <>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
                       <div
                         className="rounded-[16px] px-3 py-2"
                         style={{
@@ -1352,7 +1518,7 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                         }}
                       >
                         <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Meters</p>
-                        <p className="text-sm font-semibold" style={{ color: '#3D4852' }}>{totalMeters.toLocaleString()}</p>
+                        <p className="text-sm font-semibold" style={{ color: '#3D4852' }}>{totalMeters > 0 ? totalMeters.toLocaleString() : '—'}</p>
                       </div>
                       <div
                         className="rounded-[16px] px-3 py-2"
@@ -1365,84 +1531,30 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                         <p className="text-sm font-semibold" style={{ color: '#3D4852' }}>{formatDateRange()}</p>
                       </div>
                     </div>
-                    {machineBreakdown.length > 0 && (
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-xs" style={{ color: '#6B7280' }}>
-                        {machineBreakdown.map(m => (
-                          <span key={m.machine}>
-                            {m.machine} · {m.count} shifts · Avg {m.avg ? m.avg + '%' : '—'}
-                          </span>
-                        ))}
-                      </div>
+
+                    {avgEfficiency === '0.0%' && (
+                      <p className="text-xs mb-3" style={{ color: '#9CA3AF' }}>
+                        No production data recorded for these shifts — all efficiency values are zero.
+                      </p>
                     )}
+
+                    <div className="space-y-3">
+                      {machineCards.map(({ machine, records, nzRecs, allZeroRecs, avg, meters, machineDateRange }) => (
+                        <WeavingMachineCard
+                          key={machine}
+                          machine={machine}
+                          records={records}
+                          nzRecs={nzRecs}
+                          allZeroRecs={allZeroRecs}
+                          avg={avg}
+                          meters={meters}
+                          machineDateRange={machineDateRange}
+                        />
+                      ))}
+                    </div>
                   </>
                 );
               })()}
-              <div
-                className="rounded-[16px] overflow-hidden"
-                style={{
-                  background: '#E0E5EC',
-                  boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                }}
-              >
-              <Table>
-                <TableHeader>
-                  <TableRow
-                    style={{
-                      background: '#E0E5EC',
-                      borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                    }}
-                  >
-                    <TableHead
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: '#9CA3AF' }}
-                    >Date</TableHead>
-                    <TableHead
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: '#9CA3AF' }}
-                    >Shift</TableHead>
-                    <TableHead
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: '#9CA3AF' }}
-                    >Machine</TableHead>
-                    <TableHead
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: '#9CA3AF' }}
-                    >Beam</TableHead>
-                    <TableHead
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: '#9CA3AF' }}
-                    >Picks</TableHead>
-                    <TableHead
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: '#9CA3AF' }}
-                    >Meters</TableHead>
-                    <TableHead
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: '#9CA3AF' }}
-                    >Efficiency %</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {weaving.slice(0, 50).map((record) => (
-                    <TableRow
-                      key={record.id}
-                      style={{
-                        background: '#E0E5EC',
-                        borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                      }}
-                    >
-                      <TableCell className="text-sm" style={{ color: '#6B7280' }}>{formatDate(record.tanggal)}</TableCell>
-                      <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.shift || '—'}</TableCell>
-                      <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.machine || '—'}</TableCell>
-                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.beam || '—'}</TableCell>
-                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.kpicks?.toLocaleString() || '—'}</TableCell>
-                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.meters?.toLocaleString() || '—'}</TableCell>
-                      <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.a_pct != null ? Number(record.a_pct).toFixed(1) + '%' : '—'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
             </>
           ) : (
             <p className="text-sm" style={{ color: '#6B7280' }}>No weaving data yet</p>
@@ -1466,7 +1578,7 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                   return acc;
                 }, {} as Record<string, number>);
                 const widths = inspectGray.filter(r => r.w != null).map(r => parseFloat(r.w!));
-                const avgWidth = widths.length > 0 
+                const avgWidth = widths.length > 0
                   ? (widths.reduce((a, b) => a + b, 0) / widths.length).toFixed(1)
                   : null;
                 return (
@@ -1520,61 +1632,97 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
                 );
               })()}
 
-              {/* Rolls table */}
-              <div
-                className="rounded-[16px] overflow-hidden"
-                style={{
-                  background: '#E0E5EC',
-                  boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                }}
-              >
-                <Table>
-                  <TableHeader>
-                    <TableRow
-                      style={{
-                        background: '#E0E5EC',
-                        borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                      }}
-                    >
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Machine</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Beam</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Grade</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Width</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>BMC</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inspectGray.map((record) => (
-                      <TableRow
-                        key={record.id}
-                        style={{
-                          background: '#E0E5EC',
-                          borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                        }}
+              {/* Machine-grouped cards */}
+              {(() => {
+                const machineGroups: Record<string, InspectGrayRecordFull[]> = {};
+                inspectGray.forEach(r => {
+                  const key = r.mc || 'Unknown';
+                  if (!machineGroups[key]) machineGroups[key] = [];
+                  machineGroups[key].push(r);
+                });
+                const cards = Object.entries(machineGroups)
+                  .map(([mc, records]) => {
+                    const widths = records.filter(r => r.w != null).map(r => parseFloat(r.w!));
+                    const avgWidth = widths.length > 0
+                      ? (widths.reduce((a, b) => a + b, 0) / widths.length).toFixed(1)
+                      : null;
+                    const gradeBreakdown = records.reduce((acc, r) => {
+                      const g = r.gd || '—';
+                      acc[g] = (acc[g] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+                    const gradeDist = Object.entries(gradeBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([g, c]) => `${g}:${c}`)
+                      .join(' ');
+                    return { mc, records, count: records.length, avgWidth, gradeDist };
+                  })
+                  .sort((a, b) => b.count - a.count);
+
+                return (
+                  <div className="space-y-3">
+                    {cards.map(({ mc, records, count, avgWidth, gradeDist }) => (
+                      <MachineCard
+                        key={mc}
+                        machineName={mc}
+                        summary={`${count} rolls · Avg width ${avgWidth ?? '—'}″ · Grades: ${gradeDist}`}
+                        defaultOpen={false}
                       >
-                        <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.tg ? new Date(record.tg).toLocaleDateString('en-GB') : '—'}</TableCell>
-                        <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.mc || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.bm ?? '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.gd || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.w || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>
-                          {record.bmc != null ? (
-                            record.bmc > 50 ? (
-                              <span className="inline-flex items-center gap-1" style={{ color: '#D97706' }}>
-                                <span className="w-2 h-2 rounded-full" style={{ background: '#D97706' }}></span>
-                                {record.bmc}
-                              </span>
-                            ) : (
-                              record.bmc
-                            )
-                          ) : '—'}
-                        </TableCell>
-                      </TableRow>
+                        <Table>
+                          <TableHeader>
+                            <TableRow style={{ background: '#D8DCE3', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                              {['Date', 'Beam', 'Grade', 'Width', 'BME', 'BMC', 'SN'].map(col => (
+                                <TableHead key={col} className="text-[10px] font-bold uppercase tracking-widest py-2 px-3" style={{ color: '#9CA3AF' }}>
+                                  {col}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {records.map(record => (
+                              <TableRow
+                                key={record.id}
+                                style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.2)' }}
+                              >
+                                <TableCell className="text-xs py-2 px-3" style={{ color: '#6B7280' }}>
+                                  {record.tg ? new Date(record.tg).toLocaleDateString('en-GB') : '—'}
+                                </TableCell>
+                                <TableCell className="text-xs py-2 px-3 font-mono" style={{ color: '#3D4852' }}>
+                                  {record.bm ?? '—'}
+                                </TableCell>
+                                <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                  {record.gd || '—'}
+                                </TableCell>
+                                <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                  {record.w || '—'}
+                                </TableCell>
+                                <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                  {record.bme ?? '—'}
+                                </TableCell>
+                                <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                  {record.bmc != null ? (
+                                    record.bmc > 50 ? (
+                                      <span className="inline-flex items-center gap-1" style={{ color: '#D97706' }}>
+                                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#D97706' }}></span>
+                                        {record.bmc}
+                                      </span>
+                                    ) : (
+                                      record.bmc
+                                    )
+                                  ) : '—'}
+                                </TableCell>
+                                <TableCell className="text-xs py-2 px-3 font-mono" style={{ color: '#3D4852' }}>
+                                  {record.sn_full || '—'}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </MachineCard>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <p className="text-sm" style={{ color: '#6B7280' }}>No inspect gray data yet</p>
@@ -1643,49 +1791,89 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
               {bbsfSanfor.length > 0 && (
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#6B7280' }}>Sanfor</h4>
-                  <div
-                    className="rounded-[16px] overflow-hidden"
-                    style={{
-                      background: '#E0E5EC',
-                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    <Table>
-                      <TableHeader>
-                        <TableRow
-                          style={{
-                            background: '#E0E5EC',
-                            borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                          }}
-                        >
-                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Date</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Shift</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Type</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Speed</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Susut %</TableHead>
-                          <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Permasalahan</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {bbsfSanfor.map((record) => (
-                          <TableRow
-                            key={record.id}
-                            style={{
-                              background: '#E0E5EC',
-                              borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                            }}
+                  {(() => {
+                    const typeGroups: Record<string, BBSFSanforRun[]> = {};
+                    bbsfSanfor.forEach(r => {
+                      const key = r.sanfor_type || 'Unknown';
+                      if (!typeGroups[key]) typeGroups[key] = [];
+                      typeGroups[key].push(r);
+                    });
+                    const cards = Object.entries(typeGroups)
+                      .map(([sanfor_type, records]) => {
+                        const susutArr = records.filter(r => r.susut != null).map(r => r.susut!);
+                        const avgSusut = susutArr.length > 0
+                          ? (susutArr.reduce((a, b) => a + b, 0) / susutArr.length)
+                          : null;
+                        const speeds = records.filter(r => r.speed != null).map(r => parseFloat(r.speed!));
+                        const avgSpeed = speeds.length > 0
+                          ? (speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(1)
+                          : null;
+                        const recDates = records.filter(r => r.tgl != null).map(r => new Date(r.tgl!));
+                        const dMin = recDates.length > 0 ? new Date(Math.min(...recDates.map(d => d.getTime()))) : null;
+                        const dMax = recDates.length > 0 ? new Date(Math.max(...recDates.map(d => d.getTime()))) : null;
+                        const dateRange = (() => {
+                          if (!dMin || !dMax) return '—';
+                          const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                          return dMin.getFullYear() === dMax.getFullYear()
+                            ? `${fmt(dMin)} – ${fmt(dMax)}`
+                            : `${fmt(dMin)} – ${fmt(dMax)}`;
+                        })();
+                        return { sanfor_type, records, count: records.length, avgSusut, avgSpeed, dateRange };
+                      })
+                      .sort((a, b) => b.count - a.count);
+
+                    return (
+                      <div className="space-y-3">
+                        {cards.map(({ sanfor_type, records, count, avgSusut, avgSpeed, dateRange }) => (
+                          <MachineCard
+                            key={sanfor_type}
+                            machineName={sanfor_type}
+                            summary={`${count} runs · Avg susut ${avgSusut != null ? avgSusut.toFixed(1) : '—'}% · Avg speed ${avgSpeed ?? '—'} · ${dateRange}`}
+                            defaultOpen={true}
                           >
-                            <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.tgl ? new Date(record.tgl).toLocaleDateString('en-GB') : '—'}</TableCell>
-                            <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.shift || '—'}</TableCell>
-                            <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.sanfor_type || '—'}</TableCell>
-                            <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.speed || '—'}</TableCell>
-                            <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.susut != null ? record.susut + '%' : '—'}</TableCell>
-                            <TableCell className="text-sm" style={{ color: '#D97706' }}>{record.permasalahan || '—'}</TableCell>
-                          </TableRow>
+                            <Table>
+                              <TableHeader>
+                                <TableRow style={{ background: '#D8DCE3', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                                  {['Date', 'Shift', 'Speed', 'Susut%', 'Damping', 'Press', 'Tension', 'Permasalahan'].map(col => (
+                                    <TableHead key={col} className="text-[10px] font-bold uppercase tracking-widest py-2 px-3 whitespace-nowrap" style={{ color: '#9CA3AF' }}>
+                                      {col}
+                                    </TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {records.map(record => (
+                                  <TableRow
+                                    key={record.id}
+                                    style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.2)' }}
+                                  >
+                                    <TableCell className="text-xs py-2 px-3 whitespace-nowrap" style={{ color: '#6B7280' }}>
+                                      {record.tgl ? new Date(record.tgl).toLocaleDateString('en-GB') : '—'}
+                                    </TableCell>
+                                    <TableCell className="text-xs py-2 px-3" style={{ color: '#6B7280' }}>
+                                      {record.shift || '—'}
+                                    </TableCell>
+                                    <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                      {record.speed || '—'}
+                                    </TableCell>
+                                    <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                      {record.susut != null ? record.susut + '%' : '—'}
+                                    </TableCell>
+                                    <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>—</TableCell>
+                                    <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>—</TableCell>
+                                    <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>—</TableCell>
+                                    <TableCell className="text-xs py-2 px-3" style={{ color: '#D97706' }}>
+                                      {record.permasalahan || '—'}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </MachineCard>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -1702,181 +1890,359 @@ export default function OrderDetailPage({ kp }: { kp: string }) {
         >
           {inspectFinish.length > 0 ? (
             <div className="space-y-4">
-              {/* Summary Stats */}
+              {/* Filter + search row */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="Search SN..."
+                  value={finishSnFilter}
+                  onChange={e => { setFinishSnFilter(e.target.value.toUpperCase()); }}
+                  className="h-8 px-3 rounded-lg text-xs font-mono"
+                  style={{
+                    background: '#E0E5EC',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#3D4852',
+                    boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)',
+                    width: '160px',
+                  }}
+                />
+              </div>
+
+              {/* Summary bar — all records, always visible */}
               {(() => {
-                const totalRolls = inspectFinish.length;
-                const gradeBreakdown = inspectFinish.reduce((acc, r) => {
+                const filtered = inspectFinish.filter(r => !finishSnFilter || r.sn?.includes(finishSnFilter));
+                const totalRolls = filtered.length;
+                const gradeBreakdown = filtered.reduce((acc, r) => {
                   const g = r.grade || 'Unknown';
                   acc[g] = (acc[g] || 0) + 1;
                   return acc;
                 }, {} as Record<string, number>);
-                const lebarArr = inspectFinish.filter(r => r.lebar != null).map(r => r.lebar!);
-                const avgLebar = lebarArr.length > 0 
-                  ? (lebarArr.reduce((a, b) => a + b, 0) / lebarArr.length).toFixed(1)
-                  : null;
-                const kgArr = inspectFinish.filter(r => r.kg != null).map(r => r.kg!);
-                const avgKg = kgArr.length > 0
-                  ? (kgArr.reduce((a, b) => a + b, 0) / kgArr.length).toFixed(1)
-                  : null;
-                const susutArr = inspectFinish.filter(r => r.susut_lusi != null).map(r => r.susut_lusi!);
-                const avgSusut = susutArr.length > 0
-                  ? (susutArr.reduce((a, b) => a + b, 0) / susutArr.length).toFixed(1)
-                  : null;
-                const pointArr = inspectFinish.filter(r => r.point != null).map(r => r.point!);
-                const avgPoint = pointArr.length > 0
-                  ? (pointArr.reduce((a, b) => a + b, 0) / pointArr.length).toFixed(2)
-                  : null;
+                const gradeLabel = Object.entries(gradeBreakdown)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([g, c]) => `${g}:${c}`)
+                  .join(' · ') || '—';
+                const pointArr = filtered.filter(r => r.point != null).map(r => r.point!);
+                const avgPoint = pointArr.length > 0 ? (pointArr.reduce((a, b) => a + b, 0) / pointArr.length) : null;
+                const avgPointStr = avgPoint != null ? avgPoint.toFixed(2) : null;
+                const avgPointColor = avgPoint != null && avgPoint > 4 ? '#DC2626' : avgPoint != null && avgPoint > 2 ? '#D97706' : '#3D4852';
+                const lebarArr = filtered.filter(r => r.lebar != null).map(r => r.lebar!);
+                const avgLebar = lebarArr.length > 0 ? (lebarArr.reduce((a, b) => a + b, 0) / lebarArr.length).toFixed(1) : null;
+                const susutArr = filtered.filter(r => r.susut_lusi != null).map(r => r.susut_lusi!);
+                const avgSusut = susutArr.length > 0 ? (susutArr.reduce((a, b) => a + b, 0) / susutArr.length).toFixed(1) : null;
+                const totalKg = filtered.filter(r => r.kg != null).reduce((a, r) => a + (r.kg || 0), 0);
+
                 return (
-                  <>
-                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-4">
-                      <div
-                        className="rounded-[16px] p-3"
-                        style={{
-                          background: '#E0E5EC',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                        }}
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Rolls</p>
-                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{totalRolls}</p>
+                  <div
+                    className="rounded-[16px] px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2"
+                    style={{
+                      background: '#E0E5EC',
+                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    {[
+                      { label: 'Rolls', value: totalRolls },
+                      { label: 'Grade', value: gradeLabel },
+                      { label: 'Avg Pt', value: avgPointStr ? avgPointStr + ' pt' : '—', color: avgPointStr ? avgPointColor : undefined },
+                      { label: 'Avg L', value: avgLebar ? avgLebar + ' cm' : '—' },
+                      { label: 'Avg Su', value: avgSusut ? avgSusut + '%' : '—' },
+                      { label: 'Total KG', value: totalKg > 0 ? totalKg.toLocaleString() + ' kg' : '—' },
+                    ].map(({ label, value, color }) => (
+                      <div key={label} className="flex items-baseline gap-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>{label}</span>
+                        <span className="text-sm font-semibold" style={{ color: color || '#3D4852' }}>{value}</span>
                       </div>
-                      <div
-                        className="rounded-[16px] p-3"
-                        style={{
-                          background: '#E0E5EC',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                        }}
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Lebar</p>
-                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgLebar ? avgLebar + ' cm' : '—'}</p>
-                      </div>
-                      <div
-                        className="rounded-[16px] p-3"
-                        style={{
-                          background: '#E0E5EC',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                        }}
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg KG</p>
-                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgKg || '—'}</p>
-                      </div>
-                      <div
-                        className="rounded-[16px] p-3"
-                        style={{
-                          background: '#E0E5EC',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                        }}
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Susut</p>
-                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgSusut ? avgSusut + '%' : '—'}</p>
-                      </div>
-                      <div
-                        className="rounded-[16px] p-3"
-                        style={{
-                          background: '#E0E5EC',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                        }}
-                      >
-                        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Point</p>
-                        <p className="text-xl font-semibold" style={{ color: '#3D4852' }}>{avgPoint || '—'}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {Object.entries(gradeBreakdown).sort((a, b) => b[1] - a[1]).map(([grade, count]) => {
-                        const colors: Record<string, string> = {
-                          A: '#16A34A',
-                          B: '#D97706',
-                          C: '#EA580C',
-                          R: '#DC2626',
-                        };
-                        return (
-                          <span
-                            key={grade}
-                            className="px-2 py-1 rounded-[9999px] text-xs font-bold"
-                            style={{
-                              background: '#E0E5EC',
-                              color: colors[grade] || '#6B7280',
-                              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                            }}
-                          >
-                            {grade}: {count}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </>
+                    ))}
+                  </div>
                 );
               })()}
 
-              {/* Rolls table */}
-              <div
-                className="rounded-[16px] overflow-hidden"
-                style={{
-                  background: '#E0E5EC',
-                  boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                }}
-              >
-                <Table>
-                  <TableHeader>
-                    <TableRow
-                      style={{
-                        background: '#E0E5EC',
-                        borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                      }}
-                    >
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>SN</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Shift</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Operator</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Lebar</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>KG</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Susut</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Grade</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase" style={{ color: '#9CA3AF' }}>Point</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inspectFinish.slice(0, 50).map((record) => (
-                      <TableRow
-                        key={record.id}
-                        style={{
-                          background: '#E0E5EC',
-                          borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                        }}
+              {/* Machine-grouped cards */}
+              {(() => {
+                const searchFiltered = inspectFinish.filter(r => !finishSnFilter || r.sn?.includes(finishSnFilter));
+
+                const machineGroups: Record<string, InspectFinishRecord[]> = {};
+                searchFiltered.forEach(r => {
+                  const key = r.sn_machine || 'Unknown';
+                  if (!machineGroups[key]) machineGroups[key] = [];
+                  machineGroups[key].push(r);
+                });
+
+                const cards = Object.entries(machineGroups)
+                  .map(([sn_machine, records]) => {
+                    const pointArr = records.filter(r => r.point != null).map(r => r.point!);
+                    const avgPoint = pointArr.length > 0
+                      ? (pointArr.reduce((a, b) => a + b, 0) / pointArr.length)
+                      : null;
+                    const avgPointStr = avgPoint != null ? avgPoint.toFixed(2) : null;
+                    const avgPointColor = avgPoint != null && avgPoint > 4 ? '#DC2626' : avgPoint != null && avgPoint > 2 ? '#D97706' : '#3D4852';
+                    const lebarArr = records.filter(r => r.lebar != null).map(r => r.lebar!);
+                    const avgLebar = lebarArr.length > 0
+                      ? (lebarArr.reduce((a, b) => a + b, 0) / lebarArr.length).toFixed(1)
+                      : null;
+                    const totalKg = records.filter(r => r.kg != null).reduce((a, r) => a + (r.kg || 0), 0);
+                    const gradeBreakdown = records.reduce((acc, r) => {
+                      const g = r.grade || '—';
+                      acc[g] = (acc[g] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+                    const topGrade = Object.entries(gradeBreakdown).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+                    return { sn_machine, records, count: records.length, avgPoint, avgPointStr, avgPointColor, avgLebar, totalKg, topGrade };
+                  })
+                  .sort((a, b) => (b.avgPoint ?? 0) - (a.avgPoint ?? 0));
+
+                if (cards.length === 0) {
+                  return (
+                    <p className="text-sm text-center py-6" style={{ color: '#9CA3AF' }}>
+                      No matching records
+                    </p>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {cards.map(({ sn_machine, records, count, avgPoint, avgPointStr, avgPointColor, avgLebar, totalKg, topGrade }) => (
+                      <MachineCard
+                        key={sn_machine}
+                        machineName={sn_machine}
+                        summary={
+                          <span style={{ color: avgPointColor }}>
+                            {count} rolls · Avg pt {avgPointStr ?? '—'} · Avg {avgLebar ?? '—'}cm · {totalKg > 0 ? totalKg.toLocaleString() + 'kg' : '—'} · Top grade: {topGrade}
+                          </span>
+                        }
+                        defaultOpen={false}
                       >
-                        <TableCell className="text-sm font-mono" style={{ color: '#3D4852' }}>{record.sn || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.shift || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#6B7280' }}>{record.operator || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.lebar?.toLocaleString() || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.kg?.toLocaleString() || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.susut_lusi != null ? record.susut_lusi + '%' : '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>{record.grade || '—'}</TableCell>
-                        <TableCell className="text-sm" style={{ color: '#3D4852' }}>
-                          {record.point != null ? (
-                            record.point > 4.0 ? (
-                              <span className="inline-flex items-center gap-1" style={{ color: '#DC2626' }}>
-                                <span className="w-2 h-2 rounded-full" style={{ background: '#DC2626' }}></span>
-                                {record.point}
-                              </span>
-                            ) : record.point > 2.0 ? (
-                              <span className="inline-flex items-center gap-1" style={{ color: '#D97706' }}>
-                                <span className="w-2 h-2 rounded-full" style={{ background: '#D97706' }}></span>
-                                {record.point}
-                              </span>
-                            ) : (
-                              record.point
-                            )
-                          ) : '—'}
-                        </TableCell>
-                      </TableRow>
+                        <Table>
+                          <TableHeader>
+                            <TableRow style={{ background: '#D8DCE3', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                              {['SN', 'Shift', 'Operator', 'Lebar', 'KG', 'Susut', 'Grade', 'Point'].map(col => (
+                                <TableHead key={col} className="text-[10px] font-bold uppercase tracking-widest py-2 px-3 whitespace-nowrap" style={{ color: '#9CA3AF' }}>
+                                  {col}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {[...records]
+                              .sort((a, b) => (b.point ?? 0) - (a.point ?? 0))
+                              .map(record => (
+                                <TableRow
+                                  key={record.id}
+                                  onClick={() => setSelectedSN(record.sn)}
+                                  className="cursor-pointer"
+                                  style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.2)' }}
+                                >
+                                  <TableCell className="text-xs py-2 px-3 font-mono whitespace-nowrap" style={{ color: '#3D4852' }}>
+                                    {record.sn || '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs py-2 px-3" style={{ color: '#6B7280' }}>
+                                    {record.shift || '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs py-2 px-3" style={{ color: '#6B7280' }}>
+                                    {record.operator || '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                    {record.lebar?.toLocaleString() || '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                    {record.kg?.toLocaleString() || '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                    {record.susut_lusi != null ? record.susut_lusi + '%' : '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                    {record.grade || '—'}
+                                  </TableCell>
+                                  <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                                    {record.point != null ? (
+                                      record.point > 4.0 ? (
+                                        <span className="inline-flex items-center gap-1" style={{ color: '#DC2626' }}>
+                                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#DC2626' }}></span>
+                                          {record.point}
+                                        </span>
+                                      ) : record.point > 2.0 ? (
+                                        <span className="inline-flex items-center gap-1" style={{ color: '#D97706' }}>
+                                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: '#D97706' }}></span>
+                                          {record.point}
+                                        </span>
+                                      ) : (
+                                        record.point
+                                      )
+                                    ) : '—'}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </MachineCard>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <p className="text-sm" style={{ color: '#6B7280' }}>No inspect finish data yet</p>
           )}
         </SectionCard>
+
+        {/* Roll Trace Drawer */}
+        {selectedSN && data && (
+          <RollTraceDrawer
+            selectedSN={selectedSN}
+            data={data}
+            kp={kp}
+            onClose={() => setSelectedSN(null)}
+          />
+        )}
       </div>
     </div>
   );
 }
+
+// Reusable collapsible MachineCard — used by Weaving, Inspect Gray, Inspect Finish, BBSF Sanfor
+function MachineCard({
+  machineName,
+  summary,
+  children,
+  defaultOpen = false,
+}: {
+  machineName: string;
+  summary: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div
+      style={{
+        background: '#E0E5EC',
+        borderRadius: '12px',
+        boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Card header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full text-left px-4 py-3 flex items-center justify-between cursor-pointer bg-[hsl(var(--muted))] rounded-lg hover:bg-white/[0.05] transition-colors"
+        style={{ background: 'rgb(38 38 38)', border: 'none' }}
+      >
+        <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
+          <span className="font-mono font-semibold text-zinc-100 text-sm">{machineName}</span>
+          <span className="text-xs text-zinc-400 ml-1">{summary}</span>
+        </div>
+        <ChevronDown
+          className="w-4 h-4 flex-shrink-0 transition-transform"
+          style={{
+            color: '#9CA3AF',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+          }}
+        />
+      </button>
+
+      {/* Expanded body */}
+      {open && (
+        <div style={{ borderTop: '1px solid rgb(163 177 198 / 0.3)' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Collapsible machine card for Weaving section — uses MachineCard layout
+function WeavingMachineCard({
+  machine,
+  records,
+  nzRecs,
+  allZeroRecs,
+  avg,
+  meters,
+  machineDateRange,
+}: {
+  machine: string;
+  records: WeavingRecord[];
+  nzRecs: WeavingRecord[];
+  allZeroRecs: WeavingRecord[];
+  avg: number | null;
+  meters: number;
+  machineDateRange: () => string;
+}) {
+  const effColor = avg === null ? '#9CA3AF' : avg >= 80 ? '#16A34A' : avg >= 70 ? '#D97706' : '#DC2626';
+  const effLabel = avg === null ? '—' : avg.toFixed(1) + '%';
+  const effBg = avg === null ? 'transparent' : avg >= 80 ? 'rgb(22 163 74 / 0.08)' : avg >= 70 ? 'rgb(217 119 6 / 0.08)' : 'rgb(220 38 38 / 0.08)';
+
+  const sortedNz = [...nzRecs].sort((a, b) => {
+    if (!a.tanggal) return 1;
+    if (!b.tanggal) return -1;
+    return new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime();
+  });
+
+  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+
+  const summary = (
+    <>
+      {nzRecs.length} of {records.length} shifts · Avg {effLabel} · {meters > 0 ? meters.toLocaleString() + 'm' : '—'} · {machineDateRange()}
+    </>
+  );
+
+  return (
+    <MachineCard machineName={machine} summary={summary} defaultOpen={false}>
+      {sortedNz.length > 0 ? (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow style={{ background: '#D8DCE3', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                {['Date', 'Shift', 'Efficiency', 'Meters', 'Picks'].map(col => (
+                  <TableHead key={col} className="text-[10px] font-bold uppercase tracking-widest py-2 px-3" style={{ color: '#9CA3AF' }}>
+                    {col}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedNz.map(record => {
+                const eff = Number(record.a_pct);
+                const rowEffColor = eff >= 80 ? '#16A34A' : eff >= 70 ? '#D97706' : '#DC2626';
+                return (
+                  <TableRow
+                    key={record.id}
+                    style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.2)' }}
+                  >
+                    <TableCell className="text-xs py-2 px-3" style={{ color: '#6B7280' }}>
+                      {record.tanggal ? fmt(new Date(record.tanggal)) : '—'}
+                    </TableCell>
+                    <TableCell className="text-xs py-2 px-3" style={{ color: '#6B7280' }}>
+                      {record.shift || '—'}
+                    </TableCell>
+                    <TableCell className="text-xs py-2 px-3 font-semibold" style={{ color: rowEffColor }}>
+                      {eff.toFixed(1)}%
+                    </TableCell>
+                    <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                      {record.meters?.toLocaleString() || '—'}
+                    </TableCell>
+                    <TableCell className="text-xs py-2 px-3" style={{ color: '#3D4852' }}>
+                      {record.kpicks?.toLocaleString() || '—'}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          {allZeroRecs.length > 0 && (
+            <p className="text-xs px-4 py-2" style={{ color: '#9CA3AF', borderTop: '1px solid rgb(163 177 198 / 0.2)' }}>
+              {allZeroRecs.length} zero-production shift{allZeroRecs.length !== 1 ? 's' : ''} hidden
+            </p>
+          )}
+        </>
+      ) : (
+        <p className="text-xs px-4 py-3" style={{ color: '#9CA3AF' }}>
+          No non-zero records
+        </p>
+      )}
+    </MachineCard>
+  );
+}
+

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { requireAuth, requireRole, requireApiKey } from '../middleware/auth';
 import { Prisma } from '@prisma/client';
@@ -26,6 +26,10 @@ import { prisma } from '../lib/prisma';
 import { encodeKP, decodeKP, generateNextKP } from '../lib/kp';
 
 const router = Router();
+
+router.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Multer: store uploads in memory (files are processed immediately, not saved to disk)
 const upload = multer({
@@ -515,28 +519,32 @@ router.post('/sales-contracts', requireAuth,
         });
       }
 
-      // Auto-generate KP using the new KP code system
-      const kp = await generateNextKP(prisma);
-      const kp_sequence = decodeKP(kp);
-
-      const sc = await prisma.salesContract.create({
-        data: {
-          kp,
-          kp_sequence,
-          kp_status: 'ACTIVE',
-          tgl: new Date(tgl),
-          permintaan: permintaan || null,
-          status: status || 'SCN',
-          kat_kode: kat_kode || null,
-          codename: codename || null,
-          kons_kode: kons_kode || null,
-          ket_warna: ket_warna || null,
-          proses: proses || 'PROSES',
-          te: te ? parseInt(te) : null,
-          pipeline_status: pipeline_status || 'PENDING_APPROVAL',
-          acc: null,
-        },
-      });
+      // Auto-generate KP and insert atomically under SERIALIZABLE isolation.
+      // Without this, two concurrent requests could both read the same max(kp_sequence)
+      // and compute the same next KP before either has inserted, causing a unique
+      // constraint collision. SERIALIZABLE makes PostgreSQL abort one of them cleanly.
+      const sc = await prisma.$transaction(async (tx: any) => {
+        const kp = await generateNextKP(tx);
+        const kp_sequence = decodeKP(kp);
+        return tx.salesContract.create({
+          data: {
+            kp,
+            kp_sequence,
+            kp_status: 'ACTIVE',
+            tgl: new Date(tgl),
+            permintaan: permintaan || null,
+            status: status || 'SCN',
+            kat_kode: kat_kode || null,
+            codename: codename || null,
+            kons_kode: kons_kode || null,
+            ket_warna: ket_warna || null,
+            proses: proses || 'PROSES',
+            te: te ? parseInt(te) : null,
+            pipeline_status: pipeline_status || 'PENDING_APPROVAL',
+            acc: null,
+          },
+        });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
       return res.status(201).json(sc);
     } catch (err: any) {
@@ -984,15 +992,15 @@ router.post('/bbsf', requireAuth,
       const washingFields = [
         'ws_shift', 'ws_mc', 'ws_speed', 'ws_larutan_1', 'ws_temp_1', 'ws_padder_1',
         'ws_dancing_1', 'ws_larutan_2', 'ws_temp_2', 'ws_padder_2', 'ws_dancing_2',
-        'ws_skew', 'ws_tekanan_boiler', 'ws_temp_1_zone', 'ws_temp_2_zone', 'ws_temp_3_zone',
-        'ws_temp_4_zone', 'ws_temp_5_zone', 'ws_temp_6_zone', 'ws_lebar_awal', 'ws_panjang_awal',
-        'ws_permasalahan', 'ws_pelaksana'
+        'ws_skala_skew', 'ws_tekanan_boiler', 'ws_press_dancing_1', 'ws_press_dancing_2', 'ws_press_dancing_3',
+        'ws_temp_zone_1', 'ws_temp_zone_2', 'ws_temp_zone_3', 'ws_temp_zone_4', 'ws_temp_zone_5', 'ws_temp_zone_6',
+        'ws_lebar_awal', 'ws_panjang_awal', 'ws_permasalahan', 'ws_pelaksana', 'ws_jam_proses'
       ];
       
       const sanforFields = [
-        'sf1_shift', 'sf1_mc', 'sf1_jam', 'sf1_speed', 'sf1_damping', 'sf1_press',
+        'sf1_sanfor_type', 'sf1_shift', 'sf1_mc', 'sf1_jam', 'sf1_speed', 'sf1_damping', 'sf1_press',
         'sf1_tension', 'sf1_tension_limit', 'sf1_temperatur', 'sf1_susut', 'sf1_permasalahan', 'sf1_pelaksana',
-        'sf2_shift', 'sf2_mc', 'sf2_jam', 'sf2_speed', 'sf2_damping', 'sf2_press',
+        'sf2_sanfor_type', 'sf2_shift', 'sf2_mc', 'sf2_jam', 'sf2_speed', 'sf2_damping', 'sf2_press',
         'sf2_tension', 'sf2_temperatur', 'sf2_susut', 'sf2_awal', 'sf2_akhir', 'sf2_panjang',
         'sf2_permasalahan', 'sf2_pelaksana'
       ];
@@ -1090,15 +1098,15 @@ router.put('/bbsf', requireAuth,
       const washingFields = [
         'ws_shift', 'ws_mc', 'ws_speed', 'ws_larutan_1', 'ws_temp_1', 'ws_padder_1',
         'ws_dancing_1', 'ws_larutan_2', 'ws_temp_2', 'ws_padder_2', 'ws_dancing_2',
-        'ws_skew', 'ws_tekanan_boiler', 'ws_temp_1_zone', 'ws_temp_2_zone', 'ws_temp_3_zone',
-        'ws_temp_4_zone', 'ws_temp_5_zone', 'ws_temp_6_zone', 'ws_lebar_awal', 'ws_panjang_awal',
-        'ws_permasalahan', 'ws_pelaksana'
+        'ws_skala_skew', 'ws_tekanan_boiler', 'ws_press_dancing_1', 'ws_press_dancing_2', 'ws_press_dancing_3',
+        'ws_temp_zone_1', 'ws_temp_zone_2', 'ws_temp_zone_3', 'ws_temp_zone_4', 'ws_temp_zone_5', 'ws_temp_zone_6',
+        'ws_lebar_awal', 'ws_panjang_awal', 'ws_permasalahan', 'ws_pelaksana', 'ws_jam_proses'
       ];
       
       const sanforFields = [
-        'sf1_shift', 'sf1_mc', 'sf1_jam', 'sf1_speed', 'sf1_damping', 'sf1_press',
+        'sf1_sanfor_type', 'sf1_shift', 'sf1_mc', 'sf1_jam', 'sf1_speed', 'sf1_damping', 'sf1_press',
         'sf1_tension', 'sf1_tension_limit', 'sf1_temperatur', 'sf1_susut', 'sf1_permasalahan', 'sf1_pelaksana',
-        'sf2_shift', 'sf2_mc', 'sf2_jam', 'sf2_speed', 'sf2_damping', 'sf2_press',
+        'sf2_sanfor_type', 'sf2_shift', 'sf2_mc', 'sf2_jam', 'sf2_speed', 'sf2_damping', 'sf2_press',
         'sf2_tension', 'sf2_temperatur', 'sf2_susut', 'sf2_awal', 'sf2_akhir', 'sf2_panjang',
         'sf2_permasalahan', 'sf2_pelaksana'
       ];
@@ -2312,89 +2320,11 @@ router.get('/weaving/records',
   }
 });
 
-// GET /api/denim/pipeline-graph?kp=BRSE
-// GET /api/denim/pipeline-graph?sn=AE04182D03L
-// GET /api/denim/pipeline-graph?kp=BRSE&beam=182
-router.get('/pipeline-graph', requireAuth, requireRole('admin'), async (req: Request, res: Response) => {
-  try {
-    const { kp: kpParam, sn: snParam, beam: beamParam } = req.query as Record<string, string>;
-
-    // Decode SN if provided
-    let kp: string | undefined = kpParam;
-    let beamNumber: number | null = beamParam ? parseInt(beamParam) : null;
-    let machine: string | null = null;
-
-    if (snParam) {
-      const m = String(snParam).trim().match(/^([A-Z]{1,3}\d{2})(\d+)([A-Z]\d+[A-Z N])$/);
-      if (m) {
-        machine = m[1];
-        beamNumber = parseInt(m[2]);
-      }
-      // Find KP from InspectFinish or InspectGray
-      if (!kp) {
-        const finish = await prisma.inspectFinishRecord.findFirst({ where: { sn: snParam }, select: { kp: true } });
-        const gray = await prisma.inspectGrayRecord.findFirst({ where: { sn_full: snParam }, select: { kp: true } });
-        kp = (finish?.kp || gray?.kp) ?? undefined;
-      }
-    }
-
-    if (!kp) return res.status(400).json({ error: 'kp or sn required' });
-
-    // Fetch all stages in parallel
-    const [sc, warpingRun, indigoRun, allBeams, allWeaving, allInspectGray, bbsfWashing, bbsfSanfor, allInspectFinish] = await Promise.all([
-      prisma.salesContract.findUnique({ where: { kp } }),
-      prisma.warpingRun.findUnique({ where: { kp }, include: { beams: { orderBy: { position: 'asc' } } } }),
-      prisma.indigoRun.findUnique({ where: { kp } }),
-      prisma.warpingBeam.findMany({ where: { kp }, orderBy: { position: 'asc' } }),
-      prisma.weavingRecord.findMany({ where: { kp }, orderBy: [{ tanggal: 'asc' }, { machine: 'asc' }] }),
-      prisma.inspectGrayRecord.findMany({ where: { kp }, orderBy: { tg: 'asc' } }),
-      prisma.bBSFWashingRun.findMany({ where: { kp }, orderBy: { tgl: 'asc' } }),
-      prisma.bBSFSanforRun.findMany({ where: { kp }, orderBy: [{ tgl: 'asc' }, { sanfor_type: 'asc' }] }),
-      prisma.inspectFinishRecord.findMany({ where: { kp }, orderBy: { tgl: 'asc' } }),
-    ]);
-
-    // Beam-level filter if beam specified
-    let beamTrace: {
-      beam_number: number;
-      machine: string | null;
-      warpingBeam: (typeof allBeams)[number] | null;
-      weavingRecords: typeof allWeaving;
-      inspectGrayRecords: typeof allInspectGray;
-      bbsfNote: string;
-      inspectFinishRecords: typeof allInspectFinish;
-    } | null = null;
-    if (beamNumber) {
-      const selectedBeam = allBeams.find(b => b.beam_number === beamNumber);
-      beamTrace = {
-        beam_number: beamNumber,
-        machine,
-        warpingBeam: selectedBeam || null,
-        weavingRecords: machine
-          ? allWeaving.filter(w => w.machine === machine)
-          : allWeaving.filter(w => w.warping_beam_id === selectedBeam?.id),
-        inspectGrayRecords: allInspectGray.filter(g => g.bm === beamNumber),
-        bbsfNote: 'BBSF data is tracked at order level only',
-        inspectFinishRecords: allInspectFinish.filter(f => f.sn_beam === beamNumber),
-      };
-    }
-
-    return res.json({
-      anchor: snParam ? { type: 'sn', value: snParam } : beamNumber ? { type: 'beam', value: String(beamNumber) } : { type: 'kp', value: kp },
-      kp,
-      salesContract: sc,
-      warpingRun,
-      indigoRun,
-      allBeams,
-      allWeavingRecords: allWeaving,
-      allInspectGray,
-      bbsfWashing,
-      bbsfSanfor,
-      allInspectFinish,
-      beamTrace,
-    });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
-  }
+// Catch-all error handler — catches anything that escapes a route's try/catch
+// (unexpected sync throws, middleware errors, etc.)
+router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[denim router error]', err);
+  res.status(500).json({ error: err?.message || 'Internal server error' });
 });
 
 export default router;

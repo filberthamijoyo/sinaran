@@ -35,19 +35,24 @@ interface BBSFFormState {
   ws_temp_2: string;
   ws_padder_2: string;
   ws_dancing_2: string;
-  ws_skew: string;
+  ws_skala_skew: string;
   ws_tekanan_boiler: string;
-  ws_temp_1_zone: string;
-  ws_temp_2_zone: string;
-  ws_temp_3_zone: string;
-  ws_temp_4_zone: string;
-  ws_temp_5_zone: string;
-  ws_temp_6_zone: string;
+  ws_press_dancing_1: string;
+  ws_press_dancing_2: string;
+  ws_press_dancing_3: string;
+  ws_temp_zone_1: string;
+  ws_temp_zone_2: string;
+  ws_temp_zone_3: string;
+  ws_temp_zone_4: string;
+  ws_temp_zone_5: string;
+  ws_temp_zone_6: string;
   ws_lebar_awal: string;
   ws_panjang_awal: string;
   ws_permasalahan: string;
   ws_pelaksana: string;
+  ws_jam_proses: string;
   // Sanfor 1
+  sf1_sanfor_type: string;
   sf1_shift: string;
   sf1_mc: string;
   sf1_jam: string;
@@ -61,6 +66,7 @@ interface BBSFFormState {
   sf1_permasalahan: string;
   sf1_pelaksana: string;
   // Sanfor 2
+  sf2_sanfor_type: string;
   sf2_shift: string;
   sf2_mc: string;
   sf2_jam: string;
@@ -90,19 +96,24 @@ const emptyForm = (): BBSFFormState => ({
   ws_temp_2: '',
   ws_padder_2: '',
   ws_dancing_2: '',
-  ws_skew: '',
+  ws_skala_skew: '',
   ws_tekanan_boiler: '',
-  ws_temp_1_zone: '',
-  ws_temp_2_zone: '',
-  ws_temp_3_zone: '',
-  ws_temp_4_zone: '',
-  ws_temp_5_zone: '',
-  ws_temp_6_zone: '',
+  ws_press_dancing_1: '',
+  ws_press_dancing_2: '',
+  ws_press_dancing_3: '',
+  ws_temp_zone_1: '',
+  ws_temp_zone_2: '',
+  ws_temp_zone_3: '',
+  ws_temp_zone_4: '',
+  ws_temp_zone_5: '',
+  ws_temp_zone_6: '',
   ws_lebar_awal: '',
   ws_panjang_awal: '',
   ws_permasalahan: '',
   ws_pelaksana: '',
+  ws_jam_proses: '',
   // Sanfor 1
+  sf1_sanfor_type: 'SF1',
   sf1_shift: '',
   sf1_mc: '',
   sf1_jam: '',
@@ -116,6 +127,7 @@ const emptyForm = (): BBSFFormState => ({
   sf1_permasalahan: '',
   sf1_pelaksana: '',
   // Sanfor 2
+  sf2_sanfor_type: 'SF2',
   sf2_shift: '',
   sf2_mc: '',
   sf2_jam: '',
@@ -182,38 +194,63 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
             ws_temp_2: w.temp_2?.toString() || '',
             ws_padder_2: w.padder_2?.toString() || '',
             ws_dancing_2: w.dancing_2?.toString() || '',
-            ws_skew: w.skew?.toString() || '',
+            ws_skala_skew: w.skala_skew?.toString() || '',
             ws_tekanan_boiler: w.tekanan_boiler?.toString() || '',
-            ws_temp_1_zone: w.temp_1_zone?.toString() || '',
-            ws_temp_2_zone: w.temp_2_zone?.toString() || '',
-            ws_temp_3_zone: w.temp_3_zone?.toString() || '',
-            ws_temp_4_zone: w.temp_4_zone?.toString() || '',
-            ws_temp_5_zone: w.temp_5_zone?.toString() || '',
-            ws_temp_6_zone: w.temp_6_zone?.toString() || '',
+            ws_press_dancing_1: w.press_dancing_1?.toString() || '',
+            ws_press_dancing_2: w.press_dancing_2?.toString() || '',
+            ws_press_dancing_3: w.press_dancing_3?.toString() || '',
+            ws_temp_zone_1: w.temp_zone_1?.toString() || '',
+            ws_temp_zone_2: w.temp_zone_2?.toString() || '',
+            ws_temp_zone_3: w.temp_zone_3?.toString() || '',
+            ws_temp_zone_4: w.temp_zone_4?.toString() || '',
+            ws_temp_zone_5: w.temp_zone_5?.toString() || '',
+            ws_temp_zone_6: w.temp_zone_6?.toString() || '',
             ws_lebar_awal: w.lebar_awal?.toString() || '',
             ws_panjang_awal: w.panjang_awal?.toString() || '',
             ws_permasalahan: w.permasalahan || '',
             ws_pelaksana: w.pelaksana || '',
+            ws_jam_proses: w.jam_proses || '',
           }));
         }
         if (data?.bbsfSanfor && data.bbsfSanfor.length > 0) {
-          // Sanfor 1 and 2 share the same table, take first record
           const s = data.bbsfSanfor[0];
-          setForm(f => ({
-            ...f,
-            sf1_shift: s.shift || '',
-            sf1_mc: s.mc || '',
-            sf1_jam: s.jam?.toString() || '',
-            sf1_speed: s.speed?.toString() || '',
-            sf1_damping: s.damping?.toString() || '',
-            sf1_press: s.press?.toString() || '',
-            sf1_tension: s.tension?.toString() || '',
-            sf1_tension_limit: s.tension_limit?.toString() || '',
-            sf1_temperatur: s.temperatur?.toString() || '',
-            sf1_susut: s.susut?.toString() || '',
-            sf1_permasalahan: s.permasalahan || '',
-            sf1_pelaksana: s.pelaksana || '',
-          }));
+          if (s.sanfor_type === 'SF1') {
+            setForm(f => ({
+              ...f,
+              sf1_sanfor_type: s.sanfor_type || 'SF1',
+              sf1_shift: s.shift || '',
+              sf1_mc: s.mc || '',
+              sf1_jam: s.jam?.toString() || '',
+              sf1_speed: s.speed?.toString() || '',
+              sf1_damping: s.damping?.toString() || '',
+              sf1_press: s.press?.toString() || '',
+              sf1_tension: s.tension?.toString() || '',
+              sf1_tension_limit: s.tension_limit?.toString() || '',
+              sf1_temperatur: s.temperatur?.toString() || '',
+              sf1_susut: s.susut?.toString() || '',
+              sf1_permasalahan: s.permasalahan || '',
+              sf1_pelaksana: s.pelaksana || '',
+            }));
+          } else {
+            setForm(f => ({
+              ...f,
+              sf2_sanfor_type: s.sanfor_type || 'SF2',
+              sf2_shift: s.shift || '',
+              sf2_mc: s.mc || '',
+              sf2_jam: s.jam?.toString() || '',
+              sf2_speed: s.speed?.toString() || '',
+              sf2_damping: s.damping?.toString() || '',
+              sf2_press: s.press?.toString() || '',
+              sf2_tension: s.tension?.toString() || '',
+              sf2_temperatur: s.temperatur?.toString() || '',
+              sf2_susut: s.susut?.toString() || '',
+              sf2_awal: s.awal?.toString() || '',
+              sf2_akhir: s.akhir?.toString() || '',
+              sf2_panjang: s.panjang?.toString() || '',
+              sf2_permasalahan: s.permasalahan || '',
+              sf2_pelaksana: s.pelaksana || '',
+            }));
+          }
         }
       } catch (e) {
         console.error('Failed to load existing data:', e);
@@ -238,6 +275,9 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
           kp,
           tgl: new Date().toISOString(),
           ...form,
+          // Ensure sanfor_type is included for whichever sanfor tab was last active
+          sf1_sanfor_type: activeTab === 'sanfor1' || activeTab === 'sanfor2' ? 'SF1' : '',
+          sf2_sanfor_type: activeTab === 'sanfor2' ? 'SF2' : '',
         }),
       });
       toast.success(isEditMode ? `BBSF updated for KP ${kp}.` : `BBSF complete for KP ${kp}. Order moved to Inspect Finish.`);
@@ -297,10 +337,10 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Speed</Label>
-            <Input type="text" value={form.ws_speed}
-              onChange={e => setField('ws_speed', e.target.value)}
-              placeholder="e.g. 37"
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Jam Proses</Label>
+            <Input type="text" value={form.ws_jam_proses}
+              onChange={e => setField('ws_jam_proses', e.target.value)}
+              placeholder="e.g. 6.5"
               className="h-9 text-sm"
               style={{
                 background: '#E0E5EC',
@@ -311,10 +351,10 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Tekanan Boiler</Label>
-            <Input type="text" value={form.ws_tekanan_boiler}
-              onChange={e => setField('ws_tekanan_boiler', e.target.value)}
-              placeholder="e.g. 2.5"
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Speed</Label>
+            <Input type="text" value={form.ws_speed}
+              onChange={e => setField('ws_speed', e.target.value)}
+              placeholder="e.g. 37"
               className="h-9 text-sm"
               style={{
                 background: '#E0E5EC',
@@ -376,10 +416,54 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Press Dancing</Label>
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Dancing Roll</Label>
             <Input type="text" value={form.ws_dancing_1}
               onChange={e => setField('ws_dancing_1', e.target.value)}
               placeholder="e.g. 4"
+              className="h-9 text-sm"
+              style={{
+                background: '#E0E5EC',
+                color: '#3D4852',
+                boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                border: 'none',
+              }}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 md:grid-cols-3 gap-4 mt-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Press Dancing 1</Label>
+            <Input type="text" value={form.ws_press_dancing_1}
+              onChange={e => setField('ws_press_dancing_1', e.target.value)}
+              placeholder="e.g. 3"
+              className="h-9 text-sm"
+              style={{
+                background: '#E0E5EC',
+                color: '#3D4852',
+                boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                border: 'none',
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Press Dancing 2</Label>
+            <Input type="text" value={form.ws_press_dancing_2}
+              onChange={e => setField('ws_press_dancing_2', e.target.value)}
+              placeholder="e.g. 3"
+              className="h-9 text-sm"
+              style={{
+                background: '#E0E5EC',
+                color: '#3D4852',
+                boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                border: 'none',
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Press Dancing 3</Label>
+            <Input type="text" value={form.ws_press_dancing_3}
+              onChange={e => setField('ws_press_dancing_3', e.target.value)}
+              placeholder="e.g. 3"
               className="h-9 text-sm"
               style={{
                 background: '#E0E5EC',
@@ -441,7 +525,7 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Press Dancing</Label>
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Dancing Roll</Label>
             <Input type="text" value={form.ws_dancing_2}
               onChange={e => setField('ws_dancing_2', e.target.value)}
               placeholder="e.g. 5"
@@ -464,10 +548,24 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Skew</Label>
-            <Input type="text" value={form.ws_skew}
-              onChange={e => setField('ws_skew', e.target.value)}
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Skala Skew</Label>
+            <Input type="text" value={form.ws_skala_skew}
+              onChange={e => setField('ws_skala_skew', e.target.value)}
               placeholder="e.g. 0"
+              className="h-9 text-sm"
+              style={{
+                background: '#E0E5EC',
+                color: '#3D4852',
+                boxShadow: 'inset 4px 4px 8px rgb(163 177 198 / 0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                border: 'none',
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Tekanan Boiler</Label>
+            <Input type="text" value={form.ws_tekanan_boiler}
+              onChange={e => setField('ws_tekanan_boiler', e.target.value)}
+              placeholder="e.g. 2.5"
               className="h-9 text-sm"
               style={{
                 background: '#E0E5EC',
@@ -489,8 +587,8 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
           {[1, 2, 3, 4, 5, 6].map(i => (
             <div key={i} className="space-y-1.5">
               <Label className="text-xs font-medium" style={{ color: '#6B7280' }}>Temp {i}</Label>
-              <Input type="text" value={form[`ws_temp_${i}_zone` as keyof BBSFFormState] as string}
-                onChange={e => setField(`ws_temp_${i}_zone` as keyof BBSFFormState, e.target.value)}
+              <Input type="text" value={form[`ws_temp_zone_${i}` as keyof BBSFFormState] as string}
+                onChange={e => setField(`ws_temp_zone_${i}` as keyof BBSFFormState, e.target.value)}
                 placeholder="°C"
                 className="h-9 text-sm"
                 style={{

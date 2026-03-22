@@ -36,12 +36,6 @@ const formatDate = (iso: string) => {
   catch { return '—'; }
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  PO1: 'bg-blue-500/15 text-blue-400',
-  RP:  'bg-violet-500/15 text-violet-400',
-  SCN: ''
-};
-
 export default function InboxTable({
   rows,
   loading,

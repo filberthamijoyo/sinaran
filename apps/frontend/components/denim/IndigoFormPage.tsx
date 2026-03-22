@@ -331,13 +331,13 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
           >
             <h2 className="text-sm font-semibold mb-1" style={{ color: '#3D4852' }}
               >Run Details</h2>
-            <p className="text-xs text-zinc-500 mb-5 flex items-center gap-1">
+            <p className="text-xs mb-5 flex items-center gap-1" style={{ color: '#9CA3AF' }}>
               <Clock className="w-3 h-3" />
               Enter date and time for this production run
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Date
                 </Label>
                 <Input type="date" value={form.tgl}
@@ -345,7 +345,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   className="h-9 text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Start Time
                 </Label>
                 <Input type="time" value={form.start}
@@ -353,7 +353,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   className="h-9 text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Stop Time
                 </Label>
                 <Input type="time" value={form.stop}
@@ -375,7 +375,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
               >Rope Details</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Number of Ropes
                 </Label>
                 <Input type="number" value={form.jumlah_rope}
@@ -383,7 +383,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   placeholder="e.g. 12" className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Length per Rope (m)
                 </Label>
                 <Input type="number" step="0.01" value={form.panjang_rope}
@@ -405,7 +405,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
               >Process Parameters</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Machine No.
                 </Label>
                 <Input type="number" value={form.mc}
@@ -414,7 +414,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Speed
                 </Label>
                 <Input type="number" step="0.01" value={form.speed}
@@ -423,7 +423,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Bak Celup
                 </Label>
                 <Input type="number" step="0.01" value={form.bak_celup}
@@ -432,7 +432,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   BB
                 </Label>
                 <Input type="number" step="0.01" value={form.bb}
@@ -441,7 +441,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   P
                 </Label>
                 <Input type="number" step="0.01" value={form.p}
@@ -450,7 +450,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   TE
                 </Label>
                 <Input type="number" step="0.01" value={form.te}
@@ -473,7 +473,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
               >Dye Bath — Indigo</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Number of Baths (Bak)
                 </Label>
                 <Input type="number" value={form.bak_count}
@@ -481,7 +481,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   placeholder="e.g. 16" className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Indigo Concentration (g/L)
                 </Label>
                 <Input type="number" step="0.01" value={form.indigo_conc}
@@ -489,7 +489,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   placeholder="e.g. 20" className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Indigo Bath Number
                 </Label>
                 <Input type="number" value={form.indigo_bak}
@@ -518,15 +518,15 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   type="checkbox"
                   checked={form.has_sulfur}
                   onChange={e => setField('has_sulfur', e.target.checked)}
-                  className="w-4 h-4 rounded border-[hsl(var(--border))] text-indigo-400 focus:ring-indigo-500 accent-indigo-500"
+                  className="w-4 h-4 rounded" style={{ accentColor: '#6C63FF' }}
                 />
                 <span className="text-sm" style={{ color: '#3D4852' }}>Has Sulfur Bath?</span>
               </label>
               
               {form.has_sulfur && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pl-6 border-l-2 border-[hsl(var(--border))]">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pl-6" style={{ borderLeft: '2px solid rgb(163 177 198 / 0.4)' }}>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-zinc-500">
+                    <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                       Sulfur Concentration
                     </Label>
                     <Input type="number" step="0.01" value={form.sulfur_conc}
@@ -534,7 +534,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                       placeholder="e.g. 50" className="h-9 text-sm font-mono" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-zinc-500">
+                    <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                       Sulfur Bath Number
                     </Label>
                     <Input type="number" value={form.sulfur_bak}
@@ -558,7 +558,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
               >Output</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Total Meters Output
                 </Label>
                 <Input type="number" value={form.total_meters}
@@ -566,7 +566,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
                   placeholder="e.g. 15000" className="h-9 text-sm font-mono" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-zinc-500">
+                <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>
                   Notes
                 </Label>
                 <textarea
@@ -601,7 +601,7 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
               <h2 className="text-sm font-semibold" style={{ color: '#3D4852' }}>
                 Full Chemistry
               </h2>
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs" style={{ color: '#9CA3AF' }}>
                 {showChemistry ? 'Hide chemistry fields ▴' : 'Show chemistry fields ▾'}
               </span>
             </button>
@@ -610,52 +610,52 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
               <div className="mt-5 space-y-6">
                 {/* Quality Parameters */}
                 <div>
-                  <h3 className="text-xs font-semibold text-zinc-500 mb-3">Quality Parameters</h3>
+                  <h3 className="text-xs font-semibold mb-3" style={{ color: '#9CA3AF' }}>Quality Parameters</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Strength</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Strength</Label>
                       <Input type="number" step="0.01" value={form.strength}
                         onChange={e => setField('strength', e.target.value)}
                         placeholder="e.g. 3.5" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Elongasi %</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Elongasi %</Label>
                       <Input type="number" step="0.01" value={form.elongasi}
                         onChange={e => setField('elongasi', e.target.value)}
                         placeholder="e.g. 5.2" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Moisture Mahlo</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Moisture Mahlo</Label>
                       <Input type="number" step="0.01" value={form.moisture_mahlo}
                         onChange={e => setField('moisture_mahlo', e.target.value)}
                         placeholder="e.g. 7.5" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Temp Dryer</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Temp Dryer</Label>
                       <Input type="number" step="0.01" value={form.temp_dryer}
                         onChange={e => setField('temp_dryer', e.target.value)}
                         placeholder="e.g. 120" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Strength Val</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Strength Val</Label>
                       <Input type="number" step="0.01" value={form.strength_val}
                         onChange={e => setField('strength_val', e.target.value)}
                         placeholder="e.g. 3.2" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Elongasi IDG</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Elongasi IDG</Label>
                       <Input type="number" step="0.01" value={form.elongasi_idg}
                         onChange={e => setField('elongasi_idg', e.target.value)}
                         placeholder="e.g. 5.0" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">CV%</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>CV%</Label>
                       <Input type="number" step="0.01" value={form.cv_pct}
                         onChange={e => setField('cv_pct', e.target.value)}
                         placeholder="e.g. 2.1" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Tenacity</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Tenacity</Label>
                       <Input type="number" step="0.01" value={form.tenacity}
                         onChange={e => setField('tenacity', e.target.value)}
                         placeholder="e.g. 4.8" className="h-9 text-sm font-mono" />
@@ -665,53 +665,53 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
 
                 {/* Indigo Chemistry */}
                 <div>
-                  <h3 className="text-xs font-semibold text-zinc-500 mb-3">Indigo Chemistry</h3>
+                  <h3 className="text-xs font-semibold mb-3" style={{ color: '#9CA3AF' }}>Indigo Chemistry</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Indigo</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Indigo</Label>
                       <Input type="number" step="0.01" value={form.indigo}
                         onChange={e => setField('indigo', e.target.value)}
                         placeholder="e.g. 20" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Caustic</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Caustic</Label>
                       <Input type="number" step="0.01" value={form.caustic}
                         onChange={e => setField('caustic', e.target.value)}
                         placeholder="e.g. 50" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Hydro</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Hydro</Label>
                       <Input type="number" step="0.01" value={form.hydro}
                         onChange={e => setField('hydro', e.target.value)}
                         placeholder="e.g. 5" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">NE</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>NE</Label>
                       <Input type="text" value={form.ne}
                         onChange={e => setField('ne', e.target.value)}
                         placeholder="e.g. 20/1"
                         className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Konst IDG</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Konst IDG</Label>
                       <Input type="number" step="0.01" value={form.konst_idg}
                         onChange={e => setField('konst_idg', e.target.value)}
                         placeholder="e.g. 1.0" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Konst Sulfur</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Konst Sulfur</Label>
                       <Input type="number" step="0.01" value={form.konst_sulfur}
                         onChange={e => setField('konst_sulfur', e.target.value)}
                         placeholder="e.g. 1.2" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">Visc</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Visc</Label>
                       <Input type="number" step="0.01" value={form.visc}
                         onChange={e => setField('visc', e.target.value)}
                         placeholder="e.g. 12" className="h-9 text-sm font-mono" />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-zinc-500">MC IDG</Label>
+                      <Label className="text-xs font-medium" style={{ color: '#9CA3AF' }}>MC IDG</Label>
                       <Input type="text" value={form.mc_idg}
                         onChange={e => setField('mc_idg', e.target.value)}
                         placeholder="e.g. M-001"

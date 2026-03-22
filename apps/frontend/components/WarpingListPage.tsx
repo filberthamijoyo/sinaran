@@ -91,28 +91,35 @@ export default function WarpingListPage({ initialData }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))]">
+    <div className="min-h-screen" style={{ background: '#E0E5EC' }}>
       {/* Header */}
-      <div className="bg-[hsl(var(--card))] border-b border-[hsl(var(--border))] px-8 py-4">
-        <h1 className="text-xl font-semibold text-zinc-100">Warping Records</h1>
+      <div className="px-8 py-4" style={{ background: '#E0E5EC', boxShadow: '0 2px 8px rgb(163 177 198 / 0.3)' }}>
+        <h1 className="text-xl font-semibold" style={{ color: '#3D4852' }}>Warping Records</h1>
       </div>
 
       <div className="p-8 space-y-6">
         {/* Search Bar */}
-        <div className="card-glow rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-4">
+        <div
+          style={{
+            background: '#E0E5EC',
+            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            borderRadius: '24px',
+            padding: '16px',
+          }}
+        >
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
             <input
               type="text"
               placeholder="Search by KP..."
               value={searchKp}
               onChange={(e) => setSearchKp(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded-lg text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
+              style={{ background: '#E0E5EC', border: 'none', outline: 'none', borderRadius: '16px', boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)', padding: '10px 16px 10px 40px', color: '#3D4852', width: '100%', fontSize: '14px' }}
             />
             {searchKp && (
               <button
                 onClick={() => setSearchKp('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', lineHeight: 1 }}
               >
                 ×
               </button>
@@ -121,29 +128,36 @@ export default function WarpingListPage({ initialData }: Props) {
         </div>
 
         {/* Table */}
-        <div className="card-glow rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] overflow-hidden">
+        <div
+          style={{
+            background: '#E0E5EC',
+            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            borderRadius: '32px',
+            overflow: 'hidden',
+          }}
+        >
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="bg-[hsl(var(--muted))] text-xs font-medium text-zinc-500">
-                  <th className="text-left px-4 py-3">KP</th>
-                  <th className="text-left px-4 py-3">Date</th>
-                  <th className="text-left px-4 py-3">Machine</th>
-                  <th className="text-right px-4 py-3">RPM</th>
-                  <th className="text-right px-4 py-3">Total Beam</th>
-                  <th className="text-right px-4 py-3">Putusan</th>
-                  <th className="text-right px-4 py-3">Elongasi</th>
-                  <th className="text-right px-4 py-3">Strength</th>
-                  <th className="text-right px-4 py-3">CV%</th>
+              <thead style={{ background: '#E0E5EC' }}>
+                <tr style={{ background: '#E0E5EC' }}>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>KP</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Machine</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>RPM</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Beam</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Putusan</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Elongasi</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Strength</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>CV%</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[hsl(var(--border))]">
+              <tbody>
                 {loading ? (
                   <>
                     {[1, 2, 3].map((i) => (
-                      <tr key={i} className="hover:bg-[hsl(var(--muted))]">
+                      <tr key={i} style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
                         <td colSpan={9} className="px-4 py-4">
-                          <div className="flex items-center justify-center gap-2 text-zinc-500">
+                          <div className="flex items-center justify-center gap-2" style={{ color: '#9CA3AF' }}>
                             <Loader2 className="w-4 h-4 animate-spin" />
                             Loading...
                           </div>
@@ -153,8 +167,8 @@ export default function WarpingListPage({ initialData }: Props) {
                   </>
                 ) : data.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-zinc-500">
-                      {debouncedSearch 
+                    <td colSpan={9} className="px-4 py-8 text-center" style={{ color: '#9CA3AF' }}>
+                      {debouncedSearch
                         ? `No warping records found for '${debouncedSearch}'`
                         : 'No warping records found'
                       }
@@ -162,23 +176,23 @@ export default function WarpingListPage({ initialData }: Props) {
                   </tr>
                 ) : (
                   data.map((row) => (
-                    <tr key={row.id} className="hover:bg-[hsl(var(--muted))]">
+                    <tr key={row.id} style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => router.push(`/denim/admin/orders/${row.kp}`)}
-                          className="font-mono text-indigo-400 hover:underline cursor-pointer"
+                          style={{ fontFamily: 'monospace', fontWeight: 600, color: '#6C63FF', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}
                         >
                           {row.kp}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-zinc-400">{formatDate(row.tgl)}</td>
-                      <td className="px-4 py-3 text-zinc-400">{row.no_mc || '—'}</td>
-                      <td className="px-4 py-3 text-right text-zinc-400">{row.rpm ?? '—'}</td>
-                      <td className="px-4 py-3 text-right text-zinc-400">{row.total_beam ?? '—'}</td>
-                      <td className="px-4 py-3 text-right text-zinc-400">{row.total_putusan ?? '—'}</td>
-                      <td className="px-4 py-3 text-right text-zinc-400">{row.elongasi ?? '—'}</td>
-                      <td className="px-4 py-3 text-right text-zinc-400">{row.strength ?? '—'}</td>
-                      <td className="px-4 py-3 text-right text-zinc-400">{row.cv_pct ?? '—'}</td>
+                      <td className="px-4 py-3" style={{ color: '#6B7280' }}>{formatDate(row.tgl)}</td>
+                      <td className="px-4 py-3" style={{ color: '#6B7280' }}>{row.no_mc || '—'}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.rpm ?? '—'}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.total_beam ?? '—'}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.total_putusan ?? '—'}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.elongasi ?? '—'}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.strength ?? '—'}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.cv_pct ?? '—'}</td>
                     </tr>
                   ))
                 )}
@@ -193,19 +207,19 @@ export default function WarpingListPage({ initialData }: Props) {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="p-2 rounded-lg border border-[hsl(var(--border))] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[hsl(var(--accent))]"
+              style={{ background: '#E0E5EC', border: 'none', borderRadius: '16px', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', padding: '8px', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
             >
-              <ChevronLeft className="w-4 h-4 text-zinc-400" />
+              <ChevronLeft className="w-4 h-4" style={{ color: '#6B7280' }} />
             </button>
-            <span className="text-sm text-zinc-500 px-2">
+            <span className="text-sm px-2" style={{ color: '#9CA3AF' }}>
               Page {page} of {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="p-2 rounded-lg border border-[hsl(var(--border))] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[hsl(var(--accent))]"
+              style={{ background: '#E0E5EC', border: 'none', borderRadius: '16px', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', padding: '8px', cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.5 : 1 }}
             >
-              <ChevronRight className="w-4 h-4 text-zinc-400" />
+              <ChevronRight className="w-4 h-4" style={{ color: '#6B7280' }} />
             </button>
           </div>
         )}

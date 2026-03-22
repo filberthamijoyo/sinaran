@@ -18,6 +18,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust one level of proxy (Render's load balancer sends X-Forwarded-For).
+// Must be set before express-rate-limit is registered, otherwise it throws
+// ERR_ERL_UNEXPECTED_X_FORWARDED_FOR on startup.
+app.set('trust proxy', 1);
+
 // Middleware
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allowed?: boolean) => void) => {

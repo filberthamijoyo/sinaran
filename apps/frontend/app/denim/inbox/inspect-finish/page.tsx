@@ -33,7 +33,7 @@ export default function InspectFinishInboxPage() {
         actions={
           <div className="flex items-center gap-2">
             {rows.length > 0 && (
-              <span className="text-xs bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full font-medium">
+              <span style={{ background: '#E0E5EC', borderRadius: '9999px', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)', padding: '2px 10px', fontSize: '11px', fontWeight: 600, color: '#6B7280' }}>
                 {rows.length} order{rows.length !== 1 ? 's' : ''}
               </span>
             )}

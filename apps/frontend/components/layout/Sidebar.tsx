@@ -6,7 +6,7 @@ import { useAuth } from '../../lib/AuthContext';
 import {
   LayoutDashboard, FilePlus, FileText, Inbox, CheckSquare,
   XSquare, ClipboardList, LogOut, BarChart2, Archive,
-  FlaskConical, X, Network,
+  FlaskConical, X,
 } from 'lucide-react';
 
 interface NavItem { label: string; href: string; icon: React.ElementType; badge?: number; }
@@ -43,7 +43,6 @@ const adminNav: NavGroup[] = [
     { label: 'All Orders', href: '/denim/admin/orders', icon: FileText },
     { label: 'KP Archive', href: '/denim/admin/kp-archive', icon: Archive },
     { label: 'Fabric Specs', href: '/denim/admin/fabric-specs', icon: FlaskConical },
-    { label: 'Pipeline Graph', href: '/denim/admin/pipeline-graph', icon: Network },
     { label: 'Analytics', href: '/denim/admin/analytics', icon: BarChart2 },
   ]},
   { title: 'Pipeline', items: [

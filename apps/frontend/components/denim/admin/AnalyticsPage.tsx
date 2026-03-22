@@ -31,7 +31,7 @@ interface KpData {
   // Warping
   warping: { tgl: Date; no_mc: string; rpm: number; total_beam: number; total_putusan: number; elongasi: number; strength: number; cv_pct: number; tension_badan: number; tension_pinggir: number } | null;
   // Indigo
-  indigo: { tgl: Date; mc: string; speed: number; bak_celup: number; indigo: number; caustic: number; hydro: number; temp_dryer: number; strength: number; elongasi: number } | null;
+  indigo: { tanggal: Date; mc: string; speed: number; bak_celup: number; indigo: number; caustic: number; hydro: number; temp_dryer: number; strength: number; elongasi_idg: number } | null;
   // Weaving Summary
   weavingSummary: { totalRecords: number; avgEfficiency: number; totalMeters: number; uniqueMachines: number; firstDate: string; lastDate: string } | null;
 }
@@ -337,7 +337,7 @@ export default function AnalyticsPage() {
 
       {/* Tab Navigation */}
       <div
-        className="px-4 sm:px-8"
+        className="px-4 pt-4 sm:px-8"
         style={{
           background: '#E0E5EC',
           boxShadow: 'inset 0 2px 4px rgb(163 177 198 / 0.3)',
@@ -615,10 +615,11 @@ export default function AnalyticsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                   {/* LEFT PANEL - Find KPs */}
                   <div
-                    className="lg:col-span-2 rounded-[32px] p-4"
                     style={{
                       background: '#E0E5EC',
                       boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                      borderRadius: '32px',
+                      padding: '20px',
                     }}
                   >
                     <h3 className="text-sm font-semibold mb-3" style={{ color: '#3D4852' }}>Find KPs</h3>
@@ -632,16 +633,12 @@ export default function AnalyticsPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         style={{
-                          width: '100%',
-                          paddingLeft: '2.25rem',
-                          paddingRight: '2.25rem',
-                          paddingTop: '0.5rem',
-                          paddingBottom: '0.5rem',
                           background: '#E0E5EC',
                           border: 'none',
                           borderRadius: '16px',
                           boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                          fontSize: '14px',
+                          padding: '8px 16px',
+                          width: '100%',
                           color: '#3D4852',
                         }}
                       />
@@ -746,7 +743,7 @@ export default function AnalyticsPage() {
                       {searchLoading ? (
                         <>
                           {[1, 2, 3].map(i => (
-                            <div key={i} style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)', padding: '12px' }}>
+                            <div key={i} style={{ borderBottom: '1px solid rgb(163 177 198 / 0.4)', padding: '12px 16px', marginBottom: '8px' }}>
                               <div className="h-4 rounded w-16 mb-2" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}></div>
                               <div className="h-3 rounded w-32 mb-1" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}></div>
                               <div className="h-3 rounded w-24" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}></div>
@@ -773,10 +770,13 @@ export default function AnalyticsPage() {
                                 }
                               }}
                               style={{
-                                borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                                padding: '12px',
-                                background: isPinned ? 'rgb(108 99 255 / 0.1)' : isFull ? 'rgba(224, 229, 236, 0.5)' : '#E0E5EC',
+                                background: '#E0E5EC',
+                                boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
+                                borderRadius: '20px',
+                                padding: '12px 16px',
+                                marginBottom: '8px',
                                 cursor: isPinned ? 'default' : isFull ? 'not-allowed' : 'pointer',
+                                borderBottom: '1px solid rgb(163 177 198 / 0.4)',
                               }}
                             >
                               <div className="flex items-center justify-between">
@@ -785,9 +785,9 @@ export default function AnalyticsPage() {
                                   <StatusBadge status={result.pipeline_status} size="sm" />
                                 </div>
                                 {isLoading ? (
-                                  <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#6C63FF' }} />
                                 ) : isPinned ? (
-                                  <span className="text-green-600 text-xs font-bold">✓</span>
+                                  <span className="text-xs font-bold" style={{ color: '#16A34A' }}>✓</span>
                                 ) : null}
                               </div>
                               <div className="text-sm mt-1" style={{ color: '#6B7280' }}>{result.codename}</div>
@@ -827,7 +827,7 @@ export default function AnalyticsPage() {
                     {pinnedKps.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-4">
                         {pinnedKps.map((kp) => (
-                          <span key={kp.sc?.kp} style={{ background: 'rgb(108 99 255 / 0.1)', border: '1px solid rgb(108 99 255 / 0.2)', color: '#6C63FF', borderRadius: '9999px', padding: '4px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span key={kp.sc?.kp} style={{ background: '#E0E5EC', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', borderRadius: '9999px', padding: '4px 12px', fontSize: '12px', color: '#6C63FF', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             {kp.sc?.kp} · {kp.sc?.codename?.substring(0, 15)}...
                             <button onClick={() => unpinKp(kp.sc!.kp)} style={{ background: 'none', border: 'none', color: '#6C63FF', cursor: 'pointer', marginLeft: '4px' }}>×</button>
                           </span>
@@ -856,10 +856,11 @@ export default function AnalyticsPage() {
                     {/* Comparison table */}
                     {pinnedKps.length >= 2 && (
                       <div
-                        className="rounded-[32px] overflow-hidden"
                         style={{
                           background: '#E0E5EC',
                           boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+                          borderRadius: '32px',
+                          overflow: 'hidden',
                         }}
                       >
                         <div className="overflow-x-auto">
@@ -877,7 +878,7 @@ export default function AnalyticsPage() {
                             </thead>
                             <tbody style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
                               {/* Sales Contract Section */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.15)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 600, color: '#6B7280' }}>Sales Contract</span></td></tr>
+                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Sales Contract</span></td></tr>
                               <ComparisonRow label="Construction (codename)" values={pinnedKps.map(p => p.sc?.codename ?? '—')} />
                               <ComparisonRow label="Type (kat_kode)" values={pinnedKps.map(p => p.sc?.kat_kode ?? '—')} />
                               <ComparisonRow label="TE" values={pinnedKps.map(p => p.sc?.te?.toString() ?? '—')} />
@@ -885,7 +886,7 @@ export default function AnalyticsPage() {
                               <ComparisonRow label="Date" values={pinnedKps.map(p => p.sc?.tgl ? format(new Date(p.sc.tgl), 'yyyy-MM-dd') : '—')} />
 
                               {/* Warping Section */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(108 99 255 / 0.1)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 600, color: '#6C63FF' }}>Warping</span></td></tr>
+                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Warping</span></td></tr>
                               <ComparisonRow label="Date" values={pinnedKps.map(p => p.warping?.tgl ? format(new Date(p.warping.tgl), 'yyyy-MM-dd') : '—')} />
                               <ComparisonRow label="Machine No" values={pinnedKps.map(p => p.warping?.no_mc ?? '—')} />
                               <ComparisonRow label="RPM" values={pinnedKps.map(p => p.warping?.rpm?.toString() ?? '—')} />
@@ -898,8 +899,8 @@ export default function AnalyticsPage() {
                               <ComparisonRow label="Tension Pinggir" values={pinnedKps.map(p => p.warping?.tension_pinggir?.toString() ?? '—')} isNumeric />
 
                               {/* Indigo Section */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(6 182 212 / 0.1)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 600, color: '#0891B2' }}>Indigo</span></td></tr>
-                              <ComparisonRow label="Date" values={pinnedKps.map(p => p.indigo?.tgl ? format(new Date(p.indigo.tgl), 'yyyy-MM-dd') : '—')} />
+                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Indigo</span></td></tr>
+                              <ComparisonRow label="Date" values={pinnedKps.map(p => p.indigo?.tanggal ? format(new Date(p.indigo.tanggal), 'yyyy-MM-dd') : '—')} />
                               <ComparisonRow label="Machine" values={pinnedKps.map(p => p.indigo?.mc ?? '—')} />
                               <ComparisonRow label="Speed" values={pinnedKps.map(p => p.indigo?.speed?.toString() ?? '—')} isNumeric />
                               <ComparisonRow label="Bak Celup" values={pinnedKps.map(p => p.indigo?.bak_celup?.toString() ?? '—')} isNumeric />
@@ -908,10 +909,10 @@ export default function AnalyticsPage() {
                               <ComparisonRow label="Hydro g/L" values={pinnedKps.map(p => p.indigo?.hydro?.toString() ?? '—')} isNumeric />
                               <ComparisonRow label="Temp Dryer" values={pinnedKps.map(p => p.indigo?.temp_dryer?.toString() ?? '—')} isNumeric />
                               <ComparisonRow label="Strength" values={pinnedKps.map(p => p.indigo?.strength?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Elongasi" values={pinnedKps.map(p => p.indigo?.elongasi?.toString() ?? '—')} isNumeric />
+                              <ComparisonRow label="Elongasi" values={pinnedKps.map(p => p.indigo?.elongasi_idg?.toString() ?? '—')} isNumeric />
 
                               {/* Weaving Summary */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(20 184 166 / 0.1)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 600, color: '#0D9488' }}>Weaving Summary</span></td></tr>
+                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Weaving Summary</span></td></tr>
                               <ComparisonRow label="Total Records" values={pinnedKps.map(p => p.weavingSummary?.totalRecords?.toString() ?? '—')} />
                               <ComparisonRow label="Avg Efficiency %" values={pinnedKps.map(p => p.weavingSummary?.avgEfficiency?.toFixed(1) ?? '—')} isNumeric />
                               <ComparisonRow label="Total Meters" values={pinnedKps.map(p => p.weavingSummary?.totalMeters?.toLocaleString() ?? '—')} />
@@ -1038,9 +1039,9 @@ function MachinesTab({ data }: { data: AnalyticsData | null }) {
   });
 
   // KPI calculations
-  const totalMeters60d = data?.productionVelocity.reduce((s, v) => s + v.total_meters, 0) ?? 0;
-  const avgMachines = data?.productionVelocity.length
-    ? (data.productionVelocity.reduce((s, v) => s + v.machines, 0) / data.productionVelocity.length).toFixed(1)
+  const totalMeters60d = data?.productionVelocity?.reduce((s, v) => s + v.total_meters, 0) ?? 0;
+  const avgMachines = data?.productionVelocity?.length
+    ? (data?.productionVelocity?.reduce((s, v) => s + v.machines, 0) ?? 0) / (data?.productionVelocity?.length ?? 1)
     : '0';
   const activeMachines = allMachines.length;
 

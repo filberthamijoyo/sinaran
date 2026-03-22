@@ -50,52 +50,63 @@ export default function ApprovedPage() {
         }
       />
       <div className="px-4 sm:px-8 pb-8">
-        <div className="card-glow rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] overflow-hidden">
+        <div
+          style={{
+            background: '#E0E5EC',
+            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            borderRadius: '32px',
+            overflow: 'hidden',
+          }}
+        >
           <Table>
             <TableHeader>
-              <TableRow className="bg-[hsl(var(--muted))] hover:bg-[hsl(var(--muted))] border-b border-[hsl(var(--border))]">
-                <TableHead className="text-xs font-semibold text-zinc-500">Date</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">KP</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Construction</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Customer</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">TE</TableHead>
-                <TableHead className="text-xs font-semibold text-zinc-500">Stage</TableHead>
+              <TableRow style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                <TableHead className="text-xs font-semibold" style={{ background: '#E0E5EC', color: '#9CA3AF' }}>Date</TableHead>
+                <TableHead className="text-xs font-semibold" style={{ background: '#E0E5EC', color: '#9CA3AF' }}>KP</TableHead>
+                <TableHead className="text-xs font-semibold" style={{ background: '#E0E5EC', color: '#9CA3AF' }}>Construction</TableHead>
+                <TableHead className="text-xs font-semibold" style={{ background: '#E0E5EC', color: '#9CA3AF' }}>Customer</TableHead>
+                <TableHead className="text-xs font-semibold" style={{ background: '#E0E5EC', color: '#9CA3AF' }}>TE</TableHead>
+                <TableHead className="text-xs font-semibold" style={{ background: '#E0E5EC', color: '#9CA3AF' }}>Stage</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
+                  <TableRow key={i} style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
                     {Array.from({ length: 6 }).map((_, j) => (
                       <TableCell key={j}>
-                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }} />
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : rows.length === 0 ? (
-                <TableRow>
+                <TableRow style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
                   <TableCell colSpan={6} className="text-center py-16">
-                    <CheckCircle2 className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                    <p className="text-sm text-zinc-500">No approved orders yet.</p>
+                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2" style={{ color: '#9CA3AF' }} />
+                    <p className="text-sm" style={{ color: '#6B7280' }}>No approved orders yet.</p>
                   </TableCell>
                 </TableRow>
               ) : (
                 rows.map((row: any) => (
                   <TableRow
                     key={row.id}
-                    className="table-row-hover border-[hsl(var(--border))]"
+                    style={{
+                      background: '#E0E5EC',
+                      borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                      cursor: 'pointer',
+                    }}
                     onClick={() => router.push(`/denim/orders/${row.kp}`)}
                   >
-                    <TableCell className="text-sm text-zinc-500">{fmt(row.tgl)}</TableCell>
+                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>{fmt(row.tgl)}</TableCell>
                     <TableCell>
-                      <span className="text-sm font-mono font-semibold text-zinc-200">
+                      <span className="text-sm font-mono font-semibold" style={{ color: '#6C63FF' }}>
                         {row.kp}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-zinc-300">{row.codename || '—'}</TableCell>
-                    <TableCell className="text-sm text-zinc-400">{row.permintaan || '—'}</TableCell>
-                    <TableCell className="text-sm font-mono text-zinc-400">
+                    <TableCell className="text-sm" style={{ color: '#3D4852' }}>{row.codename || '—'}</TableCell>
+                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>{row.permintaan || '—'}</TableCell>
+                    <TableCell className="text-sm font-mono" style={{ color: '#6B7280' }}>
                       {row.te?.toLocaleString() || '—'}
                     </TableCell>
                     <TableCell>

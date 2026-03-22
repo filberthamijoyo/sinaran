@@ -22,7 +22,7 @@ const statCard = (
     }}
   >
     <p className="text-sm" style={{ color: '#6B7280' }}>{label}</p>
-    <p className="text-3xl font-semibold mt-1" style={{ color: color === 'text-zinc-100' ? '#3D4852' : color === 'text-amber-400' ? '#D97706' : color === 'text-indigo-400' ? '#6C63FF' : '#16A34A' }}>{value}</p>
+    <p className="text-3xl font-semibold mt-1" style={{ color: '#3D4852' }}>{value}</p>
     <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>{sub}</p>
   </div>
 );
@@ -56,10 +56,10 @@ export default function DenimDashboard() {
 
         {/* Stats row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {statCard('Total Orders', '1,878', 'all time', 'text-zinc-100')}
-          {statCard('Pending Approval', '—', 'awaiting Jakarta', 'text-amber-400')}
-          {statCard('In Production', '—', 'active pipeline', 'text-indigo-400')}
-          {statCard('Completed', '—', 'this month', 'text-emerald-400')}
+          {statCard('Total Orders', '1,878', 'all time', '#3D4852')}
+          {statCard('Pending Approval', '—', 'awaiting Jakarta', '#3D4852')}
+          {statCard('In Production', '—', 'active pipeline', '#3D4852')}
+          {statCard('Completed', '—', 'this month', '#3D4852')}
         </div>
 
         {/* Quick actions by role */}

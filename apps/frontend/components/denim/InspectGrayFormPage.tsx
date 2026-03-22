@@ -294,7 +294,7 @@ export default function InspectGrayFormPage({ kp, editMode = false }: { kp: stri
   const renderDefectInputs = (rollIndex: number, defects: DefectFields) => {
     const renderGroup = (defectsList: string[], severity: string, color: string) => (
       <div className="mb-3">
-        <p className={`text-xs font-semibold ${color} mb-2`}>{severity}</p>
+        <p className="text-xs font-semibold mb-2" style={{ color }}>{severity}</p>
         <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
           {defectsList.map(key => (
             <div key={key} className="space-y-1">
@@ -329,9 +329,9 @@ export default function InspectGrayFormPage({ kp, editMode = false }: { kp: stri
           boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
         }}
       >
-        {renderGroup(DEFECT_CRITICAL, 'CRITICAL (Severity 4)', 'text-red-500')}
-        {renderGroup(DEFECT_MEDIUM, 'MEDIUM (Severity 2)', 'text-yellow-500')}
-        {renderGroup(DEFECT_LOW, 'LOW (Severity 1)', 'text-green-500')}
+        {renderGroup(DEFECT_CRITICAL, 'CRITICAL (Severity 4)', '#DC2626')}
+        {renderGroup(DEFECT_MEDIUM, 'MEDIUM (Severity 2)', '#D97706')}
+        {renderGroup(DEFECT_LOW, 'LOW (Severity 1)', '#16A34A')}
       </div>
     );
   };

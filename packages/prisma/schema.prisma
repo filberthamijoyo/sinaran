@@ -6,7 +6,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://neondb_owner:npg_c6JfMBL7Pjno@ep-plain-dust-a1bggj1v-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 }
 
 model CountDescription {
@@ -46,6 +46,7 @@ model Lot {
   blendId           Int?               @map("blend_id")
   blend             Blend?             @relation(fields: [blendId], references: [id], onUpdate: NoAction)
   productionRecords ProductionRecord[]
+  spks              Spk[]
   yarnTests         YarnTest[]
 
   @@index([code], map: "idx_lots_code")
@@ -55,17 +56,43 @@ model Lot {
 }
 
 model Spk {
-  id                Int                @id @default(autoincrement())
-  code              Int?               @unique
-  name              String             @unique @db.VarChar(100)
-  isActive          Boolean?           @default(true) @map("is_active")
-  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  productionRecords ProductionRecord[]
-  yarnTests         YarnTest[]
+  id                             Int                @id @default(autoincrement())
+  code                           Int?               @unique
+  name                           String             @unique @db.VarChar(100)
+  isActive                       Boolean?           @default(true) @map("is_active")
+  createdAt                      DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                      DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  ac                             Decimal?           @db.Decimal(14, 2)
+  blow_room_clx_combine          Decimal?           @db.Decimal(14, 2)
+  blow_room_filter_combine       Decimal?           @db.Decimal(14, 2)
+  box_filter_oe                  Decimal?           @db.Decimal(14, 2)
+  carding_filter_combine         Decimal?           @db.Decimal(14, 2)
+  comber_noil_pct_on_combed_yarn Decimal?           @db.Decimal(14, 2)
+  dust                           Decimal?           @db.Decimal(14, 2)
+  grand_total                    Decimal?           @db.Decimal(14, 2)
+  hard_waste                     Decimal?           @db.Decimal(14, 2)
+  imported_cotton_used_in_local  Decimal?           @db.Decimal(6, 2)
+  invisible                      Decimal?           @db.Decimal(14, 2)
+  lot_id                         Int?
+  mills_unit_id                  Int?
+  rayon_brand_id                 Int?
+  total_soft_waste               Decimal?           @db.Decimal(14, 2)
+  total_waste_and_invisible      Decimal?           @db.Decimal(14, 2)
+  use_waste                      Decimal?           @db.Decimal(14, 2)
+  weight_issued_to_blow_room     Decimal?           @db.Decimal(14, 2)
+  yarn_produced_yield_percent    Decimal?           @db.Decimal(6, 2)
+  productionRecords              ProductionRecord[]
+  spk_fiber_usages               spk_fiber_usages[]
+  lots                           Lot?               @relation(fields: [lot_id], references: [id], onUpdate: NoAction)
+  mills_units                    MillsUnit?         @relation(fields: [mills_unit_id], references: [id], onUpdate: NoAction)
+  rayon_brand                    RayonBrand?        @relation(fields: [rayon_brand_id], references: [id], onUpdate: NoAction)
+  yarnTests                      YarnTest[]
 
   @@index([code], map: "idx_spks_code")
   @@index([name], map: "idx_spks_name")
+  @@index([lot_id], map: "idx_spks_lot_id")
+  @@index([mills_unit_id], map: "idx_spks_mills_unit_id")
+  @@index([rayon_brand_id], map: "idx_spks_rayon_brand_id")
   @@map("spks")
 }
 
@@ -168,6 +195,7 @@ model MillsUnit {
   createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   productionRecords ProductionRecord[]
+  spks              Spk[]
   yarnTests         YarnTest[]
 
   @@index([code], map: "idx_mills_units_code")
@@ -239,6 +267,7 @@ model RayonBrand {
   createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   productionRecords ProductionRecord[]
+  spks              Spk[]
 
   @@index([name], map: "idx_rayon_brand_name")
   @@index([letterCode], map: "idx_rayon_brand_letter_code")
@@ -656,50 +685,50 @@ model IndigoDivisionRecord {
 }
 
 model SalesContract {
-  id              Int       @id @default(autoincrement())
-  kp              String    @unique
-  tgl             DateTime
-  permintaan      String?
-  codename        String?
-  kons_kode       String?
-  kode_number     String?
-  kat_kode        String?
-  ket_ct_ws       String?
-  ket_warna       String?
-  status          String?
-  te              Decimal?
-  sisir           String?
-  p_kons          String?
-  ne_k_lusi       String?
-  ne_lusi         Decimal?
-  sp_lusi         String?
-  lot_lusi        String?
-  ne_k_pakan      String?
-  ne_pakan        Decimal?
-  sp_pakan        String?
-  j               Decimal?
-  j_c             Decimal?
-  b_c             Decimal?
-  tb              Decimal?
-  bale_lusi       Decimal?
-  total_pakan     Decimal?
-  bale_pakan      Decimal?
-  ts              DateTime?
-  sacon           Boolean   @default(false)
-  acc             String?
-  proses          String?
-  foto_sacon      String?
-  remarks         String?
-  is_active       Boolean   @default(true)
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  pipeline_status String    @default("DRAFT")
-  weaving_confirmed_at DateTime? // confirmed by weaving dept
-  kp_sequence     Int?      @unique  // decoded integer e.g. BUDQ = 4620
-  kp_status       String    @default("ACTIVE") // ACTIVE | REJECTED | ARCHIVED
-  archived_at     DateTime? // set when this record is archived
-  archived_kp     String?   // copy of kp before recycling
-  rejection_reason String?  // reason when rejected in approval flow
+  id                   Int       @id @default(autoincrement())
+  kp                   String    @unique
+  tgl                  DateTime
+  permintaan           String?
+  codename             String?
+  kons_kode            String?
+  kode_number          String?
+  kat_kode             String?
+  ket_ct_ws            String?
+  ket_warna            String?
+  status               String?
+  te                   Decimal?
+  sisir                String?
+  p_kons               String?
+  ne_k_lusi            String?
+  ne_lusi              Decimal?
+  sp_lusi              String?
+  lot_lusi             String?
+  ne_k_pakan           String?
+  ne_pakan             Decimal?
+  sp_pakan             String?
+  j                    Decimal?
+  j_c                  Decimal?
+  b_c                  Decimal?
+  tb                   Decimal?
+  bale_lusi            Decimal?
+  total_pakan          Decimal?
+  bale_pakan           Decimal?
+  ts                   DateTime?
+  sacon                Boolean   @default(false)
+  acc                  String?
+  proses               String?
+  foto_sacon           String?
+  remarks              String?
+  is_active            Boolean   @default(true)
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+  pipeline_status      String    @default("DRAFT")
+  weaving_confirmed_at DateTime?
+  kp_sequence          Int?      @unique
+  kp_status            String    @default("ACTIVE")
+  archived_at          DateTime?
+  archived_kp          String?
+  rejection_reason     String?
 
   @@index([kp])
   @@index([kons_kode, kode_number])
@@ -959,6 +988,9 @@ model WeavingRecord {
   @@index([beam])
   @@index([machine, beam])
   @@index([synced_at], map: "idx_weaving_record_synced_at")
+  @@index([kp, machine], map: "idx_weaving_record_kp_machine")
+  @@index([kp, tanggal], map: "idx_weaving_record_kp_tanggal")
+  @@index([machine, tanggal], map: "idx_weaving_record_machine_tanggal")
 }
 
 model InspectGrayRecord {
@@ -971,7 +1003,6 @@ model InspectGrayRecord {
   bm                Int?
   sn                String?
   sn_combined       String?
-  sn_full           String?   // combined SN = mc + bm + sn_short (already in Excel col 7)
   gd                String?
   bme               Decimal?
   sj                Decimal?
@@ -991,63 +1022,61 @@ model InspectGrayRecord {
   no_roll           Int?
   panjang           Float?
   tgl               DateTime?
-  
-  // Extended fields from Excel - defect types
-  bmc               Int?           // Banyak Cacat (calculated sum)
-  btl               Int?           // Beltel (narrow width)
-  bts               Int?           // Batas (edge)
+  bmc               Int?
+  btl               Int?
+  bts               Int?
   pp                Int?
   pks               Int?
-  ko                Int?           // Kotor (dirty)
+  ko                Int?
   db                Int?
-  bl                Int?           // Belang (stripes)
-  ptr               Int?           // Peter defect
+  bl                Int?
+  ptr               Int?
   pkt               Int?
   fly               Int?
   ls                Int?
   lpb               Int?
-  p_bulu            Int?           // Putus Bulu
-  smg               Int?           // Sumur
+  p_bulu            Int?
+  smg               Int?
   sms               Int?
   aw                Int?
   pl                Int?
   na                Int?
-  lm                Int?           // Lumayan
-  lkc               Int?           // Lobang Kecil
-  lks               Int?           // Lobang Sedang
-  ld                Int?           // Lobang Besar
+  lm                Int?
+  lkc               Int?
+  lks               Int?
+  ld                Int?
   pts               Int?
   pd                Int?
-  lkt               Int?           // Luka Tipis
+  lkt               Int?
   pk                Int?
   lp                Int?
   plc               Int?
-  j                 Int?           // Jarum (needle)
-  kk                Int?           // Kriting
-  bta               Int?           // Bintik
+  j                 Int?
+  kk                Int?
+  bta               Int?
   pj                Int?
   rp                Int?
   pb                Int?
   xpd               Int?
-  br                Int?           // Bulu
+  br                Int?
   pss               Int?
-  luper             Int?           // Luput
-  ptn               Int?           // Peti
-  b_bercak          Int?           // Bercak
-  r_rusak           Int?           // Rusak
-  sl                Int?           // Selep
-  p_timbul          Int?           // Pilih Tumbuh
-  b_celup           Int?           // Bau Celup
-  p_tumpuk          Int?           // Tumpuk
-  b_bar             Int?           // Bercak
-  sml               Int?           // Semel
-  p_slub            Int?           // Putus Slub
-  p_belang          Int?           // Pilih Belang
+  luper             Int?
+  ptn               Int?
+  b_bercak          Int?
+  r_rusak           Int?
+  sl                Int?
+  p_timbul          Int?
+  b_celup           Int?
+  p_tumpuk          Int?
+  b_bar             Int?
+  sml               Int?
+  p_slub            Int?
+  p_belang          Int?
   crossing          Int?
-  x_sambang         Int?           // Sambungan
-  p_jelek           Int?           // Pilih Jelek
-  lipatan           Int?           // Lipatan
-  
+  x_sambang         Int?
+  p_jelek           Int?
+  lipatan           Int?
+  sn_full           String?
   weaving_record    WeavingRecord? @relation(fields: [weaving_record_id], references: [id])
 
   @@unique([kp, mc, bm, no_pot])
@@ -1091,6 +1120,7 @@ model BBSFWashingRun {
   permasalahan    String?
   pelaksana       String?
   created_at      DateTime @default(now())
+
   @@index([kp])
   @@index([tgl])
 }
@@ -1101,7 +1131,7 @@ model BBSFSanforRun {
   tgl           DateTime
   shift         String?
   mc            String?
-  sanfor_type   String   // 'SF1', 'SF2', 'SF5'
+  sanfor_type   String
   jam           String?
   speed         String?
   damping       Float?
@@ -1116,89 +1146,84 @@ model BBSFSanforRun {
   permasalahan  String?
   pelaksana     String?
   created_at    DateTime @default(now())
+
   @@index([kp])
   @@index([tgl])
   @@index([kp, sanfor_type])
 }
 
 model BBSFServiceRecord {
-  id          Int      @id @default(autoincrement())
-  tgl         DateTime
-  keterangan  String?
-  mc          String?
-  no_mc       Float?
-  tindakan    String?
-  created_at  DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  tgl        DateTime
+  keterangan String?
+  mc         String?
+  no_mc      Float?
+  tindakan   String?
+  created_at DateTime @default(now())
+
   @@index([tgl])
 }
 
 model InspectFinishRecord {
-  id           Int      @id @default(autoincrement())
-  kp           String
-  tgl          DateTime
-  shift        String?
-  operator     String?
-  no_roll      Int?
-  sn           String?  // legacy - migrate to sn_combined
-  sn_combined  String?  // links to InspectGrayRecord.sn_combined — format: MC + BM + SN_short e.g. AE04182D03L
-  sn_machine   String?   // decoded from sn e.g. "AE04"
-  sn_beam      Int?      // decoded from sn e.g. 182
-  sn_lot       String?   // decoded from sn e.g. "D03L"
-  tgl_potong   DateTime?
-  lebar        Float?
-  kg           Float?
-  susut_lusi   Float?
-  grade        String?
-  point        Float?
-  
-  // Defects
-  btl          Int?
-  bts          Int?
-  slub         Int?
-  snl          Int?
-  losp         Int?
-  lb           Int?
-  ptr          Int?
-  p_slub       Int?
-  pb           Int?
-  lm           Int?
-  aw           Int?
-  ptm          Int?
-  j            Int?
-  bta          Int?
-  pts          Int?
-  pd           Int?
-  pp           Int?
-  pks          Int?
-  pss          Int?
-  pkl          Int?
-  pk           Int?
-  plc          Int?
-  lp           Int?
-  lks          Int?
-  lkc          Int?
-  ld           Int?
-  lkt          Int?
-  lki          Int?
-  lptd         Int?
-  bmc          Int?
-  exst         Int?
-  smg          Int?
-  
-  // Quality flags
-  noda         String?
-  kotor        String?
-  bkrt         String?
-  ket          String?
-  
-  // Blueprint refs
-  blpt_grey    String?
-  bl_ws        Float?
-  bl_bb        String?
-  
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  
+  id          Int       @id @default(autoincrement())
+  kp          String
+  tgl         DateTime
+  shift       String?
+  operator    String?
+  no_roll     Int?
+  sn          String?
+  tgl_potong  DateTime?
+  lebar       Float?
+  kg          Float?
+  susut_lusi  Float?
+  grade       String?
+  point       Float?
+  btl         Int?
+  bts         Int?
+  slub        Int?
+  snl         Int?
+  losp        Int?
+  lb          Int?
+  ptr         Int?
+  p_slub      Int?
+  pb          Int?
+  lm          Int?
+  aw          Int?
+  ptm         Int?
+  j           Int?
+  bta         Int?
+  pts         Int?
+  pd          Int?
+  pp          Int?
+  pks         Int?
+  pss         Int?
+  pkl         Int?
+  pk          Int?
+  plc         Int?
+  lp          Int?
+  lks         Int?
+  lkc         Int?
+  ld          Int?
+  lkt         Int?
+  lki         Int?
+  lptd        Int?
+  bmc         Int?
+  exst        Int?
+  smg         Int?
+  noda        String?
+  kotor       String?
+  bkrt        String?
+  ket         String?
+  blpt_grey   String?
+  bl_ws       Float?
+  bl_bb       String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  sn_combined String?
+  sn_beam     Int?
+  sn_lot      String?
+  sn_machine  String?
+
   @@index([kp])
   @@index([sn_combined])
 }
@@ -1249,4 +1274,28 @@ model ImportLog {
   @@index([createdAt], map: "idx_import_log_created_at")
   @@index([source], map: "idx_import_log_source")
   @@map("ImportLog")
+}
+
+model fiber_types {
+  id               Int                @id @default(autoincrement())
+  code             String             @unique @db.VarChar(50)
+  name             String             @db.VarChar(100)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
+  spk_fiber_usages spk_fiber_usages[]
+}
+
+model spk_fiber_usages {
+  id            Int         @id @default(autoincrement())
+  spk_id        Int
+  fiber_type_id Int
+  weight        Decimal     @db.Decimal(14, 2)
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  fiber_types   fiber_types @relation(fields: [fiber_type_id], references: [id])
+  spks          Spk         @relation(fields: [spk_id], references: [id], onDelete: Cascade)
+
+  @@unique([spk_id, fiber_type_id], map: "idx_spk_fiber_usages_spk_fiber")
+  @@index([fiber_type_id], map: "idx_spk_fiber_usages_fiber_type_id")
+  @@index([spk_id], map: "idx_spk_fiber_usages_spk_id")
 }

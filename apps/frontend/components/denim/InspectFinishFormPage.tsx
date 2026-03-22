@@ -292,11 +292,11 @@ export default function InspectFinishFormPage({ kp, editMode = false }: { kp: st
   const renderDefectInputs = (rollIndex: number, defects: DefectFields) => {
     const renderGroup = (defectsList: string[], severity: string, color: string) => (
       <div className="mb-3">
-        <p className={`text-xs font-semibold ${color} mb-2`}>{severity}</p>
+        <p className="text-xs font-semibold mb-2" style={{ color }}>{severity}</p>
         <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
           {defectsList.map(key => (
             <div key={key} className="space-y-1">
-              <Label className="text-[10px] style={{ color: '#9CA3AF' }} block">
+              <Label className="text-[10px] block" style={{ color: '#9CA3AF' }}>
                 {DEFECT_LABELS[key] || key}
               </Label>
               <Input
@@ -315,9 +315,9 @@ export default function InspectFinishFormPage({ kp, editMode = false }: { kp: st
 
     return (
       <div className="rounded-[16px] p-3 mt-2" style={{ background: '#E0E5EC', boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)' }}>
-        {renderGroup(DEFECT_CRITICAL, 'CRITICAL (Severity 4)', 'text-red-400')}
-        {renderGroup(DEFECT_MEDIUM, 'MEDIUM (Severity 2)', 'text-yellow-400')}
-        {renderGroup(DEFECT_LOW, 'LOW (Severity 1)', 'text-green-400')}
+        {renderGroup(DEFECT_CRITICAL, 'CRITICAL (Severity 4)', '#DC2626')}
+        {renderGroup(DEFECT_MEDIUM, 'MEDIUM (Severity 2)', '#D97706')}
+        {renderGroup(DEFECT_LOW, 'LOW (Severity 1)', '#16A34A')}
       </div>
     );
   };
@@ -459,7 +459,7 @@ export default function InspectFinishFormPage({ kp, editMode = false }: { kp: st
                 return (
                   <div key={i} className="space-y-2">
                     <div className="grid grid-cols-13 gap-2 items-center">
-                      <span className="col-span-1 text-xs style={{ color: '#9CA3AF' }} font-mono text-center">
+                      <span className="col-span-1 text-xs font-mono text-center" style={{ color: '#9CA3AF' }}>
                         {i + 1}
                       </span>
                       <div className="col-span-1">
@@ -577,7 +577,7 @@ export default function InspectFinishFormPage({ kp, editMode = false }: { kp: st
                           }}
                         />
                       </div>
-                      <div className={`col-span-1 flex items-center justify-center font-bold text-sm ${hasDefects ? 'text-amber-400' : 'text-zinc-500'}`}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', color: hasDefects ? '#D97706' : '#9CA3AF' }}>
                         {hasDefects ? (
                           <span className="flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3" />
@@ -602,7 +602,8 @@ export default function InspectFinishFormPage({ kp, editMode = false }: { kp: st
                           <button
                             type="button"
                             onClick={() => removeRoll(i)}
-                            className="style={{ color: '#6B7280' }} hover:text-red-400 transition-colors"
+                            className="transition-colors"
+                            style={{ color: '#6B7280' }}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

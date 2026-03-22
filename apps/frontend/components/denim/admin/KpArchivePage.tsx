@@ -36,8 +36,8 @@ const formatDate = (iso: string) => {
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  PO1: 'bg-blue-500/15 text-blue-400 border border-blue-500/20',
-  RP:  'bg-violet-500/15 text-violet-400 border border-violet-500/20',
+  PO1: 'rgba(59, 130, 246, 0.15)',
+  RP:  'rgba(139, 92, 246, 0.15)',
   SCN: ''
 };
 
@@ -99,7 +99,7 @@ export default function KpArchivePage() {
       {/* Search Bar */}
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#9CA3AF' }} />
           <input
             type="text"
             placeholder="Search by original KP code..."
@@ -150,7 +150,7 @@ export default function KpArchivePage() {
               ))
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={8} className="text-center py-12" style={{ color: '#9CA3AF' }}>
                   {search ? (
                     <>No archived KPs matching '{search}'</>
                   ) : (
@@ -169,7 +169,9 @@ export default function KpArchivePage() {
                     <TableCell>
                       <button
                         onClick={() => toggleExpand(row.id)}
-                        className="p-1 hover:bg-muted rounded"
+                        className="p-1 rounded-[8px]" style={{ background: 'transparent' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgb(163 177 198 / 0.3)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
                         {expandedId === row.id ? (
                           <ChevronUp className="h-4 w-4" />
@@ -178,7 +180,7 @@ export default function KpArchivePage() {
                         )}
                       </button>
                     </TableCell>
-                    <TableCell className="font-mono font-semibold text-amber-400 text-sm">{row.original_kp}</TableCell>
+                    <TableCell className="font-mono font-semibold text-sm" style={{ color: '#6C63FF' }}>{row.original_kp}</TableCell>
                     <TableCell>{formatDate(row.tgl)}</TableCell>
                     <TableCell>{row.codename || '—'}</TableCell>
                     <TableCell>
@@ -189,7 +191,7 @@ export default function KpArchivePage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '9999px', fontSize: '12px', fontWeight: 600, background: 'rgba(220, 38, 38, 0.15)', color: '#DC2626' }}>
                         REJECTED
                       </span>
                     </TableCell>

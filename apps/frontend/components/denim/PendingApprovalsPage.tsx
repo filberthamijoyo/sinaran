@@ -12,7 +12,7 @@ import {
 } from '../ui/table';
 import {
   Dialog, DialogContent, DialogHeader,
-  DialogTitle, DialogFooter,
+  DialogTitle, DialogFooter, DialogDescription,
 } from '../ui/dialog';
 import { CheckCircle2, XCircle, Loader2, RefreshCw, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
@@ -274,7 +274,7 @@ export default function PendingApprovalsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <span className="font-mono" style={{ color: '#6C63FF' }}>{selected?.kp}</span>
-              <span style={{ color: '#6B7280' }} font-normal text-sm>— Review Order</span>
+              <span className="font-normal text-sm" style={{ color: '#6B7280' }}>— Review Order</span>
             </DialogTitle>
             <a
               href={`/denim/admin/orders/${selected?.kp}`}
@@ -341,9 +341,9 @@ export default function PendingApprovalsPage() {
                 />
               </div>
 
-              <p className="text-xs" style={{ color: '#6B7280' }}>
+              <DialogDescription className="text-xs" style={{ color: '#6B7280' }}>
                 Your decision will be immediately sent to the Bandung team. If approved, the order moves to the warping queue.
-              </p>
+              </DialogDescription>
             </div>
           )}
 

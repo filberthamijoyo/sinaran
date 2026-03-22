@@ -328,7 +328,7 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
                 .reduce((s, b) => s + parseInt(b.putusan || '0'), 0);
               return (
                 <div className="flex items-center gap-2 text-sm mt-4">
-                  <span className="text-zinc-500">Total Putusan:</span>
+                  <span style={{ color: '#9CA3AF' }}>Total Putusan:</span>
                   <span className="font-mono font-semibold" style={{ color: '#3D4852' }}>
                     {totalPutusan}
                   </span>
@@ -362,14 +362,10 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
               {/* Header */}
               <div className="grid grid-cols-12 gap-3 px-1">
                 <p className="col-span-1 text-xs" style={{ color: '#6B7280' }}>#</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Beam No.</p>
-                <p className="col-span-3 text-xs font-medium
-                  text-zinc-500">Panjang (m)</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Jumlah Ends</p>
-                <p className="col-span-2 text-xs font-medium
-                  text-zinc-500">Putusan</p>
+                <p className="col-span-2 text-xs font-medium" style={{ color: '#9CA3AF' }}>Beam No.</p>
+                <p className="col-span-3 text-xs font-medium" style={{ color: '#9CA3AF' }}>Panjang (m)</p>
+                <p className="col-span-2 text-xs font-medium" style={{ color: '#9CA3AF' }}>Jumlah Ends</p>
+                <p className="col-span-2 text-xs font-medium" style={{ color: '#9CA3AF' }}>Putusan</p>
                 <p className="col-span-2" />
               </div>
 
@@ -429,7 +425,8 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
                       <button
                         type="button"
                         onClick={() => removeBeam(i)}
-                        className="hover:text-red-400"
+                        onMouseEnter={e => (e.currentTarget.style.color = '#DC2626')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#6B7280')}
                         style={{ color: '#6B7280' }}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
