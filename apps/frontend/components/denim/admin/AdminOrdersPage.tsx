@@ -1,436 +1,693 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { authFetch } from '../../../lib/authFetch';
-import PageHeader from '../../layout/PageHeader';
-import { Button } from '../../ui/button';
-import { Skeleton } from '../../ui/skeleton';
-import {
-  Table, TableBody, TableCell, TableHead,
-  TableHeader, TableRow,
-} from '../../ui/table';
-import { RefreshCw, Inbox } from 'lucide-react';
+import { PageShell } from '@/components/ui/erp/PageShell';
+import { Button } from '@/components/ui/button';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { authFetch } from '@/lib/authFetch';
+import { useAuth } from '@/lib/AuthContext';
+import { Filter, Plus } from 'lucide-react';
 import { format } from 'date-fns';
-import OrderFilterBar, {
-  FilterState, defaultFilters,
-} from '../OrderFilterBar';
 
-type SC = {
+// ─── Types ──────────────────────────────────────────────────────
+interface SalesContract {
   id: number;
   kp: string;
   tgl: string;
   codename: string | null;
-  permintaan: string | null;
   kat_kode: string | null;
-  ket_warna: string | null;
-  status: string | null;
   te: number | null;
   acc: string | null;
   pipeline_status: string;
+  permintaan: string | null;
+  ket_warna: string | null;
+  status: string | null;
+}
+
+interface Pagination { page: number; limit: number; total: number; pages: number; }
+interface ContractsData { items: SalesContract[]; pagination: Pagination; }
+
+// ─── Filters ────────────────────────────────────────────────────
+interface FilterState {
+  search: string;
+  stage: string;
+  acc: string;
+  type: string;
+  dateFrom: string;
+  dateTo: string;
+}
+
+const DEFAULT_FILTERS: FilterState = {
+  search:   '',
+  stage:    '',
+  acc:      '',
+  type:     '',
+  dateFrom: '',
+  dateTo:   '',
+};
+
+function activeFilterCount(f: FilterState): number {
+  let n = 0;
+  if (f.stage)    n++;
+  if (f.acc)      n++;
+  if (f.type)     n++;
+  if (f.dateFrom) n++;
+  if (f.dateTo)   n++;
+  return n;
+}
+
+// ─── Stage config ───────────────────────────────────────────────
+const STAGE_BORDER: Record<string, string> = {
+  PENDING_APPROVAL: '#D97706',
+  SACON:            '#7C3AED',
+  WARPING:          '#4A7A9B',
+  INDIGO:           '#0891B2',
+  WEAVING:          '#059669',
+  INSPECT_GRAY:     '#D97706',
+  BBSF:             '#EA580C',
+  INSPECT_FINISH:   '#2B506E',
+  COMPLETE:         '#059669',
+  REJECTED:         '#DC2626',
 };
 
 const STAGES = [
-  'ALL', 'DRAFT', 'PENDING_APPROVAL', 'REJECTED',
-  'WARPING', 'INDIGO', 'WEAVING', 'INSPECT_GRAY', 'COMPLETE',
+  { value: '',                          label: 'All Stages' },
+  { value: 'PENDING_APPROVAL',          label: 'Pending' },
+  { value: 'SACON',                     label: 'SACON' },
+  { value: 'WARPING',                   label: 'Warping' },
+  { value: 'INDIGO',                    label: 'Indigo' },
+  { value: 'WEAVING',                   label: 'Weaving' },
+  { value: 'INSPECT_GRAY',              label: 'Inspect Gray' },
+  { value: 'BBSF',                      label: 'BBSF' },
+  { value: 'INSPECT_FINISH',            label: 'Inspect Finish' },
+  { value: 'COMPLETE',                   label: 'Complete' },
+  { value: 'REJECTED',                  label: 'Rejected' },
 ];
 
-const formatDate = (iso: string) => {
+const TYPES = [
+  { value: '', label: 'All Types' },
+  { value: 'SC', label: 'SC' },
+  { value: 'WS', label: 'WS' },
+];
+
+const ACC_OPTS = [
+  { value: '', label: 'All' },
+  { value: 'ACC', label: 'ACC' },
+  { value: 'TIDAK ACC', label: 'TIDAK ACC' },
+  { value: 'Pending', label: 'Pending' },
+];
+
+// ─── Utilities ───────────────────────────────────────────────────
+function formatDate(iso: string): string {
   try { return format(new Date(iso), 'd MMM yyyy'); }
   catch { return '—'; }
-};
-
-const stageBadge = (status: string) => {
-  const label: Record<string, string> = {
-    PENDING_APPROVAL: 'Pending', WARPING: 'Warping',
-    INDIGO: 'Indigo', WEAVING: 'Weaving', INSPECT_GRAY: 'Inspect',
-    COMPLETE: 'Complete', REJECTED: 'Rejected',
-  };
-  const bgMap: Record<string, string> = {
-    PENDING_APPROVAL: 'rgba(217, 119, 6, 0.15)',
-    WARPING: 'rgba(108, 99, 255, 0.15)',
-    INDIGO: 'rgba(6, 182, 212, 0.15)',
-    WEAVING: 'rgba(22, 163, 74, 0.15)',
-    INSPECT_GRAY: 'rgba(249, 115, 22, 0.15)',
-    COMPLETE: 'rgba(22, 163, 74, 0.15)',
-    REJECTED: 'rgba(220, 38, 38, 0.15)',
-  };
-  const colorMap: Record<string, string> = {
-    PENDING_APPROVAL: '#D97706',
-    WARPING: '#6C63FF',
-    INDIGO: '#06B6D4',
-    WEAVING: '#16A34A',
-    INSPECT_GRAY: '#F97316',
-    COMPLETE: '#16A34A',
-    REJECTED: '#DC2626',
-  };
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-[9999px] text-xs font-medium"
-      style={{
-        background: bgMap[status] ?? 'rgba(163, 177, 198, 0.2)',
-        color: colorMap[status] ?? '#6B7280',
-        boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)',
-      }}
-    >
-      {label[status] ?? status}
-    </span>
-  );
-};
-
-interface Props {
-  defaultStage?: string;
-  initialData?: {
-    items: SC[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      pages: number;
-    };
-  };
 }
 
-export default function AdminOrdersPage({ defaultStage = 'ALL', initialData }: Props) {
-  const router = useRouter();
-  const [rows, setRows] = useState<SC[]>(initialData?.items ?? []);
-  const [loading, setLoading] = useState(!initialData);
-  const [filters, setFilters] = useState<FilterState>({
-    ...defaultFilters(),
-    stage: defaultStage,
-  });
-  const [page, setPage] = useState(initialData ? 1 : 1);
-  const [total, setTotal] = useState(initialData?.pagination?.total ?? 0);
+// ─── Skeleton shimmer ───────────────────────────────────────────
+const SHIMMER = `
+@keyframes __sacon_shimmer__ {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.85; }
+}`;
+
+function SkeletonRow() {
+  return (
+    <>
+      <style>{SHIMMER}</style>
+      {Array.from({ length: 5 }).map((_, j) => (
+        <tr key={j} style={{ borderBottom: '1px solid #F3F4F6' }}>
+          {[0,1,2,3,4,5,6,7].map(cellIdx => (
+            <td key={cellIdx} style={{ padding: '0 16px', height: 44 }}>
+              <div style={{
+                height:        12,
+                borderRadius:  4,
+                background:    '#E5E7EB',
+                animation:     `__sacon_shimmer__ 1.5s ease-in-out ${j * 100}ms infinite`,
+                width:         cellIdx === 2 ? '80%' : '60%',
+              }} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+// ─── Select component ───────────────────────────────────────────
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label style={{
+        display:     'block',
+        fontSize:    11,
+        fontWeight:  500,
+        color:       'var(--text-secondary)',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+      }}>{label}</label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          width:         '100%',
+          height:        32,
+          borderRadius:  'var(--input-radius)',
+          border:        '1px solid var(--border)',
+          background:    'var(--page-bg)',
+          color:         'var(--text-primary)',
+          fontSize:      13,
+          padding:       '0 28px 0 10px',
+          cursor:        'pointer',
+          appearance:    'none',
+          WebkitAppearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A96A8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 10px center',
+          outline: 'none',
+        }}
+      >
+        {options.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────
+export default function SalesContractPage({
+  initialData,
+}: {
+  initialData?: ContractsData;
+}) {
+  const router        = useRouter();
+  const { user }     = useAuth();
+
+  const [rows,    setRows]    = useState<SalesContract[]>(initialData?.items ?? []);
+  const [total,   setTotal]   = useState<number>(initialData?.pagination?.total ?? 0);
+  const [loading, setLoading] = useState<boolean>(!initialData);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [page,    setPage]    = useState<number>(1);
+  const [showFilters, setShowFilters] = useState(false);
   const LIMIT = 50;
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
-        page: String(page),
+        page:  String(page),
         limit: String(LIMIT),
-        sortField: filters.sortField,
-        sortDir: filters.sortDir,
       });
-      if (filters.search) params.set('kp', filters.search);
-      if (filters.stage && filters.stage !== 'ALL')
-        params.set('pipeline_status', filters.stage);
-      if (filters.type && filters.type !== 'ALL')
-        params.set('type', filters.type);
+      if (filters.search)   params.set('kp',         filters.search);
+      if (filters.stage)    params.set('pipeline_status', filters.stage);
+      if (filters.acc)      params.set('acc',         filters.acc);
+      if (filters.type)     params.set('kat_kode',    filters.type);
+      if (filters.dateFrom) params.set('dateFrom',   filters.dateFrom);
+      if (filters.dateTo)   params.set('dateTo',     filters.dateTo);
 
-      const data = await authFetch(
+      const data = await authFetch<ContractsData>(
         `/denim/sales-contracts?${params}`
-      ) as any;
-      setRows(data?.items || []);
-      setTotal(data?.pagination?.total || 0);
-    } catch (e) {
-      console.error(e);
+      );
+      setRows(data?.items ?? []);
+      setTotal(data?.pagination?.total ?? 0);
+    } catch {
+      setRows([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
   }, [page, filters]);
 
   useEffect(() => {
-    if (!initialData) {
-      fetchOrders();
-    }
+    if (initialData && page === 1) return;
+    fetchOrders();
   }, [fetchOrders, initialData]);
 
-  useEffect(() => {
-    if (!initialData || page > 1) {
-      fetchOrders();
-    }
-  }, [page]);
+  // Reset to page 1 on filter change
+  const handleFilterChange = (patch: Partial<FilterState>) => {
+    setFilters(f => ({ ...f, ...patch }));
+    setPage(1);
+  };
 
-  useEffect(() => { setPage(1); }, [filters]);
+  const clearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setPage(1);
+  };
 
-  const totalPages = Math.ceil(total / LIMIT);
+  const activeCount  = activeFilterCount(filters);
+  const totalPages  = Math.ceil(total / LIMIT);
+  const start       = (page - 1) * LIMIT + 1;
+  const end         = Math.min(page * LIMIT, total);
+
+  const headerActions = (
+    user?.role === 'factory' ? (
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => router.push('/denim/inbox/sacon/new')}
+        leftIcon={<Plus size={14} />}
+      >
+        New Contract
+      </Button>
+    ) : null
+  );
 
   return (
-    <div>
-      <PageHeader
-        title="All Orders"
-        subtitle={`${total.toLocaleString()} orders`}
-        actions={
-          <Button
-            size="sm"
-            onClick={fetchOrders}
-            className="h-8 w-8 p-0"
-            style={{
-              background: '#E0E5EC',
-              borderRadius: '16px',
-              boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-            }}
-          >
-            <RefreshCw className="w-3.5 h-3.5" style={{ color: '#6B7280' }} />
-          </Button>
-        }
-      />
+    <PageShell
+      title="Sales Contract"
+      subtitle={`${total.toLocaleString()} total`}
+      actions={headerActions}
+      noPadding
+    >
+      <div style={{ backgroundColor: '#F0F4F8', minHeight: '100vh', padding: '24px 32px' }}>
 
-      <div className="px-4 sm:px-8 pb-8">
+        {/* ── Search + Filter bar ── */}
+        <div style={{
+          display:        'flex',
+          alignItems:    'center',
+          gap:            12,
+          marginBottom:  showFilters ? 12 : 16,
+        }}>
+          {/* Search */}
+          <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+            <input
+              type="text"
+              placeholder="Search KP, construction..."
+              value={filters.search}
+              onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(1); }}
+              onFocus={e => { e.target.style.borderColor = '#4A7A9B'; }}
+              onBlur={e => { e.target.style.borderColor = '#E5E7EB'; }}
+              style={{
+                width:         '100%',
+                height:        38,
+                borderRadius:  8,
+                border:        '1px solid #E5E7EB',
+                background:    '#FFFFFF',
+                color:         '#0F1E2E',
+                fontSize:      14,
+                padding:       '0 12px 0 38px',
+                outline:       'none',
+              }}
+            />
+            <svg
+              width="16" height="16" viewBox="0 0 16 16" fill="none"
+              style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#9CA3AF' }}
+            >
+              <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M11 11L15 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
 
-        {/* Filters */}
-        <div className="pt-4 flex items-center gap-2 mb-4">
-          <OrderFilterBar
-            filters={filters}
-            onChange={f => { setFilters(f); setPage(1); }}
-            showStageFilter={true}
-            showTypeFilter={true}
-            placeholder="Search by KP..."
-          />
-          <Button
-            size="sm"
-            onClick={fetchOrders}
-            className="h-8 w-8 p-0"
+          {/* Filter toggle */}
+          <button
+            onClick={() => setShowFilters(v => !v)}
             style={{
-              background: '#E0E5EC',
-              borderRadius: '16px',
-              boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+              height:        38,
+              padding:       '0 14px',
+              borderRadius:  8,
+              border:        '1px solid #E5E7EB',
+              background:    '#FFFFFF',
+              fontSize:      13,
+              color:         '#374151',
+              display:       'flex',
+              alignItems:    'center',
+              gap:           6,
+              cursor:        'pointer',
+              transition:    'background 150ms',
             }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF'; }}
           >
-            <RefreshCw className="w-3.5 h-3.5" style={{ color: '#6B7280' }} />
-          </Button>
+            <Filter size={13} />
+            Filters
+            {activeCount > 0 && (
+              <span style={{
+                background:    '#4A7A9B',
+                color:         '#EEF3F7',
+                borderRadius:  '99px',
+                width:         18,
+                height:        18,
+                fontSize:      10,
+                fontWeight:    700,
+                display:       'inline-flex',
+                alignItems:    'center',
+                justifyContent:'center',
+              }}>{activeCount}</span>
+            )}
+          </button>
         </div>
 
-        {totalPages > 1 && (
-          <div
-            className="flex items-center justify-between mt-4"
-            style={{
-              background: '#E0E5EC',
-              borderRadius: '16px',
-              padding: '10px 16px',
-              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-            }}
-          >
-            <p className="text-xs" style={{ color: '#9CA3AF' }}>
-              Page {page} of {totalPages}
-              {' '}· {total.toLocaleString()} orders
-            </p>
-            <div className="flex items-center gap-1.5">
-              <Button
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
-                className="h-7 text-xs"
+        {/* ── Collapsible filter panel ── */}
+        {showFilters && (
+          <div style={{
+            background:    'var(--content-bg)',
+            border:        '1px solid var(--border)',
+            borderRadius:  'var(--card-radius)',
+            padding:       '16px 20px',
+            marginBottom:  12,
+            display:       'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap:           12,
+          }}>
+            <SelectField
+              label="Pipeline Stage"
+              value={filters.stage}
+              options={STAGES}
+              onChange={v => handleFilterChange({ stage: v })}
+            />
+            <SelectField
+              label="ACC Status"
+              value={filters.acc}
+              options={ACC_OPTS}
+              onChange={v => handleFilterChange({ acc: v })}
+            />
+            <SelectField
+              label="Type"
+              value={filters.type}
+              options={TYPES}
+              onChange={v => handleFilterChange({ type: v })}
+            />
+            <div>
+              <label style={{
+                display:       'block',
+                fontSize:      11,
+                fontWeight:    500,
+                color:         'var(--text-secondary)',
+                marginBottom:  4,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}>Date From</label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={e => handleFilterChange({ dateFrom: e.target.value })}
                 style={{
-                  background: '#E0E5EC',
-                  borderRadius: '16px',
-                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                  color: '#3D4852',
+                  width:         '100%',
+                  height:        32,
+                  borderRadius:  'var(--input-radius)',
+                  border:        '1px solid var(--border)',
+                  background:    'var(--page-bg)',
+                  color:         'var(--text-primary)',
+                  fontSize:      13,
+                  padding:       '0 10px',
+                  outline:       'none',
                 }}
-              >
-                Previous
-              </Button>
-              <Button
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => p + 1)}
-                className="h-7 text-xs"
-                style={{
-                  background: '#E0E5EC',
-                  borderRadius: '16px',
-                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                  color: '#3D4852',
-                }}
-              >
-                Next
-              </Button>
+              />
             </div>
+            <div>
+              <label style={{
+                display:       'block',
+                fontSize:      11,
+                fontWeight:    500,
+                color:         'var(--text-secondary)',
+                marginBottom:  4,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}>Date To</label>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={e => handleFilterChange({ dateTo: e.target.value })}
+                style={{
+                  width:         '100%',
+                  height:        32,
+                  borderRadius:  'var(--input-radius)',
+                  border:        '1px solid var(--border)',
+                  background:    'var(--page-bg)',
+                  color:         'var(--text-primary)',
+                  fontSize:      13,
+                  padding:       '0 10px',
+                  outline:       'none',
+                }}
+              />
+            </div>
+            {activeCount > 0 && (
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  style={{ color: 'var(--danger)', whiteSpace: 'nowrap' }}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Table */}
-        <div
-          style={{
-            background: '#E0E5EC',
-            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-            borderRadius: '32px',
-            overflow: 'hidden',
-          }}
-        >
-          <Table>
-            <TableHeader>
-              <TableRow
-                style={{ background: '#E0E5EC' }}
-              >
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  Date
-                </TableHead>
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  KP
-                </TableHead>
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  Construction
-                </TableHead>
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  Type
-                </TableHead>
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  Customer
-                </TableHead>
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  TE
-                </TableHead>
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  Color
-                </TableHead>
-                <TableHead
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ background: '#E0E5EC', color: '#9CA3AF' }}
-                >
-                  Stage
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+        {/* ── Table ── */}
+        <div style={{
+          background:    '#FFFFFF',
+          border:        '1px solid #E5E7EB',
+          borderRadius:  12,
+          overflow:      'hidden',
+          overflowX:     'auto',
+          boxShadow:     'none',
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                {/* Status stripe — no header text */}
+                <th style={{ width: 4, padding: 0 }} />
+                {[
+                  { key: 'DATE',        label: 'DATE' },
+                  { key: 'KP',         label: 'KP CODE' },
+                  { key: 'CONSTRUCTION',label: 'CONSTRUCTION' },
+                  { key: 'TYPE',       label: 'TYPE' },
+                  { key: 'TE',         label: 'TE' },
+                  { key: 'ACC',        label: 'ACC' },
+                  { key: 'STAGE',      label: 'STAGE' },
+                  { key: 'ACTION',     label: '' },
+                ].map(h => (
+                  <th
+                    key={h.key}
+                    style={{
+                      padding:    '0 16px',
+                      height:     36,
+                      fontSize:   11,
+                      fontWeight: 600,
+                      textAlign:  h.key === 'ACTION' ? 'right' : 'left',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color:      '#9CA3AF',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >{h.label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
               {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <TableRow
-                    key={i}
-                    style={{
-                      background: '#E0E5EC',
-                      borderBottom: '1px solid rgb(163 177 198 / 0.4)',
-                    }}
-                  >
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <TableCell key={j}>
-                        <Skeleton
-                          className="h-4 w-full"
-                          style={{
-                            background: '#E0E5EC',
-                            boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                          }}
-                        />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                <SkeletonRow />
               ) : rows.length === 0 ? (
-                <TableRow
-                  style={{
-                    background: '#E0E5EC',
-                    borderBottom: '1px solid rgb(163 177 198 / 0.4)',
-                  }}
-                >
-                  <TableCell colSpan={8}>
-                    <div
-                      className="flex flex-col items-center justify-center py-16"
-                      style={{ color: '#6B7280' }}
-                    >
-                      <Inbox className="w-10 h-10 mb-3" style={{ color: '#9CA3AF' }} />
-                      <p className="text-sm font-medium" style={{ color: '#6B7280' }}>No orders found</p>
-                      <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>Try adjusting your filters</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map(row => (
-                  <TableRow
-                    key={row.id}
-                    style={{
-                      background: '#E0E5EC',
-                      borderBottom: '1px solid rgb(163 177 198 / 0.4)',
-                    }}
-                    className="cursor-pointer transition-all duration-100"
-                    onClick={() =>
-                      router.push(`/denim/admin/orders/${row.kp}`)
-                    }
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)';
-                      e.currentTarget.style.transform = 'translateX(2px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = 'none';
-                      e.currentTarget.style.transform = 'translateX(0px)';
-                    }}
+                <tr>
+                  <td
+                    colSpan={9}
+                    style={{ height: 200, textAlign: 'center' }}
                   >
-                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
-                      {formatDate(row.tgl)}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className="font-mono font-semibold text-sm tracking-wide"
-                        style={{ color: '#6C63FF' }}
-                      >
-                        {row.kp}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-sm" style={{ color: '#3D4852' }}>
-                      {row.codename || '—'}
-                    </TableCell>
-                    <TableCell>
-                      {row.kat_kode && (
-                        <span
-                          className="inline-flex items-center rounded-[9999px] px-3 py-1 text-xs font-bold"
-                          style={{
-                            background: '#E0E5EC',
-                            color: '#3D4852',
-                            boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                          }}
-                        >
-                          {row.kat_kode}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
-                      {row.permintaan || '—'}
-                    </TableCell>
-                    <TableCell className="text-sm font-mono" style={{ color: '#6B7280' }}>
-                      {row.te?.toLocaleString() || '—'}
-                    </TableCell>
-                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
-                      {row.ket_warna || '—'}
-                    </TableCell>
-                    <TableCell>
-                      {stageBadge(row.pipeline_status || 'DRAFT')}
-                      {(() => {
-                        const daysWaiting = row.tgl
-                          ? Math.floor((Date.now() - new Date(row.tgl).getTime()) / (1000 * 60 * 60 * 24))
-                          : 0;
-                        const isStalled = row.pipeline_status === 'PENDING_APPROVAL' && daysWaiting > 30;
-                        return isStalled ? (
-                          <span
-                            className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-[9999px] text-xs font-bold"
-                            style={{
-                              background: '#E0E5EC',
-                              color: '#D97706',
-                              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                            }}
-                          >
-                            🕐 Stalled {daysWaiting}d
-                          </span>
-                        ) : null;
-                      })()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                    <p style={{ fontSize: 14, color: '#9CA3AF' }}>
+                      No contracts found
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                rows.map(row => {
+                  const borderColor = STAGE_BORDER[row.pipeline_status] ?? '#B8CDD9';
+                  return (
+                    <tr
+                      key={row.id}
+                      onClick={() => router.push(`/denim/admin/orders/${row.kp}`)}
+                      style={{
+                        cursor:      'pointer',
+                        borderBottom:'1px solid #F3F4F6',
+                        transition:  'background 150ms',
+                        height:      44,
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                    >
+                      {/* Status stripe */}
+                      <td style={{ borderLeft: `3px solid ${borderColor}`, paddingLeft: 13, paddingRight: 0 }} />
 
+                      {/* Date */}
+                      <td style={{ padding: '0 16px', fontSize: 13, color: '#6B7280', whiteSpace: 'nowrap' }}>
+                        {formatDate(row.tgl)}
+                      </td>
+
+                      {/* KP */}
+                      <td style={{ padding: '0 16px', height: 44 }}>
+                        <span style={{
+                          fontFamily:  "'IBM Plex Mono', monospace",
+                          fontSize:    13,
+                          fontWeight:  600,
+                          color:       '#1D4ED8',
+                        }}>
+                          {row.kp}
+                        </span>
+                      </td>
+
+                      {/* Construction */}
+                      <td style={{
+                        padding:    '0 16px',
+                        height:     44,
+                        fontSize:   13,
+                        color:      '#0F1E2E',
+                        maxWidth:   220,
+                        overflow:   'hidden',
+                        textOverflow:'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {row.codename || '—'}
+                      </td>
+
+                      {/* Type */}
+                      <td style={{ padding: '0 16px', height: 44, fontSize: 12, color: '#6B7280' }}>
+                        {row.kat_kode || '—'}
+                      </td>
+
+                      {/* TE */}
+                      <td style={{ padding: '0 16px', height: 44, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums' }}>
+                        {row.te != null ? row.te.toLocaleString() : '—'}
+                      </td>
+
+                      {/* ACC */}
+                      <td style={{ padding: '0 16px', height: 44 }}>
+                        {row.acc === 'ACC' ? (
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#059669' }}>✓ ACC</span>
+                        ) : row.acc === 'TIDAK ACC' ? (
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#DC2626' }}>✕ REJ</span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#D1D5DB' }}>—</span>
+                        )}
+                      </td>
+
+                      {/* Stage */}
+                      <td style={{ padding: '0 16px', height: 44 }}>
+                        <StatusBadge status={row.pipeline_status} />
+                      </td>
+
+                      {/* Action */}
+                      <td
+                        style={{ padding: '0 16px 0 0', height: 44, textAlign: 'right' }}
+                        onClick={e => { e.stopPropagation(); router.push(`/denim/admin/orders/${row.kp}`); }}
+                      >
+                        <span style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 500, cursor: 'pointer' }}>
+                          View →
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+
+          {/* ── Pagination ── */}
+          {totalPages > 0 && (
+            <div style={{
+              display:        'flex',
+              alignItems:    'center',
+              justifyContent: 'space-between',
+              padding:        '12px 16px',
+              borderTop:      '1px solid #F3F4F6',
+              fontSize:       13,
+              color:          '#6B7280',
+            }}>
+              <span style={{ fontSize: 13, color: '#6B7280' }}>
+                Showing {start}–{end} of {total.toLocaleString()} orders
+              </span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage(p => p - 1)}
+                  style={{
+                    height:        32,
+                    padding:       '0 12px',
+                    borderRadius:   6,
+                    border:        '1px solid #E5E7EB',
+                    background:    '#FFFFFF',
+                    fontSize:       13,
+                    color:         page <= 1 ? '#374151' : '#374151',
+                    cursor:        page <= 1 ? 'not-allowed' : 'pointer',
+                    opacity:       page <= 1 ? 0.4 : 1,
+                    display:       'flex',
+                    alignItems:    'center',
+                    transition:    'background 150ms',
+                  }}
+                  onMouseEnter={e => { if (page > 1) (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF'; }}
+                >←</button>
+
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  const p = i + 1;
+                  const active = p === page;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      style={{
+                        height:        32,
+                        width:         32,
+                        borderRadius:   6,
+                        border:        active ? 'none' : '1px solid #E5E7EB',
+                        background:    active ? '#1D4ED8' : 'transparent',
+                        color:         active ? '#FFFFFF' : '#374151',
+                        fontSize:       13,
+                        fontWeight:    active ? 600 : 500,
+                        cursor:        'pointer',
+                        display:       'flex',
+                        alignItems:    'center',
+                        justifyContent:'center',
+                        transition:    'all 0.1s',
+                      }}
+                    >{p}</button>
+                  );
+                })}
+
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                  style={{
+                    height:        32,
+                    padding:       '0 12px',
+                    borderRadius:   6,
+                    border:        '1px solid #E5E7EB',
+                    background:    '#FFFFFF',
+                    fontSize:       13,
+                    color:         page >= totalPages ? '#374151' : '#374151',
+                    cursor:        page >= totalPages ? 'not-allowed' : 'pointer',
+                    opacity:       page >= totalPages ? 0.4 : 1,
+                    display:       'flex',
+                    alignItems:    'center',
+                    transition:    'background 150ms',
+                  }}
+                  onMouseEnter={e => { if (page < totalPages) (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FFFFFF'; }}
+                >→</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      <style>{`
+        @media (max-width: 767px) {
+          .sacontent { padding: 16px !important; }
+        }
+      `}</style>
+    </PageShell>
   );
 }

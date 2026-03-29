@@ -1,50 +1,25 @@
-import AdminOrdersPage from '../../../../components/denim/admin/AdminOrdersPage';
-import { prisma } from '../../../../lib/server-prisma';
+import AdminOrdersPage from '@/components/denim/admin/AdminOrdersPage';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'All Orders — Sinaran ERP' };
-
-async function getOrders() {
-  const page = 1;
-  const limit = 50;
-  const skip = (page - 1) * limit;
-
-  try {
-    const [items, total] = await Promise.all([
-      prisma.salesContract.findMany({
-        orderBy: { tgl: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          kp: true,
-          tgl: true,
-          codename: true,
-          permintaan: true,
-          kat_kode: true,
-          ket_warna: true,
-          status: true,
-          acc: true,
-          te: true,
-          pipeline_status: true,
-        },
-      }),
-      prisma.salesContract.count(),
-    ]);
-
-    const serializedItems = JSON.parse(JSON.stringify(items));
-
-    return {
-      items: serializedItems,
-      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
-    };
-  } catch {
-    return { items: [], pagination: { page, limit, total: 0, pages: 0 } };
-  }
-}
-
 export default async function Page() {
-  const initialData = await getOrders();
+  let initialData = null;
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost';
+    const port = process.env.NEXT_PUBLIC_API_PORT;
+    const isProduction =
+      baseUrl.startsWith('https://') ||
+      (baseUrl.startsWith('http://') && !baseUrl.includes('localhost'));
+    const effectivePort = port || (isProduction ? '' : '3001');
+    const apiBase = effectivePort
+      ? `${baseUrl.replace(/\/$/, '')}:${effectivePort}/api`
+      : `${baseUrl.replace(/\/$/, '')}/api`;
+
+    const res = await fetch(
+      `${apiBase}/denim/sales-contracts?limit=50&page=1`,
+      { next: { revalidate: 30 }, headers: { 'x-internal': '1' } }
+    );
+    if (res.ok) initialData = await res.json();
+  } catch {}
   return <AdminOrdersPage initialData={initialData} />;
 }

@@ -1,12 +1,10 @@
-import type { Metadata } from 'next';
-import ProductionList from '../../components/ProductionList';
+import RequireAuth from '@/components/RequireAuth';
+import ProductionList from '@/components/ProductionList';
 
-export const metadata: Metadata = {
-  title: 'Production',
-  description: 'Production database',
-};
-
-export default function ProductionPage() {
-  return <ProductionList />;
+export default function Page() {
+  return (
+    <RequireAuth>
+      <ProductionList />
+    </RequireAuth>
+  );
 }
-

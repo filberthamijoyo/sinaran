@@ -9,15 +9,113 @@ import { parseLocalizedNumber, formatDecimalInput } from '../lib/numberFormat';
 
 const API_BASE_URL = API_ENDPOINTS.production;
 
+type Feedback = { type: string; message: string };
+
+interface ProductionFormRow {
+  id: string;
+  date: string;
+  month: string;
+  year: number;
+  countDescriptionCode: string;
+  unitPabrikId: string;
+  yarnJenisBenangId: string;
+  countNeId: string;
+  slubCodeId: string;
+  lotBenangId: string;
+  spkId: string;
+  blendId: string;
+  warnaConeCheeseId: string;
+  beratConeKg: string;
+  tm: string;
+  tpi: string;
+  speed: string;
+  spindlesInstalled: string;
+  jumlahCones: string;
+  produksiKg: string;
+  produksiLbs: string;
+  produksiBalesActual: string;
+  produksiBales100: string;
+  targetBales: string;
+  efisiensiBalesVsTarget: string;
+  targetOps: string;
+  opsActual: string;
+  opsWorked: string;
+  produksiEffPercent: string;
+  kerjaEffPercent: string;
+  stopPowerMin: string;
+  stopCountChangeMin: string;
+  stopCreelChangeMin: string;
+  stopPreventiveMin: string;
+  stopCreelShortMin: string;
+  stopTotalMin: string;
+  spindlesWorking: string;
+  spindleEffPercent: string;
+  lossPowerBales: string;
+  lossCountChangeBales: string;
+  lossCreelChangeBales: string;
+  lossPreventiveBales: string;
+  lossCreelShortBales: string;
+  lossTotalBales: string;
+  hargaPerBale: string;
+}
+
+interface ProductionRecord {
+  id?: string;
+  productionDate?: string;
+  month?: string;
+  year?: number;
+  countDescriptionCode?: number;
+  millsUnitId?: number;
+  yarnJenisBenangId?: number;
+  countNeId?: number;
+  slubCodeId?: number;
+  lotBenangId?: number;
+  spkId?: number;
+  blendId?: number;
+  warnaConeCheeseId?: number;
+  beratConeCheeseKg?: number;
+  tm?: number;
+  tpi?: number;
+  speed?: number;
+  jumlahSpindelRotorTerpasang?: number;
+  jumlahConesCheese?: number;
+  produksiKgs?: number;
+  produksiLbs?: number;
+  aktualProduksiBales?: number;
+  produksi100PercentBales?: number;
+  targetProduksiOnTargetOprBales?: number;
+  keuntunganKerugianEfisiensiBalesOnTargetOpsOpr?: number;
+  targetOpsOpr?: number;
+  opsOprAktual?: number;
+  opsOprWorked?: number;
+  produksiEffisiensiPercent?: number;
+  effisiensiKerjaPercent?: number;
+  powerElectricMin?: number;
+  countMengubahMin?: number;
+  creelMengubahMin?: number;
+  preventiveMtcMin?: number;
+  creelShortStoppageMin?: number;
+  totalPenghentianMin?: number;
+  spindlesRotorsBekerja?: number;
+  spindlesRotorsEffisiensi?: number;
+  powerPenghentian?: number;
+  countMengubahLoss?: number;
+  creelMengubahLoss?: number;
+  preventiveMtcLoss?: number;
+  creelShortLoss?: number;
+  kerugianTotal?: number;
+  hargaBenangPerBale?: number;
+}
+
 // --- Small helpers reused from the list page ---
 
-const formatDate = (dateString: any) => {
+const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.getDate().toString();
 };
 
-const createFullDate = (day: any, month: any, year: any = new Date().getFullYear()) => {
+const createFullDate = (day: string, month: string, year?: number) => {
   if (!day || !month) return null;
   const monthMap: Record<string, number> = {
     Januari: 0,
@@ -39,14 +137,14 @@ const createFullDate = (day: any, month: any, year: any = new Date().getFullYear
   return new Date(yearNum, monthNum, parseInt(day, 10));
 };
 
-const formatDateForAPI = (date: any) => {
+const formatDateForAPI = (date: Date | string | null | undefined) => {
   if (!date) return null;
   const d = date instanceof Date ? date : new Date(date);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString().split('T')[0];
 };
 
-const parseNum = (val: any) => parseLocalizedNumber(val);
+const parseNum = (val: string | null | undefined) => parseLocalizedNumber(val ?? '');
 
 const createEmptyRow = () => ({
   id: '',
@@ -96,7 +194,7 @@ const createEmptyRow = () => ({
   hargaPerBale: '',
 });
 
-const mapRecordToForm = (record: any) => {
+const mapRecordToForm = (record: ProductionRecord | null): ProductionFormRow => {
   if (!record) return createEmptyRow();
 
   return {
@@ -154,8 +252,39 @@ const mapRecordToForm = (record: any) => {
   };
 };
 
-const mapFormToAPI = (formData: any) => {
-  const payload: any = {};
+interface ProductionPayload {
+  productionDate?: string | null;
+  month?: string;
+  year?: number;
+  countDescriptionCode?: number;
+  millsUnitId?: number;
+  yarnJenisBenangId?: number;
+  countNeId?: number;
+  slubCodeId?: number;
+  lotBenangId?: number;
+  spkId?: number;
+  blendId?: number;
+  warnaConeCheeseId?: number;
+  beratConeCheeseKg?: number | null;
+  tm?: number | null;
+  tpi?: number | null;
+  speed?: number | null;
+  jumlahSpindelRotorTerpasang?: number | null;
+  jumlahConesCheese?: number | null;
+  produksiKgs?: number | null;
+  produksiLbs?: number | null;
+  aktualProduksiBales?: number | null;
+  powerElectricMin?: number | null;
+  countMengubahMin?: number | null;
+  creelMengubahMin?: number | null;
+  preventiveMtcMin?: number | null;
+  creelShortStoppageMin?: number | null;
+  totalPenghentianMin?: number | null;
+  hargaBenangPerBale?: number | null;
+}
+
+const mapFormToAPI = (formData: ProductionFormRow): ProductionPayload => {
+  const payload: ProductionPayload = {};
 
   if (formData.date && formData.month) {
     const fullDate = createFullDate(formData.date, formData.month, formData.year);
@@ -169,7 +298,7 @@ const mapFormToAPI = (formData: any) => {
   }
 
   if (formData.month) payload.month = formData.month;
-  if (formData.year) payload.year = parseInt(formData.year, 10);
+  if (formData.year) payload.year = parseInt(String(formData.year), 10);
   if (formData.countDescriptionCode)
     payload.countDescriptionCode = parseInt(formData.countDescriptionCode, 10);
   // Map Unit Pabrik select to backend millsUnitId foreign key
@@ -212,14 +341,19 @@ const mapFormToAPI = (formData: any) => {
   return payload;
 };
 
-const getCountNeValue = (countNeId: any, counts: any[]) => {
+interface CountOption {
+  id: number;
+  value: number;
+}
+
+const getCountNeValue = (countNeId: string | null, counts: CountOption[]): number | null => {
   if (!countNeId || !counts || counts.length === 0) return null;
   const count = counts.find((c) => c.id === parseInt(countNeId, 10));
-  return count?.value ? parseNum(count.value) : null;
+  return count?.value ? parseNum(count.value.toString()) : null;
 };
 
-const calculateProductionValues = (formData: any, counts: any[]) => {
-  const result = { ...formData };
+const calculateProductionValues = (formData: ProductionFormRow, counts: CountOption[]): ProductionFormRow => {
+  const result: ProductionFormRow = { ...formData };
 
   const beratConeKg = parseNum(formData.beratConeKg);
   const jumlahCones = parseNum(formData.jumlahCones);
@@ -375,32 +509,73 @@ const calculateProductionValues = (formData: any, counts: any[]) => {
   return result;
 };
 
+interface UnitOption {
+  id: number;
+  name: string;
+}
+
+interface YarnTypeOption {
+  id: number;
+  name: string;
+}
+
+interface CountDescriptionOption {
+  code: number;
+  name: string;
+}
+
+interface SlubCodeOption {
+  id: number;
+  name?: string;
+  code?: string;
+}
+
+interface LotOption {
+  id: number;
+  name: string;
+}
+
+interface SpkOption {
+  id: number;
+  name: string;
+}
+
+interface BlendOption {
+  id: number;
+  name: string;
+}
+
+interface ColorOption {
+  id: number;
+  name: string;
+}
+
 const ProductionForm = () => {
-  const params = useParams() as any;
+  const params = useParams<{ id?: string | string[] }>();
   const router = useRouter();
 
   const rawId = params?.id;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
   const isEdit = Boolean(id);
-  const [formData, setFormData, clearPersistedForm] = usePersistedState<any>(
+  const [formData, setFormData, clearPersistedForm] = usePersistedState<ProductionFormRow>(
     'form_production_new',
-    createEmptyRow as any,
+    createEmptyRow,
     !isEdit,
   );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [feedback, setFeedback] = useState({ type: '', message: '' });
+  const [feedback, setFeedback] = useState<Feedback>({ type: '', message: '' });
 
-  const [units, setUnits] = useState<any[]>([]);
-  const [yarnTypes, setYarnTypes] = useState<any[]>([]);
-  const [counts, setCounts] = useState<any[]>([]);
-  const [countDescriptions, setCountDescriptions] = useState<any[]>([]);
-  const [slubCodes, setSlubCodes] = useState<any[]>([]);
-  const [lots, setLots] = useState<any[]>([]);
-  const [spks, setSpks] = useState<any[]>([]);
-  const [blends, setBlends] = useState<any[]>([]);
-  const [colors, setColors] = useState<any[]>([]);
+  const [units, setUnits] = useState<UnitOption[]>([]);
+  const [yarnTypes, setYarnTypes] = useState<YarnTypeOption[]>([]);
+  const [counts, setCounts] = useState<CountOption[]>([]);
+  const [countDescriptions, setCountDescriptions] = useState<CountDescriptionOption[]>([]);
+  const [slubCodes, setSlubCodes] = useState<SlubCodeOption[]>([]);
+  const [lots, setLots] = useState<LotOption[]>([]);
+  const [spks, setSpks] = useState<SpkOption[]>([]);
+  const [blends, setBlends] = useState<BlendOption[]>([]);
+  const [colors, setColors] = useState<ColorOption[]>([]);
 
   useEffect(() => {
     const loadDropdowns = async () => {
@@ -426,7 +601,7 @@ const ProductionForm = () => {
           apiCall(`${API_BASE_URL}/spks`),
           apiCall(`${API_ENDPOINTS.unified}/blends`),
           apiCall(`${API_BASE_URL}/colors`),
-        ])) as any[];
+        ])) as [UnitOption[], YarnTypeOption[], CountOption[], CountDescriptionOption[], SlubCodeOption[], LotOption[], SpkOption[], BlendOption[], ColorOption[]];
 
         setUnits(unitsData || []);
         setYarnTypes(yarnTypesData || []);
@@ -437,13 +612,12 @@ const ProductionForm = () => {
         setSpks(spksData || []);
         setBlends(blendsData || []);
         setColors(colorsData || []);
-      } catch (err: any) {
-        const errorMessage = err?.message || err?.toString() || 'Unknown error';
-        setFeedback({
-          type: 'error',
-          message: `Error loading dropdown data: ${errorMessage}`,
-        });
-      } finally {
+    } catch {
+      setFeedback({
+        type: 'error',
+        message: 'Error loading dropdown data: Unknown error',
+      });
+    } finally {
         setLoading(false);
       }
     };
@@ -460,10 +634,10 @@ const ProductionForm = () => {
 
       try {
         setLoading(true);
-        const record = (await apiCall(`${API_BASE_URL}/records/${id}`)) as any;
+        const record = await apiCall(`${API_BASE_URL}/records/${id}`) as ProductionRecord | null;
         setFormData(mapRecordToForm(record));
-      } catch (err: any) {
-        setFeedback({ type: 'error', message: `Error loading record: ${err.message}` });
+      } catch {
+        setFeedback({ type: 'error', message: 'Error loading record' });
       } finally {
         setLoading(false);
       }
@@ -473,10 +647,10 @@ const ProductionForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isEdit]);
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    setFormData((prev: any) => {
+    setFormData((prev: ProductionFormRow) => {
       const updated = { ...prev, [name]: value };
 
       const calculationFields = new Set([
@@ -506,7 +680,7 @@ const ProductionForm = () => {
     [isEdit],
   );
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFeedback({ type: '', message: '' });
 
@@ -536,8 +710,8 @@ const ProductionForm = () => {
       }
 
       router.push('/production');
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err.message || 'Failed to save record' });
+    } catch {
+      setFeedback({ type: 'error', message: 'Failed to save record' });
     } finally {
       setSaving(false);
     }
@@ -551,8 +725,8 @@ const ProductionForm = () => {
       setSaving(true);
       await apiCall(`${API_BASE_URL}/records/${id}`, { method: 'DELETE' });
       router.push('/production');
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err.message || 'Failed to delete record' });
+    } catch {
+      setFeedback({ type: 'error', message: 'Failed to delete record' });
     } finally {
       setSaving(false);
     }
@@ -715,7 +889,7 @@ const ProductionForm = () => {
                     onChange={handleChange}
                   >
                     <option value="">None</option>
-                    {countDescriptions.map((cd: any) => (
+                    {countDescriptions.map((cd: CountDescriptionOption) => (
                       <option key={cd.code} value={cd.code}>
                         {cd.code} - {cd.name}
                       </option>

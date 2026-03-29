@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import './Production.css';
 import { API_ENDPOINTS, apiCall } from '../lib/api';
+import { displayValue } from '../lib/utils';
 
 const API_BASE = API_ENDPOINTS.denim;
 
@@ -26,9 +27,6 @@ const todayYMD = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 };
-
-const displayValue = (v: any) =>
-  v === null || v === undefined || v === '' ? '-' : String(v);
 
 export default function DenimSalesContractPage() {
   const router = useRouter();
@@ -65,11 +63,11 @@ export default function DenimSalesContractPage() {
       setFeedback({ type: '', message: '' });
       const data = await apiCall(
         `${API_BASE}/sales-contracts?${queryParams}`
-      ) as any;
+      ) as { items: SalesContractRow[]; pagination: { page: number; limit: number; total: number; totalPages: number } };
       setRows(data?.items || []);
       setPagination(prev => ({ ...prev, ...(data?.pagination || {}) }));
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err?.message || 'Failed to fetch' });
+    } catch (err: unknown) {
+      setFeedback({ type: 'error', message: err instanceof Error ? err.message : 'Failed to fetch' });
     } finally {
       setLoading(false);
     }

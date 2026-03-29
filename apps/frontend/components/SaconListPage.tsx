@@ -11,15 +11,65 @@ const API_BASE_URL = API_ENDPOINTS.sacon;
 
 type Feedback = { type: '' | 'error' | 'success'; message: string };
 
+interface SaconRecord {
+  id: string | number;
+  tgl?: string | null;
+  permintaan?: string | null;
+  codename?: string | null;
+  kp?: string | null;
+  konsKode?: string | null;
+  kode?: string | null;
+  katKode?: string | null;
+  ketCtWs?: string | null;
+  ketWarna?: string | null;
+  status?: string | null;
+  te?: number | null;
+  sisir?: number | null;
+  pKons?: number | null;
+  neKLusi?: number | null;
+  neLusi?: number | null;
+  spLusi?: number | null;
+  lotLusi?: number | null;
+  neKPakan?: number | null;
+  nePakan?: number | null;
+  spPakan?: number | null;
+  j?: number | null;
+  jPerC?: number | null;
+  bPerC?: number | null;
+  tb?: number | null;
+  tbReal?: number | null;
+  baleLusi?: number | null;
+  totalPakan?: number | null;
+  balePakan?: number | null;
+  ts?: number | null;
+  sacon?: number | null;
+  accStatus?: string | null;
+  proses?: string | null;
+  fotoSacon?: string | null;
+  remarks?: string | null;
+}
+
 const getDefaultFilters = () => ({
   dateFrom: '',
   dateTo: '',
 });
 
+interface SaconResponse {
+  records?: SaconRecord[];
+  data?: SaconRecord[];
+  items?: SaconRecord[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export default function SaconListPage() {
   const router = useRouter();
 
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<SaconRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({ type: '', message: '' });
   const [filtersExpanded, setFiltersExpanded] = useState(true);
@@ -47,26 +97,28 @@ export default function SaconListPage() {
       setLoading(true);
       setFeedback({ type: '', message: '' });
 
-      const data = (await apiCall(`${API_BASE_URL}/records?${queryParams}`)) as any;
+      const data = await apiCall(`${API_BASE_URL}/records?${queryParams}`) as SaconResponse | null;
       const records =
-        data?.records ||
-        data?.data ||
-        (Array.isArray(data) ? data : data?.items) ||
-        [];
+        data && typeof data === 'object' && !Array.isArray(data)
+          ? (data as SaconResponse).records ||
+            (data as SaconResponse).data ||
+            (data as SaconResponse).items ||
+            []
+          : Array.isArray(data) ? data : [];
 
       setRows(records);
       setPagination((prev) => {
-        if (data?.pagination) return data.pagination;
+        if (data && typeof data === 'object' && 'pagination' in data) return (data as SaconResponse).pagination!;
         return {
           ...prev,
           total: records.length,
           totalPages: records.length > 0 ? 1 : 0,
         };
       });
-    } catch (err: any) {
+    } catch {
       setFeedback({
         type: 'error',
-        message: err?.message || 'Failed to fetch Sacon records',
+        message: 'Failed to fetch Sacon records',
       });
     } finally {
       setLoading(false);
@@ -90,17 +142,17 @@ export default function SaconListPage() {
     setFeedback({ type: '', message: '' });
   };
 
-  const handleSelectRow = (row: any) => {
+  const handleSelectRow = (row: SaconRecord) => {
     if (!row?.id) return;
     router.push(`/sacon/edit/${row.id}`);
   };
 
-  const handleEditRow = (row: any) => {
+  const handleEditRow = (row: SaconRecord) => {
     if (!row?.id) return;
     router.push(`/sacon/edit/${row.id}`);
   };
 
-  const handleDelete = async (id: any) => {
+  const handleDelete = async (id: string | number) => {
     if (!id) return;
     // eslint-disable-next-line no-alert
     const ok = window.confirm('Delete this Sacon record? This action cannot be undone.');
@@ -111,10 +163,10 @@ export default function SaconListPage() {
       await apiCall(`${API_BASE_URL}/records/${id}`, { method: 'DELETE' });
       setFeedback({ type: 'success', message: 'Deleted successfully.' });
       await fetchRecords();
-    } catch (err: any) {
+    } catch {
       setFeedback({
         type: 'error',
-        message: err?.message || 'Failed to delete record',
+        message: 'Failed to delete record',
       });
     } finally {
       setLoading(false);
@@ -253,7 +305,7 @@ export default function SaconListPage() {
                       </td>
                     </tr>
                   ) : (
-                    rows.map((row: any) => (
+                    rows.map((row: SaconRecord) => (
                       <tr key={row.id} onClick={() => handleSelectRow(row)}>
                         <td>{displayValue(toYMD(row.tgl))}</td>
                         <td>{displayValue(row.permintaan)}</td>

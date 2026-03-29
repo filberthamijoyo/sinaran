@@ -46,18 +46,18 @@ const buildSections = (): Section[] => {
       }
     }
     if (!current) startSection('GENERAL');
-    current.fieldIds.push(col.id);
+    current!.fieldIds.push(col.id);
   });
 
   return sections;
 };
 
 export default function IndigoFormPage() {
-  const params = useParams() as any;
+  const params = useParams();
   const router = useRouter();
 
   const rawId = params?.id;
-  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId as string | undefined;
   const isEdit = Boolean(id);
 
   const [values, setValues] = useState<IndigoValues>(createEmptyIndigoValues);
@@ -79,10 +79,10 @@ export default function IndigoFormPage() {
 
       try {
         setLoading(true);
-        const record = (await apiCall(`${API_BASE_URL}/records/${id}`)) as any;
+        const record = (await apiCall(`${API_BASE_URL}/records/${id}`)) as IndigoValues;
         setValues(mapIndigoRecordToValues(record || {}));
-      } catch (err: any) {
-        setFeedback({ type: 'error', message: err?.message || 'Failed to load record' });
+      } catch (err: unknown) {
+        setFeedback({ type: 'error', message: err instanceof Error ? err.message : 'Failed to load record' });
       } finally {
         setLoading(false);
       }
@@ -116,8 +116,8 @@ export default function IndigoFormPage() {
         await apiCall(`${API_BASE_URL}/records`, { method: 'POST', body: payload });
       }
       router.push('/indigo');
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err?.message || 'Failed to save record' });
+    } catch (err: unknown) {
+      setFeedback({ type: 'error', message: err instanceof Error ? err.message : 'Failed to save record' });
     } finally {
       setSaving(false);
     }

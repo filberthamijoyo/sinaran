@@ -1,47 +1,111 @@
-import { cn } from '../../lib/utils';
+'use client';
 
-type Status =
-  | 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'
-  | 'WARPING' | 'INDIGO' | 'WEAVING' | 'INSPECT_GRAY'
-  | 'BBSF' | 'INSPECT_FINISH' | 'COMPLETE';
+import * as React from 'react';
 
-const config: Record<Status, { label: string; color: string; dot: string }> = {
-  DRAFT:           { label: 'Draft',          color: '#6B7280', dot: '#9CA3AF' },
-  PENDING_APPROVAL:{ label: 'Pending',        color: '#D97706', dot: '#F59E0B' },
-  APPROVED:        { label: 'Approved',       color: '#16A34A', dot: '#22C55E' },
-  REJECTED:        { label: 'Rejected',       color: '#DC2626', dot: '#EF4444' },
-  WARPING:         { label: 'Warping',        color: '#6C63FF', dot: '#8B84FF' },
-  INDIGO:          { label: 'Indigo',         color: '#0891B2', dot: '#22D3EE' },
-  WEAVING:         { label: 'Weaving',        color: '#16A34A', dot: '#22C55E' },
-  INSPECT_GRAY:    { label: 'Inspect Gray',   color: '#D97706', dot: '#FBBF24' },
-  BBSF:            { label: 'BBSF',           color: '#7C3AED', dot: '#A78BFA' },
-  INSPECT_FINISH:  { label: 'Inspect Finish', color: '#EA580C', dot: '#FB923C' },
-  COMPLETE:        { label: 'Complete',       color: '#16A34A', dot: '#22C55E' },
+/* ─────────────────────────────────────────────────────────
+   Design tokens (from globals.css)
+   ───────────────────────────────────────────────────────── */
+const T = {
+  denim100:    'var(--denim-100)',
+  textMuted:   'var(--text-muted)',
+  badgeRadius: 'var(--badge-radius)',
+
+  // Stage token backgrounds
+  stagePendingBg:    'var(--stage-pending-bg)',
+  stagePendingText: 'var(--stage-pending-text)',
+  stageSaconBg:     'var(--stage-sacon-bg)',
+  stageSaconText:   'var(--stage-sacon-text)',
+  stageWarpingBg:   'var(--stage-warping-bg)',
+  stageWarpingText: 'var(--stage-warping-text)',
+  stageIndigoBg:    'var(--stage-indigo-bg)',
+  stageIndigoText:  'var(--stage-indigo-text)',
+  stageWeavingBg:   'var(--stage-weaving-bg)',
+  stageWeavingText: 'var(--stage-weaving-text)',
+  stageGrayBg:      'var(--stage-gray-bg)',
+  stageGrayText:    'var(--stage-gray-text)',
+  stageBbsfBg:      'var(--stage-bbsf-bg)',
+  stageBbsfText:    'var(--stage-bbsf-text)',
+  stageFinishBg:    'var(--stage-finish-bg)',
+  stageFinishText:  'var(--stage-finish-text)',
+  stageCompleteBg:  'var(--stage-complete-bg)',
+  stageCompleteText:'var(--stage-complete-text)',
+  stageRejectedBg:  'var(--stage-rejected-bg)',
+  stageRejectedText:'var(--stage-rejected-text)',
+  stageStaledBg:   'var(--stage-staled-bg)',
+  stageStaledText: 'var(--stage-staled-text)',
+} as const;
+
+/* ─────────────────────────────────────────────────────────
+   Stage → style map
+   ───────────────────────────────────────────────────────── */
+const stageStyles: Record<string, React.CSSProperties> = {
+  PENDING_APPROVAL: { backgroundColor: T.stagePendingBg,  color: T.stagePendingText },
+  SACON:            { backgroundColor: T.stageSaconBg,    color: T.stageSaconText   },
+  WARPING:          { backgroundColor: T.stageWarpingBg,  color: T.stageWarpingText},
+  INDIGO:           { backgroundColor: T.stageIndigoBg,   color: T.stageIndigoText },
+  WEAVING:          { backgroundColor: T.stageWeavingBg,  color: T.stageWeavingText},
+  INSPECT_GRAY:     { backgroundColor: T.stageGrayBg,     color: T.stageGrayText   },
+  BBSF:             { backgroundColor: T.stageBbsfBg,     color: T.stageBbsfText   },
+  INSPECT_FINISH:   { backgroundColor: T.stageFinishBg,   color: T.stageFinishText },
+  COMPLETE:         { backgroundColor: T.stageCompleteBg, color: T.stageCompleteText},
+  REJECTED:         { backgroundColor: T.stageRejectedBg, color: T.stageRejectedText},
+  STALED:           { backgroundColor: T.stageStaledBg,    color: T.stageStaledText },
 };
 
-interface StatusBadgeProps {
+const defaultStyle: React.CSSProperties = {
+  backgroundColor: T.denim100,
+  color:           T.textMuted,
+};
+
+/* ─────────────────────────────────────────────────────────
+   Label overrides
+   ───────────────────────────────────────────────────────── */
+const LABEL: Record<string, string> = {
+  PENDING_APPROVAL: 'Pending',
+  INSPECT_GRAY:    'Inspect Gray',
+  INSPECT_FINISH:  'Inspect Finish',
+};
+
+function toTitleCase(s: string): string {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function labelFor(status: string): string {
+  return LABEL[status] ?? toTitleCase(status);
+}
+
+/* ─────────────────────────────────────────────────────────
+   StatusBadge
+   ───────────────────────────────────────────────────────── */
+interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   status: string;
+  /** @deprecated no longer changes styling */
   size?: 'sm' | 'md';
 }
 
-export default function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
-  const s = status as Status;
-  const c = config[s] ?? { label: status, color: '#6B7280', dot: '#9CA3AF' };
+function StatusBadge({ status, style, ...rest }: StatusBadgeProps) {
+  const stageStyle = stageStyles[status] ?? defaultStyle;
 
   return (
     <span
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full font-semibold',
-        size === 'sm' ? 'px-2.5 py-0.5 text-xs' : 'px-3 py-1 text-sm'
-      )}
       style={{
-        background: '#E0E5EC',
-        color: c.color,
-        boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)',
+        borderRadius: T.badgeRadius,
+        padding:      '2px 8px',
+        fontSize:    11,
+        fontWeight:  500,
+        display:     'inline-flex',
+        alignItems:  'center',
+        gap:         4,
+        whiteSpace:  'nowrap',
+        ...stageStyle,
+        ...style,
       }}
+      {...rest}
     >
-      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: c.dot }} />
-      {c.label}
+      {labelFor(status)}
     </span>
   );
 }
+
+export { StatusBadge };
+export default StatusBadge;

@@ -60,6 +60,7 @@ const upload = multer({
 router.post(
   '/import/sales-contract',
   requireAuth,
+  requireRole('admin'),
   upload.single('file'),
   async (req: Request, res: Response) => {
     try {
@@ -89,6 +90,7 @@ router.post(
 router.post(
   '/import/warping',
   requireAuth,
+  requireRole('admin'),
   upload.single('file'),
   async (req: Request, res: Response) => {
     try {
@@ -116,6 +118,7 @@ router.post(
 router.post(
   '/import/indigo',
   requireAuth,
+  requireRole('admin'),
   upload.single('file'),
   async (req: Request, res: Response) => {
     try {
@@ -144,6 +147,7 @@ router.post(
 router.post(
   '/import/weaving',
   requireAuth,
+  requireRole('admin'),
   upload.single('file'),
   async (req: Request, res: Response) => {
     try {
@@ -172,6 +176,7 @@ router.post(
 // Returns full order pipeline for a KP code
 router.get('/pipeline/:kp',
   requireAuth,
+  requireRole('admin', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const result = await getFullPipeline(req.params.kp);
@@ -186,6 +191,7 @@ router.get('/pipeline/:kp',
 // Returns weaving records in a date range
 router.get('/weaving',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const { start, end } = req.query;
@@ -209,6 +215,7 @@ router.get('/weaving',
 // Returns paginated list of sales contracts
 router.get('/sales-contracts',
   requireAuth,
+  requireRole('admin', 'jakarta', 'factory'),
   async (req: Request, res: Response) => {
   try {
     const page  = parseInt(String(req.query.page  || '1'));
@@ -227,6 +234,11 @@ router.get('/sales-contracts',
     if (req.query.pipeline_status &&
         req.query.pipeline_status !== 'ALL') {
       where.pipeline_status = String(req.query.pipeline_status);
+    }
+
+    // decided=true → acc IS NOT NULL (approved or rejected)
+    if (req.query.decided === 'true') {
+      where.acc = { not: null };
     }
 
     // acc filter (approved/rejected)
@@ -272,6 +284,29 @@ router.get('/sales-contracts',
           acc: true,
           te: true,
           pipeline_status: true,
+          kons_kode: true,
+          kode_number: true,
+          ket_ct_ws: true,
+          sisir: true,
+          p_kons: true,
+          ne_k_lusi: true,
+          ne_lusi: true,
+          sp_lusi: true,
+          lot_lusi: true,
+          ne_k_pakan: true,
+          ne_pakan: true,
+          sp_pakan: true,
+          j: true,
+          j_c: true,
+          b_c: true,
+          tb: true,
+          tb_real: true,
+          bale_lusi: true,
+          total_pakan: true,
+          bale_pakan: true,
+          ts: true,
+          proses: true,
+          remarks: true,
         },
       }),
       prisma.salesContract.count({ where }),
@@ -291,6 +326,7 @@ router.get('/sales-contracts',
 // Returns a single sales contract by KP
 router.get('/sales-contracts/:kp',
   requireAuth,
+  requireRole('admin', 'jakarta', 'factory'),
   async (req: Request, res: Response) => {
   try {
     const { kp } = req.params;
@@ -317,6 +353,7 @@ router.get('/sales-contracts/:kp',
 // Returns all gray inspection records for a beam number
 router.get('/inspect-gray/beam/:bm',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const bm = parseInt(req.params.bm);
@@ -332,6 +369,7 @@ router.get('/inspect-gray/beam/:bm',
 // Returns total meters produced and roll count for a KP
 router.get('/meters/:kp',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const result = await getMetersByKp(req.params.kp);
@@ -345,6 +383,7 @@ router.get('/meters/:kp',
 // Returns the latest record per loom machine
 router.get('/looms/status',
   requireAuth,
+  requireRole('admin', 'jakarta'),
   async (_req: Request, res: Response) => {
   try {
     const result = await getActiveLoomStatus();
@@ -360,6 +399,7 @@ router.get('/looms/status',
 // Poll this after starting an import to check progress
 router.get('/jobs/:id',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   (req: Request, res: Response) => {
   const job = getJob(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found' });
@@ -370,6 +410,7 @@ router.get('/jobs/:id',
 // List the last 50 import jobs
 router.get('/jobs',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   (_req: Request, res: Response) => {
   return res.json(listJobs());
 });
@@ -380,6 +421,7 @@ router.get('/jobs',
 // Search fabric specs by kode (for autocomplete)
 router.get('/fabric-specs/search',
   requireAuth,
+  requireRole('admin', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const q = String(req.query.q || '').trim().toUpperCase();
@@ -437,6 +479,7 @@ router.get('/fabric-specs/search',
 // Get full fabric spec by item key
 router.get('/fabric-specs/:item',
   requireAuth,
+  requireRole('admin', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const item = decodeURIComponent(req.params.item);
@@ -449,12 +492,19 @@ router.get('/fabric-specs/:item',
 });
 
 // GET /api/denim/fabric-specs — full list with usage counts (admin)
-router.get('/fabric-specs', requireAuth, async (req: Request, res: Response) => {
+//   ?q=...          — text search across item, kons_kode, kode
+//   ?kat_kode=...  — filter by kat_kode
+//   ?kons_kode=... — filter by kons_kode
+//   ?kode=...      — filter by kode (e.g. "DALLAS 3")
+// Returns one match when kons_kode + kode + kat_kode are all provided.
+router.get('/fabric-specs', requireAuth, requireRole('admin', 'jakarta', 'factory'), async (req: Request, res: Response) => {
   try {
-    const { q, kat_kode } = req.query as any;
+    const { q, kat_kode, kons_kode, kode } = req.query as Record<string, string>;
     const specs = await prisma.fabricSpec.findMany({
       where: {
-        ...(kat_kode ? { kat_kode } : {}),
+        ...(kons_kode ? { kons_kode } : {}),
+        ...(kode      ? { kode }      : {}),
+        ...(kat_kode  ? { kat_kode }  : {}),
         ...(q ? {
           OR: [
             { item: { contains: q, mode: 'insensitive' } },
@@ -502,27 +552,33 @@ router.put('/fabric-specs/:id', requireAuth, requireRole('admin'), async (req: R
 });
 
 // POST /api/denim/sales-contracts
-// Create a new sales contract (from New Order form)
+// Create a new sacon order directly (factory clicks New Order → order lands in sacon inbox)
 router.post('/sales-contracts', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const {
         tgl, permintaan, status, kat_kode, codename, kode,
-        kons_kode, ket_warna, proses, te, catatan,
-        pipeline_status, ne_lusi, ne_pakan, sisir, pick,
-        anyaman, arah, oz_g, oz_f,
-      } = req.body;
+        kons_kode, ket_warna, ket_ct_ws, kode_number,
+        proses, catatan,
+        // Fabric spec fields — destructure frontend field names
+        te, sisir, p_kons,
+        lusi_type, lusi_ne,
+        pick, anyaman, arah, lg_inches, lf_inches,
+        pakan_type, pakan_ne, susut_pakan,
+        warna, pretreatment, indigo_i, indigo_bak_i,
+        sulfur_s, sulfur_bak_s, posttreatment, finish,
+        oz_g, oz_f,
+        // SACON / measurement fields
+        j, j_c, b_c, tb, tb_real,
+        bale_lusi, total_pakan, bale_pakan,
+        lot_lusi, delivery_time, remarks, foto_sacon,
+      } = req.body as Record<string, unknown>;
 
       if (!tgl || !kode) {
-        return res.status(400).json({
-          error: 'tgl and kode are required'
-        });
+        return res.status(400).json({ error: 'tgl and kode are required' });
       }
 
-      // Auto-generate KP and insert atomically under SERIALIZABLE isolation.
-      // Without this, two concurrent requests could both read the same max(kp_sequence)
-      // and compute the same next KP before either has inserted, causing a unique
-      // constraint collision. SERIALIZABLE makes PostgreSQL abort one of them cleanly.
       const sc = await prisma.$transaction(async (tx: any) => {
         const kp = await generateNextKP(tx);
         const kp_sequence = decodeKP(kp);
@@ -531,22 +587,156 @@ router.post('/sales-contracts', requireAuth,
             kp,
             kp_sequence,
             kp_status: 'ACTIVE',
-            tgl: new Date(tgl),
-            permintaan: permintaan || null,
-            status: status || 'SCN',
-            kat_kode: kat_kode || null,
-            codename: codename || null,
-            kons_kode: kons_kode || null,
-            ket_warna: ket_warna || null,
-            proses: proses || 'PROSES',
-            te: te ? parseInt(te) : null,
-            pipeline_status: pipeline_status || 'PENDING_APPROVAL',
-            acc: null,
+            tgl: new Date(tgl as string),
+            permintaan:   permintaan   as string ?? null,
+            status:       status       as string ?? 'SCN',
+            kat_kode:     kat_kode     as string ?? null,
+            codename:     codename     as string ?? null,
+            kons_kode:    kons_kode    as string ?? null,
+            ket_warna:    ket_warna    as string ?? null,
+            ket_ct_ws:    ket_ct_ws    as string ?? null,
+            kode_number:  kode_number  as string ?? null,
+            proses:       proses       as string ?? 'PROSES',
+            // Fabric spec fields — map frontend names to SalesContract schema fields
+            te:            te            ? parseFloat(te as string) : null,
+            sisir:         sisir         as string ?? null,
+            p_kons:        p_kons        as string ?? null,
+            // FabricSpec lusi_type → SalesContract ne_k_lusi (string)
+            ne_k_lusi:     lusi_type     as string ?? null,
+            // FabricSpec lusi_ne → SalesContract ne_lusi (Decimal)
+            ne_lusi:       lusi_ne       ? parseFloat(lusi_ne as string) : null,
+            // FabricSpec pick → SalesContract sp_lusi (string)
+            sp_lusi:       pick          as string ?? null,
+            anyaman:       anyaman       as string ?? null,
+            arah:          arah          as string ?? null,
+            lg_inches:     lg_inches     ? parseFloat(lg_inches as string) : null,
+            lf_inches:     lf_inches     ? parseFloat(lf_inches as string) : null,
+            // FabricSpec pakan_type → SalesContract ne_k_pakan (string)
+            ne_k_pakan:    pakan_type    as string ?? null,
+            // FabricSpec pakan_ne → SalesContract ne_pakan (Decimal)
+            ne_pakan:      pakan_ne      ? parseFloat(pakan_ne as string) : null,
+            susut_pakan:   susut_pakan   ? parseFloat(susut_pakan as string) : null,
+            warna:         warna         as string ?? null,
+            pretreatment:   pretreatment   as string ?? null,
+            indigo_i:      indigo_i     ? parseFloat(indigo_i as string) : null,
+            indigo_bak_i:  indigo_bak_i ? parseInt(indigo_bak_i as string) : null,
+            sulfur_s:      sulfur_s     ? parseFloat(sulfur_s as string) : null,
+            sulfur_bak_s:  sulfur_bak_s ? parseInt(sulfur_bak_s as string) : null,
+            posttreatment: posttreatment as string ?? null,
+            finish:        finish       as string ?? null,
+            oz_g:          oz_g         ? parseFloat(oz_g as string) : null,
+            oz_f:          oz_f         ? parseFloat(oz_f as string) : null,
+            // SACON fields
+            lot_lusi:      lot_lusi     as string ?? null,
+            delivery_time: delivery_time as string ?? null,
+            remarks:       remarks      as string ?? null,
+            // Yarn parameters
+            j:             j            ? parseFloat(j as string) : null,
+            j_c:           j_c          ? parseFloat(j_c as string) : null,
+            b_c:           b_c          ? parseFloat(b_c as string) : null,
+            tb:            tb           ? parseFloat(tb as string) : null,
+            tb_real:       tb_real      ? parseFloat(tb_real as string) : null,
+            bale_lusi:     bale_lusi    ? parseFloat(bale_lusi as string) : null,
+            total_pakan:   total_pakan  ? parseFloat(total_pakan as string) : null,
+            bale_pakan:    bale_pakan   ? parseFloat(bale_pakan as string) : null,
+            foto_sacon:    foto_sacon   as string ?? null,
+            // New order → awaiting Jakarta approval
+            sacon:            false,
+            pipeline_status:  'PENDING_APPROVAL',
+            ts:              new Date(),
+            acc:             null,
           },
         });
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
       return res.status(201).json(sc);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// POST /api/denim/sales-contracts/bulk-decision
+// Approve or reject multiple sales contracts in one request (Jakarta / admin only)
+router.post(
+  '/sales-contracts/bulk-decision',
+  requireAuth,
+  requireRole('jakarta', 'admin'),
+  async (req: Request, res: Response) => {
+    try {
+      const { kps, decision, rejection_reason } = req.body as {
+        kps: string[];
+        decision: 'approve' | 'reject';
+        rejection_reason?: string;
+      };
+
+      if (!Array.isArray(kps) || kps.length === 0) {
+        return res.status(400).json({ error: 'kps must be a non-empty array' });
+      }
+      if (kps.length > 100) {
+        return res.status(400).json({ error: 'Cannot process more than 100 KPs at once' });
+      }
+      if (decision !== 'approve' && decision !== 'reject') {
+        return res.status(400).json({ error: 'Invalid decision' });
+      }
+
+      const succeeded: string[] = [];
+      const failed: { kp: string; error: string }[] = [];
+
+      // Best-effort: process each KP independently so partial failures don't block the rest.
+      for (const kp of kps) {
+        try {
+          if (decision === 'reject') {
+            const existing = await prisma.salesContract.findUnique({ where: { kp } });
+            if (!existing) { failed.push({ kp, error: 'Not found' }); continue; }
+            await prisma.salesContract.update({
+              where: { kp },
+              data: {
+                kp_status: 'ARCHIVED',
+                archived_at: new Date(),
+                archived_kp: existing.kp,
+                pipeline_status: 'REJECTED',
+                acc: 'TIDAK ACC',
+                kp: `kp_archived_${kp}`,
+                rejection_reason: rejection_reason || null,
+              },
+            });
+            await prisma.pipelineEvent.create({
+              data: {
+                kp,
+                from_stage: existing.pipeline_status,
+                to_stage: 'REJECTED',
+              },
+            });
+            notifyUser('1', 'sc_rejected', {
+              kp,
+              message: `KP ${kp} was not approved — KP slot has been archived and will be recycled`,
+            });
+          } else {
+            const existing = await prisma.salesContract.findUnique({ where: { kp }, select: { pipeline_status: true } });
+            await prisma.salesContract.update({
+              where: { kp },
+              data: { pipeline_status: 'WARPING', acc: 'ACC', kp_status: 'ACTIVE' },
+            });
+            await prisma.pipelineEvent.create({
+              data: {
+                kp,
+                from_stage: existing?.pipeline_status ?? null,
+                to_stage: 'WARPING',
+              },
+            });
+            notifyUser('1', 'sc_approved', {
+              kp,
+              message: `KP ${kp} has been approved ✓ — moved to warping queue`,
+            });
+          }
+          succeeded.push(kp);
+        } catch (e: any) {
+          failed.push({ kp, error: e?.message || 'Unknown error' });
+        }
+      }
+
+      return res.json({ succeeded, failed });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -562,8 +752,9 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { kp } = req.params;
-      const { decision } = req.body as {
+      const { decision, rejection_reason } = req.body as {
         decision: 'approve' | 'reject';
+        rejection_reason?: string;
       };
 
       if (decision !== 'approve' && decision !== 'reject') {
@@ -592,7 +783,16 @@ router.post(
             pipeline_status: newStatus,
             acc: accValue,
             kp: `kp_archived_${kp}`,  // free up the KP code for reuse
+            rejection_reason: rejection_reason || null,
           }
+        });
+
+        await prisma.pipelineEvent.create({
+          data: {
+            kp,
+            from_stage: existing?.pipeline_status ?? null,
+            to_stage: newStatus,
+          },
         });
 
         // The kp_sequence stays on the archived record so generateNextKP() can find it as a recyclable gap
@@ -610,12 +810,21 @@ router.post(
       }
 
       // When approving, just update as normal
+      const existing = await prisma.salesContract.findUnique({ where: { kp }, select: { pipeline_status: true } });
       const sc = await prisma.salesContract.update({
         where: { kp },
         data: {
           pipeline_status: newStatus,
           acc: accValue,
           kp_status: 'ACTIVE',  // Mark as ACTIVE when approved
+        },
+      });
+
+      await prisma.pipelineEvent.create({
+        data: {
+          kp,
+          from_stage: existing?.pipeline_status ?? null,
+          to_stage: newStatus,
         },
       });
 
@@ -645,12 +854,250 @@ router.post(
   }
 );
 
+// POST /api/denim/sales-contracts/:kp/sacon-submit
+// Submits SACON form data for a sales contract in PENDING_APPROVAL stage
+router.post(
+  '/sales-contracts/:kp/sacon-submit',
+  requireAuth,
+  requireRole('admin', 'factory'),
+  async (req: Request, res: Response) => {
+    try {
+      const { kp } = req.params;
+      const {
+        j, j_c, b_c, tb, tb_real,
+        bale_lusi, total_pakan, bale_pakan,
+        foto_sacon,
+      } = req.body as {
+        j?: number;
+        j_c?: number;
+        b_c?: number;
+        tb?: number;
+        tb_real?: number;
+        bale_lusi?: number;
+        total_pakan?: number;
+        bale_pakan?: number;
+        foto_sacon?: string;
+      };
+
+      const sc = await prisma.salesContract.findUnique({ where: { kp } });
+      if (!sc) return res.status(404).json({ error: `KP ${kp} not found` });
+
+      if (sc.pipeline_status !== 'PENDING_APPROVAL') {
+        return res.status(400).json({ error: 'Order is not in PENDING_APPROVAL stage' });
+      }
+
+      const updateData: any = {
+        sacon: true,
+        ts: new Date(),
+        pipeline_status: 'SACON',
+      };
+      if (j !== undefined)         updateData.j = j;
+      if (j_c !== undefined)        updateData.j_c = j_c;
+      if (b_c !== undefined)       updateData.b_c = b_c;
+      if (tb !== undefined)        updateData.tb = tb;
+      if (tb_real !== undefined)   updateData.tb_real = tb_real;
+      if (bale_lusi !== undefined) updateData.bale_lusi = bale_lusi;
+      if (total_pakan !== undefined) updateData.total_pakan = total_pakan;
+      if (bale_pakan !== undefined) updateData.bale_pakan = bale_pakan;
+      if (foto_sacon !== undefined) updateData.foto_sacon = foto_sacon;
+
+      const updated = await prisma.salesContract.update({
+        where: { kp },
+        data: updateData,
+      });
+
+      await prisma.pipelineEvent.create({
+        data: {
+          kp,
+          from_stage: sc.pipeline_status,
+          to_stage: 'SACON',
+        },
+      });
+
+      return res.json(updated);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// POST /api/denim/sales-contracts/:kp/sacon-decision
+// ACC or reject a sales contract in SACON stage
+router.post(
+  '/sales-contracts/:kp/sacon-decision',
+  requireAuth,
+  requireRole('admin', 'jakarta'),
+  async (req: Request, res: Response) => {
+    try {
+      const { kp } = req.params;
+      const { decision, rejection_reason } = req.body as {
+        decision: 'ACC' | 'TIDAK ACC';
+        rejection_reason?: string;
+      };
+
+      if (!decision) {
+        return res.status(400).json({ error: 'decision is required' });
+      }
+      if (decision !== 'ACC' && decision !== 'TIDAK ACC') {
+        return res.status(400).json({ error: "decision must be 'ACC' or 'TIDAK ACC'" });
+      }
+
+      const sc = await prisma.salesContract.findUnique({ where: { kp } });
+      if (!sc) return res.status(404).json({ error: `KP ${kp} not found` });
+
+      if (sc.pipeline_status !== 'SACON') {
+        return res.status(400).json({ error: 'Order is not in SACON stage' });
+      }
+
+      const updateData: any = {
+        acc: decision,
+        pipeline_status: decision === 'ACC' ? 'WARPING' : 'REJECTED',
+        rejection_reason: decision === 'TIDAK ACC' ? (rejection_reason ?? null) : null,
+      };
+
+      const updated = await prisma.salesContract.update({
+        where: { kp },
+        data: updateData,
+      });
+
+      await prisma.pipelineEvent.create({
+        data: {
+          kp,
+          from_stage: sc.pipeline_status,
+          to_stage: updateData.pipeline_status,
+        },
+      });
+
+      return res.json(updated);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/denim/sacon-inbox
+// Returns sales contracts for the sacon inbox in two sections:
+//   pending  — orders ready to submit sacon (SACON+sacon=false OR WARPING+acc=ACC+sacon=false)
+//   awaiting — orders submitted to Jakarta, waiting for decision (sacon=true AND acc IS NULL)
+router.get('/sacon-inbox',
+  requireAuth,
+  requireRole('admin', 'factory'),
+  async (req: Request, res: Response) => {
+    try {
+      const pendingWhere: any = {
+        OR: [
+          // In SACON stage, sacon not yet submitted
+          { pipeline_status: 'SACON', sacon: false },
+          // Approved (WARPING), sacon form not yet submitted
+          { pipeline_status: 'WARPING', acc: 'ACC', sacon: false },
+        ],
+      };
+
+      const awaitingWhere: any = {
+        sacon: true,
+        acc: null,
+      };
+
+      const [pendingItems, awaitingItems] = await Promise.all([
+        prisma.salesContract.findMany({
+          where: pendingWhere,
+          orderBy: { tgl: 'desc' },
+          take: 200,
+          select: {
+            id: true,
+            kp: true,
+            codename: true,
+            tgl: true,
+            permintaan: true,
+            pipeline_status: true,
+            sacon: true,
+            acc: true,
+            ts: true,
+            foto_sacon: true,
+            j: true,
+            j_c: true,
+            b_c: true,
+            tb: true,
+            tb_real: true,
+            bale_lusi: true,
+            total_pakan: true,
+            bale_pakan: true,
+            rejection_reason: true,
+          },
+        }),
+        prisma.salesContract.findMany({
+          where: awaitingWhere,
+          orderBy: { tgl: 'desc' },
+          take: 200,
+          select: {
+            id: true,
+            kp: true,
+            codename: true,
+            tgl: true,
+            permintaan: true,
+            pipeline_status: true,
+            sacon: true,
+            acc: true,
+            ts: true,
+            foto_sacon: true,
+            j: true,
+            j_c: true,
+            b_c: true,
+            tb: true,
+            tb_real: true,
+            bale_lusi: true,
+            total_pakan: true,
+            bale_pakan: true,
+            rejection_reason: true,
+          },
+        }),
+      ]);
+
+      return res.json({ pending: pendingItems, awaiting: awaitingItems });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/denim/sacon-inbox/awaiting
+// Returns orders submitted to Jakarta, waiting for decision
+// (pipeline_status: PENDING_APPROVAL, sacon: false, acc: null)
+router.get('/sacon-inbox/awaiting',
+  requireAuth,
+  requireRole('admin', 'factory'),
+  async (req: Request, res: Response) => {
+    try {
+      const items = await prisma.salesContract.findMany({
+        where: { pipeline_status: 'PENDING_APPROVAL', sacon: false, acc: null },
+        orderBy: { tgl: 'desc' },
+        take: 200,
+        select: {
+          id:          true,
+          kp:          true,
+          tgl:         true,
+          codename:    true,
+          kons_kode:   true,
+          kat_kode:    true,
+          permintaan:  true,
+          ts:          true,
+          acc:         true,
+        },
+      });
+      return res.json(items);
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // ─── PRODUCTION INBOX ROUTES ──────────────────────────────────────────────────
 
 // GET /api/denim/warping-inbox
 // Returns sales contracts ready for warping (pipeline_status = 'WARPING')
 router.get('/warping-inbox',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const items = await prisma.salesContract.findMany({
@@ -671,6 +1118,7 @@ router.get('/warping-inbox',
 // POST /api/denim/warping
 // Creates/updates warping run and advances pipeline to 'INDIGO'
 router.post('/warping', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const {
@@ -727,6 +1175,14 @@ router.post('/warping', requireAuth,
         data: { pipeline_status: 'INDIGO' },
       });
 
+      await prisma.pipelineEvent.create({
+        data: {
+          kp,
+          from_stage: 'WARPING',
+          to_stage: 'INDIGO',
+        },
+      });
+
       return res.json({ success: true, run });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -738,6 +1194,7 @@ router.post('/warping', requireAuth,
 // Returns sales contracts ready for indigo (pipeline_status = 'INDIGO')
 router.get('/indigo-inbox',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const items = await prisma.salesContract.findMany({
@@ -758,6 +1215,7 @@ router.get('/indigo-inbox',
 // POST /api/denim/indigo
 // Creates/updates indigo run and advances pipeline to 'WEAVING'
 router.post('/indigo', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const {
@@ -819,6 +1277,14 @@ router.post('/indigo', requireAuth,
         data: { pipeline_status: 'WEAVING' },
       });
 
+      await prisma.pipelineEvent.create({
+        data: {
+          kp,
+          from_stage: 'INDIGO',
+          to_stage: 'WEAVING',
+        },
+      });
+
       return res.json({ success: true, run });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -830,6 +1296,7 @@ router.post('/indigo', requireAuth,
 // Returns sales contracts ready for weaving (pipeline_status = 'WEAVING')
 router.get('/weaving-inbox',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const items = await prisma.salesContract.findMany({
@@ -849,7 +1316,7 @@ router.get('/weaving-inbox',
 
 // POST /api/denim/weaving
 // Confirms weaving completion and advances pipeline to 'INSPECT_GRAY'
-router.post('/weaving', requireAuth, async (req: Request, res: Response) => {
+router.post('/weaving', requireAuth, requireRole('admin', 'factory'), async (req: Request, res: Response) => {
   try {
     const { kp } = req.body;
     if (!kp) return res.status(400).json({ error: 'kp is required' });
@@ -868,6 +1335,14 @@ router.post('/weaving', requireAuth, async (req: Request, res: Response) => {
       },
     });
 
+    await prisma.pipelineEvent.create({
+      data: {
+        kp,
+        from_stage: sc.pipeline_status,
+        to_stage: 'INSPECT_GRAY',
+      },
+    });
+
     return res.json({ ok: true, kp, pipeline_status: 'INSPECT_GRAY' });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -878,6 +1353,7 @@ router.post('/weaving', requireAuth, async (req: Request, res: Response) => {
 // Returns sales contracts ready for inspect gray (pipeline_status = 'INSPECT_GRAY')
 router.get('/inspect-gray-inbox',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const items = await prisma.salesContract.findMany({
@@ -897,6 +1373,7 @@ router.get('/inspect-gray-inbox',
 
 // PUT /api/denim/inspect-gray — update existing inspection records
 router.put('/inspect-gray', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const {
@@ -938,6 +1415,7 @@ router.put('/inspect-gray', requireAuth,
 
 // POST /api/denim/inspect-gray — create new inspection records
 router.post('/inspect-gray', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const {
@@ -982,6 +1460,7 @@ router.post('/inspect-gray', requireAuth,
 
 // POST /api/denim/bbsf — create new BBSF records
 router.post('/bbsf', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const { kp, tgl, ...bbsfData } = req.body;
@@ -1042,6 +1521,7 @@ router.post('/bbsf', requireAuth,
 
 // POST /api/denim/inspect-finish — create new inspection records
 router.post('/inspect-finish', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const { kp, shift, operator, rolls } = req.body;
@@ -1068,13 +1548,27 @@ router.post('/inspect-finish', requireAuth,
           })),
         });
         
+        // Fetch previous stage before updating
+        const prev = await prisma.salesContract.findUnique({
+          where: { kp },
+          select: { pipeline_status: true },
+        });
+
         // Update pipeline status to COMPLETE
         await prisma.salesContract.update({
           where: { kp },
           data: { pipeline_status: 'COMPLETE' },
         });
+
+        await prisma.pipelineEvent.create({
+          data: {
+            kp,
+            from_stage: prev?.pipeline_status ?? null,
+            to_stage: 'COMPLETE',
+          },
+        });
       }
-      
+
       return res.json({ success: true });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
@@ -1084,6 +1578,7 @@ router.post('/inspect-finish', requireAuth,
 
 // PUT /api/denim/bbsf — update existing BBSF records
 router.put('/bbsf', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const { kp, tgl, ...bbsfData } = req.body;
@@ -1146,8 +1641,47 @@ router.put('/bbsf', requireAuth,
   }
 );
 
+// GET /denim/bbsf-production?kp=:kp
+router.get('/bbsf-production', requireAuth, requireRole('admin', 'factory', 'jakarta'), async (req, res) => {
+  try {
+    const { kp } = req.query
+    if (!kp || typeof kp !== 'string') {
+      return res.status(400).json({ error: 'kp required' })
+    }
+    const records = await prisma.bBSFProductionRecord.findMany({
+      where: { kp: kp.toUpperCase() },
+      orderBy: [{ tanggal: 'desc' }, { line: 'asc' }],
+      take: 500,
+    })
+    res.json(records)
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Internal error' })
+  }
+})
+
+// GET /denim/bbsf-susut?kp=:kp
+router.get('/bbsf-susut', requireAuth, requireRole('admin', 'factory', 'jakarta'), async (req, res) => {
+  try {
+    const { kp } = req.query
+    if (!kp || typeof kp !== 'string') {
+      return res.status(400).json({ error: 'kp required' })
+    }
+    const records = await prisma.bBSFSusutRecord.findMany({
+      where: { kp: kp.toUpperCase() },
+      orderBy: [{ tanggal: 'desc' }, { kereta: 'asc' }],
+      take: 200,
+    })
+    res.json(records)
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Internal error' })
+  }
+})
+
 // PUT /api/denim/inspect-finish — update existing inspection records
 router.put('/inspect-finish', requireAuth,
+  requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const { kp, shift, operator, rolls } = req.body;
@@ -1303,6 +1837,19 @@ router.get('/admin/summary',
         where: { pipeline_status: 'PENDING_APPROVAL' },
       });
 
+      // NEW: Stale Orders (active stage, tgl > 7 days ago — top 5 oldest)
+      const staleOrders = await prisma.salesContract.findMany({
+        where: {
+          pipeline_status: {
+            notIn: ['PENDING_APPROVAL', 'COMPLETE', 'REJECTED'],
+          },
+          tgl: { lte: sevenDaysAgo },
+        },
+        orderBy: { tgl: 'asc' },
+        take: 5,
+        select: { kp: true, pipeline_status: true, tgl: true },
+      });
+
       // NEW: Top Customers
       const topCustomersRaw = await prisma.$queryRaw<Array<{
         customer: string;
@@ -1390,6 +1937,24 @@ router.get('/admin/summary',
       const inProgress = total - (stageCounts.find(s => s.pipeline_status === 'COMPLETE')?._count.pipeline_status ?? 0)
         - (stageCounts.find(s => s.pipeline_status === 'REJECTED')?._count.pipeline_status ?? 0);
 
+      // NEW: Recent Activity — last 5 SalesContracts by updated_at
+      const recentActivityRaw = await prisma.salesContract.findMany({
+        orderBy: { updated_at: 'desc' },
+        take: 5,
+        select: {
+          kp: true,
+          pipeline_status: true,
+          updated_at: true,
+          codename: true,
+        },
+      });
+      const recentActivity = recentActivityRaw.map(sc => ({
+        kp: sc.kp,
+        pipeline_status: sc.pipeline_status,
+        updatedAt: sc.updated_at.toISOString(),
+        codename: sc.codename,
+      }));
+
       return res.json({
         total,
         inProgress,
@@ -1412,9 +1977,85 @@ router.get('/admin/summary',
         machineEfficiencyToday,
         lowEfficiencyMachines,
         warpingQueue,
+        staleOrders,
         topCustomers,
         avgCycleTime,
+        recentActivity,
       });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// GET /api/denim/admin/throughput
+// Returns pipeline stage transition counts grouped by period bucket
+router.get('/admin/throughput',
+  requireAuth,
+  requireRole('admin', 'jakarta'),
+  async (req: Request, res: Response) => {
+    try {
+      const { period = 'week', from, to } = req.query as {
+        period?: 'day' | 'week' | 'month';
+        from?: string;
+        to?: string;
+      };
+
+      if (!['day', 'week', 'month'].includes(period)) {
+        return res.status(400).json({ error: "period must be 'day', 'week', or 'month'" });
+      }
+
+      // Determine date range
+      let fromDate: Date;
+      let toDate: Date;
+
+      if (from && to) {
+        fromDate = new Date(from);
+        toDate = new Date(to);
+      } else if (period === 'day') {
+        fromDate = new Date();
+        fromDate.setDate(fromDate.getDate() - 29);
+        toDate = new Date();
+      } else if (period === 'week') {
+        fromDate = new Date();
+        fromDate.setDate(fromDate.getDate() - 12 * 7);
+        toDate = new Date();
+      } else {
+        fromDate = new Date();
+        fromDate.setMonth(fromDate.getMonth() - 11);
+        fromDate.setDate(1);
+        toDate = new Date();
+      }
+
+      // Map period to PostgreSQL date_trunc unit
+      const truncUnit = period === 'day' ? 'day' : period === 'week' ? 'week' : 'month';
+
+      const raw = await prisma.$queryRaw<Array<{
+        bucket: Date;
+        to_stage: string;
+        count: bigint;
+      }>>`
+        SELECT
+          DATE_TRUNC(${truncUnit}, created_at) AS bucket,
+          to_stage,
+          COUNT(*)::bigint AS count
+        FROM "PipelineEvent"
+        WHERE created_at >= ${fromDate} AND created_at <= ${toDate}
+        GROUP BY DATE_TRUNC(${truncUnit}, created_at), to_stage
+        ORDER BY bucket ASC, to_stage ASC
+      `;
+
+      if (!raw || raw.length === 0) {
+        return res.json({ period, data: [] });
+      }
+
+      const data = raw.map(row => ({
+        bucket: row.bucket.toISOString(),
+        stage: row.to_stage,
+        count: Number(row.count),
+      }));
+
+      return res.json({ period, data });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -1425,6 +2066,7 @@ router.get('/admin/summary',
 // Returns full pipeline detail for a single KP (admin only)
 router.get('/admin/pipeline/:kp',
   requireAuth,
+  requireRole('admin', 'jakarta', 'factory'),
   async (req: Request, res: Response) => {
     try {
       const { kp } = req.params;
@@ -1549,6 +2191,8 @@ router.get('/admin/pipeline/:kp',
 // Search KPs with filters, returns results with pipeline status
 router.get('/admin/kp-search',
   requireAuth,
+  requireRole('admin'),
+  requireRole('admin'),
   async (req: Request, res: Response) => {
     try {
       const { q, codename, kat_kode, from, to, limit = '20' } = req.query;
@@ -2153,6 +2797,7 @@ router.post('/weaving-sync', requireApiKey, async (req: Request, res: Response) 
 // Returns paginated warping runs with filtering
 router.get('/warping/records',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const kp = req.query.kp as string | undefined;
@@ -2204,6 +2849,7 @@ router.get('/warping/records',
 // Returns paginated indigo runs with filtering
 router.get('/indigo/records',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const kp = req.query.kp as string | undefined;
@@ -2254,6 +2900,7 @@ router.get('/indigo/records',
 // Returns weaving summary grouped by KP (not individual shifts)
 router.get('/weaving/records',
   requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
   async (req: Request, res: Response) => {
   try {
     const kp = req.query.kp as string | undefined;

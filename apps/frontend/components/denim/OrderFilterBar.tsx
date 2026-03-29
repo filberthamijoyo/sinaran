@@ -1,22 +1,16 @@
 'use client';
 
-import { Input } from '../ui/input';
-import {
-  Select, SelectContent, SelectItem,
-  SelectTrigger, SelectValue,
-} from '../ui/select';
-import { Button } from '../ui/button';
 import { Search, ArrowUpDown, X } from 'lucide-react';
 
 export type SortField = 'tgl' | 'kp' | 'codename' | 'permintaan' | 'te';
 export type SortDir = 'asc' | 'desc';
 
 export interface FilterState {
-  search: string;        // KP search — startsWith + contains
+  search: string;
   sortField: SortField;
   sortDir: SortDir;
-  stage?: string;        // pipeline_status filter (optional)
-  type?: string;         // kat_kode filter (optional)
+  stage?: string;
+  type?: string;
 }
 
 interface Props {
@@ -28,11 +22,11 @@ interface Props {
 }
 
 const SORT_OPTIONS: { value: SortField; label: string }[] = [
-  { value: 'tgl',       label: 'Date' },
-  { value: 'kp',        label: 'KP' },
-  { value: 'codename',  label: 'Construction' },
-  { value: 'permintaan',label: 'Customer' },
-  { value: 'te',        label: 'TE' },
+  { value: 'tgl',        label: 'Date' },
+  { value: 'kp',         label: 'KP' },
+  { value: 'codename',   label: 'Construction' },
+  { value: 'permintaan', label: 'Customer' },
+  { value: 'te',         label: 'TE' },
 ];
 
 const STAGES = [
@@ -42,11 +36,25 @@ const STAGES = [
 
 const TYPES = ['ALL', 'PO1', 'RP', 'SCN'];
 
+const STAGE_LABELS: Record<string, string> = {
+  ALL: 'All Stages',
+  DRAFT: 'Draft',
+  PENDING_APPROVAL: 'Pending Approval',
+  REJECTED: 'Rejected',
+  WARPING: 'Warping',
+  INDIGO: 'Indigo',
+  WEAVING: 'Weaving',
+  INSPECT_GRAY: 'Inspect Gray',
+  BBSF: 'BBSF',
+  INSPECT_FINISH: 'Inspect Finish',
+  COMPLETE: 'Complete',
+};
+
 export function defaultFilters(): FilterState {
   return {
     search: '',
     sortField: 'tgl',
-    sortDir: 'desc',   // newest first by default
+    sortDir: 'desc',
     stage: 'ALL',
     type: 'ALL',
   };
@@ -70,141 +78,179 @@ export default function OrderFilterBar({
     (showTypeFilter && filters.type !== 'ALL');
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2
-          -translate-y-1/2 w-3.5 h-3.5
-          pointer-events-none" style={{ color: '#9CA3AF' }} />
-        <Input
+      <div style={{ position: 'relative' }}>
+        <Search
+          size={14}
+          style={{
+            position: 'absolute',
+            left: 9,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--t3)',
+            pointerEvents: 'none',
+          }}
+        />
+        <input
+          type="text"
           placeholder={placeholder}
           value={filters.search}
           onChange={e => set({ search: e.target.value })}
-          className="pl-8 h-8 text-sm w-52"
           style={{
-            background: '#E0E5EC',
-            color: '#3D4852',
-            boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-            border: 'none',
-            borderRadius: '16px',
+            height: 30,
+            paddingLeft: 30,
+            paddingRight: filters.search ? 30 : 10,
+            fontSize: 12,
+            borderRadius: 'var(--r2)',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--t1)',
+            width: 208,
+            outline: 'none',
+            transition: 'border-color 0.12s, box-shadow 0.12s',
+            boxShadow: 'var(--shadow-xs)',
+          }}
+          onFocus={e => {
+            e.currentTarget.style.borderColor = 'var(--blue)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-blue)';
+          }}
+          onBlur={e => {
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-xs)';
           }}
         />
         {filters.search && (
           <button
             onClick={() => set({ search: '' })}
-            className="absolute right-2 top-1/2 -translate-y-1/2"
-            style={{ color: '#9CA3AF' }}
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--t3)',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+            }}
           >
-            <X className="w-3 h-3" />
+            <X size={12} />
           </button>
         )}
       </div>
 
       {/* Sort field */}
-      <Select
+      <select
         value={filters.sortField}
-        onValueChange={v => set({ sortField: v as SortField })}
-      >
-        <SelectTrigger className="h-8 text-sm w-36"
-          style={{
-            background: '#E0E5EC',
-            color: '#3D4852',
-            boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-            border: 'none',
-            borderRadius: '16px',
-          }}
-        >
-          <ArrowUpDown className="w-3 h-3 mr-1.5 flex-shrink-0" style={{ color: '#9CA3AF' }} />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent style={{ background: '#E0E5EC', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', border: 'none', borderRadius: '16px' }}>
-          {SORT_OPTIONS.map(o => (
-            <SelectItem key={o.value} value={o.value} style={{ color: '#3D4852' }}>
-              {o.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Sort direction toggle */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() =>
-          set({ sortDir: filters.sortDir === 'desc' ? 'asc' : 'desc' })
-        }
-        className="h-8 px-3 text-xs gap-1.5"
+        onChange={e => set({ sortField: e.target.value as SortField })}
         style={{
-          background: '#E0E5EC',
-          color: '#6B7280',
-          boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-          border: 'none',
-          borderRadius: '16px',
+          height: 30,
+          padding: '0 10px',
+          fontSize: 12,
+          borderRadius: 'var(--r2)',
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          color: 'var(--t1)',
+          cursor: 'pointer',
+          outline: 'none',
+          boxShadow: 'var(--shadow-xs)',
+          minWidth: 144,
         }}
       >
-        {filters.sortDir === 'desc' ? '↓ Newest' : '↑ Oldest'}
-      </Button>
+        {SORT_OPTIONS.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
 
-      {/* Stage filter (optional) */}
+      {/* Sort direction toggle */}
+      <button
+        onClick={() => set({ sortDir: filters.sortDir === 'desc' ? 'asc' : 'desc' })}
+        style={{
+          height: 30,
+          padding: '0 10px',
+          fontSize: 11,
+          fontWeight: 500,
+          borderRadius: 'var(--r2)',
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          color: 'var(--t2)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          boxShadow: 'var(--shadow-xs)',
+          transition: 'all 0.1s',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-2)';
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLElement).style.background = 'var(--surface)';
+          (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)';
+        }}
+      >
+        <ArrowUpDown size={12} />
+        {filters.sortDir === 'desc' ? '↓ Newest' : '↑ Oldest'}
+      </button>
+
+      {/* Stage filter */}
       {showStageFilter && (
-        <Select
+        <select
           value={filters.stage ?? 'ALL'}
-          onValueChange={v => set({ stage: v })}
+          onChange={e => set({ stage: e.target.value })}
+          style={{
+            height: 30,
+            padding: '0 10px',
+            fontSize: 12,
+            borderRadius: 'var(--r2)',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--t1)',
+            cursor: 'pointer',
+            outline: 'none',
+            boxShadow: 'var(--shadow-xs)',
+            minWidth: 176,
+          }}
         >
-          <SelectTrigger className="h-8 text-sm w-44"
-            style={{
-              background: '#E0E5EC',
-              color: '#3D4852',
-              boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-              border: 'none',
-              borderRadius: '16px',
-            }}
-          >
-            <SelectValue placeholder="All stages" />
-          </SelectTrigger>
-          <SelectContent style={{ background: '#E0E5EC', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', border: 'none', borderRadius: '16px' }}>
-            {STAGES.map(s => (
-              <SelectItem key={s} value={s} style={{ color: '#3D4852' }}>
-                {s === 'ALL' ? 'All Stages'
-                  : s.replace('_', ' ')}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {STAGES.map(s => (
+            <option key={s} value={s}>{STAGE_LABELS[s] ?? s.replace('_', ' ')}</option>
+          ))}
+        </select>
       )}
 
-      {/* Type filter (optional) */}
+      {/* Type filter */}
       {showTypeFilter && (
-        <Select
+        <select
           value={filters.type ?? 'ALL'}
-          onValueChange={v => set({ type: v })}
+          onChange={e => set({ type: e.target.value })}
+          style={{
+            height: 30,
+            padding: '0 10px',
+            fontSize: 12,
+            borderRadius: 'var(--r2)',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--t1)',
+            cursor: 'pointer',
+            outline: 'none',
+            boxShadow: 'var(--shadow-xs)',
+            minWidth: 128,
+          }}
         >
-          <SelectTrigger className="h-8 text-sm w-32"
-            style={{
-              background: '#E0E5EC',
-              color: '#3D4852',
-              boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-              border: 'none',
-              borderRadius: '16px',
-            }}
-          >
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent style={{ background: '#E0E5EC', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)', border: 'none', borderRadius: '16px' }}>
-            {TYPES.map(t => (
-              <SelectItem key={t} value={t} style={{ color: '#3D4852' }}>
-                {t === 'ALL' ? 'All Types' : t}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {TYPES.map(t => (
+            <option key={t} value={t}>{t === 'ALL' ? 'All Types' : t}</option>
+          ))}
+        </select>
       )}
 
       {/* Reset */}
       {hasActiveFilters && (
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={() => onChange({
             search: '',
             sortField: 'tgl',
@@ -212,11 +258,22 @@ export default function OrderFilterBar({
             stage: 'ALL',
             type: 'ALL',
           })}
-          className="h-8 px-2 text-xs"
-          style={{ color: '#9CA3AF' }}
+          style={{
+            height: 30,
+            padding: '0 8px',
+            fontSize: 11,
+            borderRadius: 'var(--r2)',
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--t3)',
+            cursor: 'pointer',
+            transition: 'color 0.1s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t2)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t3)'; }}
         >
           Reset
-        </Button>
+        </button>
       )}
     </div>
   );

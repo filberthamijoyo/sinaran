@@ -1,15 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import {
-  Table, TableBody, TableCell,
-  TableHead, TableHeader, TableRow,
-} from '../ui/table';
-import { Skeleton } from '../ui/skeleton';
-import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
-import { ChevronRight, Inbox, CheckCircle2 } from 'lucide-react';
 
+// ─── Types ──────────────────────────────────────────────────────
 export type InboxRow = {
   id: number;
   kp: string;
@@ -26,202 +20,202 @@ interface InboxTableProps {
   rows: InboxRow[];
   loading: boolean;
   formBasePath: string;
-  // e.g. '/denim/inbox/warping' — row click goes to
-  // formBasePath/[kp]
   emptyMessage?: string;
+  stage?: string;
 }
 
-const formatDate = (iso: string) => {
-  try { return format(new Date(iso), 'd MMM yyyy'); }
-  catch { return '—'; }
+// ─── Stage border color ─────────────────────────────────────────
+const STAGE_BORDER: Record<string, string> = {
+  PENDING_APPROVAL: '#D97706',
+  WARPING:          '#4A7A9B',
+  INDIGO:           '#0891B2',
+  WEAVING:          '#059669',
+  INSPECT_GRAY:     '#D97706',
+  BBSF:             '#EA580C',
+  INSPECT_FINISH:   '#2B506E',
+  COMPLETE:         '#059669',
+  REJECTED:         '#DC2626',
 };
 
+// ─── Helpers ─────────────────────────────────────────────────────
+function formatDate(iso: string): string {
+  try { return format(new Date(iso), 'd MMM yyyy'); }
+  catch { return '—'; }
+}
+
+// ─── Shimmer ───────────────────────────────────────────────────
+const SHIMMER = `
+@keyframes __inbox_shimmer__ {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.85; }
+}`;
+
+function SkeletonRow({ borderColor }: { borderColor: string }) {
+  return (
+    <>
+      <style>{SHIMMER}</style>
+      {[0,1,2,3,4].map(i => (
+        <tr key={i} style={{ borderBottom: '1px solid #F3F4F6', height: 44 }}>
+          <td style={{ borderLeft: `3px solid ${borderColor}`, paddingLeft: 13, paddingRight: 0 }} />
+          {[0,1,2,3,4,5,6].map(j => (
+            <td key={j} style={{ padding: '0 16px', height: 44 }}>
+              <div style={{
+                height:        12,
+                borderRadius:  4,
+                background:    '#E5E7EB',
+                animation:     `__inbox_shimmer__ 1.5s ease-in-out ${i * 100}ms infinite`,
+                width:         j === 2 ? '80%' : '60%',
+              }} />
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}
+
+// ─── Main component ──────────────────────────────────────────────
 export default function InboxTable({
   rows,
   loading,
   formBasePath,
-  emptyMessage = 'No orders in this queue.',
+  emptyMessage = 'No orders pending.',
+  stage,
 }: InboxTableProps) {
   const router = useRouter();
+  const borderColor = stage ? (STAGE_BORDER[stage] ?? '#B8CDD9') : '#B8CDD9';
 
   return (
-    <div
-      className="rounded-[32px] p-6 overflow-hidden"
-      style={{
-        background: '#E0E5EC',
-        boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-      }}
-    >
-      <Table>
-        <TableHeader>
-          <TableRow
-            style={{
-              background: '#E0E5EC',
-              borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-            }}
-          >
-            <TableHead
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: '#9CA3AF' }}
-            >
-              Date
-            </TableHead>
-            <TableHead
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: '#9CA3AF' }}
-            >
-              KP
-            </TableHead>
-            <TableHead
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: '#9CA3AF' }}
-            >
-              Construction
-            </TableHead>
-            <TableHead
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: '#9CA3AF' }}
-            >
-              Type
-            </TableHead>
-            <TableHead
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: '#9CA3AF' }}
-            >
-              Customer
-            </TableHead>
-            <TableHead
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: '#9CA3AF' }}
-            >
-              TE
-            </TableHead>
-            <TableHead
-              className="text-[10px] font-bold uppercase tracking-widest"
-              style={{ color: '#9CA3AF' }}
-            >
-              Color
-            </TableHead>
-            <TableHead className="w-8" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <TableRow
-                key={i}
+    <div style={{
+      background:    '#FFFFFF',
+      border:       '1px solid #E5E7EB',
+      borderRadius: 12,
+      overflow:     'hidden',
+    }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+            {/* Border stripe — no header text */}
+            <th style={{ width: 4, padding: 0 }} />
+            {[
+              { key: 'DATE',         label: 'DATE' },
+              { key: 'KP',          label: 'KP CODE' },
+              { key: 'CONSTRUCTION', label: 'CONSTRUCTION' },
+              { key: 'TYPE',        label: 'TYPE' },
+              { key: 'TE',          label: 'TE' },
+              { key: 'COLOR',       label: 'COLOR' },
+              { key: 'ACTION',      label: '' },
+            ].map(h => (
+              <th
+                key={h.key}
                 style={{
-                  background: '#E0E5EC',
-                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                  padding:    '0 16px',
+                  height:     36,
+                  fontSize:   11,
+                  fontWeight: 600,
+                  textAlign:  h.key === 'ACTION' ? 'right' : 'left',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  color:      '#9CA3AF',
+                  whiteSpace: 'nowrap',
                 }}
-              >
-                {Array.from({ length: 8 }).map((_, j) => (
-                  <TableCell key={j}>
-                    <Skeleton
-                      className="h-4 w-full"
-                      style={{
-                        background: '#E0E5EC',
-                        boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                      }}
-                    />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+              >{h.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <SkeletonRow borderColor={borderColor} />
           ) : rows.length === 0 ? (
-            <TableRow
-              style={{
-                background: '#E0E5EC',
-                borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-              }}
-            >
-              <TableCell colSpan={8}>
-                <div
-                  className="flex flex-col items-center justify-center py-20 gap-3"
-                  style={{ color: '#6B7280' }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center"
-                    style={{
-                      background: '#E0E5EC',
-                      boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    <CheckCircle2 className="w-6 h-6" style={{ color: '#9CA3AF' }} />
-                  </div>
-                  <p className="text-sm font-medium" style={{ color: '#6B7280' }}>
-                    Queue is clear
-                  </p>
-                  <p className="text-xs" style={{ color: '#9CA3AF' }}>
-                    No orders waiting in this stage.
-                  </p>
+            <tr>
+              <td colSpan={8} style={{ padding: '48px 20px', textAlign: 'center' }}>
+                <div style={{ marginBottom: 12 }}>
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                    <rect x="6" y="14" width="36" height="28" rx="4" stroke="#E5E7EB" strokeWidth="2"/>
+                    <path d="M6 18L24 28L42 18" stroke="#E5E7EB" strokeWidth="2" strokeLinejoin="round"/>
+                    <path d="M18 8L24 14L30 8" stroke="#E5E7EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-              </TableCell>
-            </TableRow>
+                <p style={{ fontSize: 14, color: '#9CA3AF' }}>{emptyMessage}</p>
+              </td>
+            </tr>
           ) : (
             rows.map(row => (
-              <TableRow
+              <tr
                 key={row.id}
+                onClick={() => router.push(`${formBasePath}/${row.kp}`)}
                 style={{
-                  background: '#E0E5EC',
-                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
+                  cursor:      'pointer',
+                  borderBottom:'1px solid #F3F4F6',
+                  transition:  'background 150ms',
+                  height:      44,
                 }}
-                className="cursor-pointer transition-all duration-100 hover:translate-y-[-1px]"
-                onClick={() =>
-                  router.push(`${formBasePath}/${row.kp}`)
-                }
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
               >
-                <TableCell className="text-sm" style={{ color: '#6B7280' }}>
+                {/* Border stripe */}
+                <td style={{ borderLeft: `3px solid ${borderColor}`, paddingLeft: 13, paddingRight: 0 }} />
+
+                {/* Date */}
+                <td style={{ padding: '0 16px', height: 44, fontSize: 13, color: '#6B7280', whiteSpace: 'nowrap' }}>
                   {formatDate(row.tgl)}
-                </TableCell>
-                <TableCell>
-                  <span
-                    className="text-sm font-mono font-semibold"
-                    style={{ color: '#3D4852' }}
-                  >
+                </td>
+
+                {/* KP */}
+                <td style={{ padding: '0 16px', height: 44 }}>
+                  <span style={{
+                    fontFamily:  "'IBM Plex Mono', monospace",
+                    fontSize:    13,
+                    fontWeight:  600,
+                    color:       '#1D4ED8',
+                  }}>
                     {row.kp}
                   </span>
-                </TableCell>
-                <TableCell className="text-sm" style={{ color: '#3D4852' }}>
+                </td>
+
+                {/* Construction */}
+                <td style={{
+                  padding:    '0 16px',
+                  height:     44,
+                  fontSize:   13,
+                  color:      '#0F1E2E',
+                  maxWidth:   220,
+                  overflow:   'hidden',
+                  textOverflow:'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}>
                   {row.codename || '—'}
-                </TableCell>
-                <TableCell>
-                  {row.kat_kode && (
-                    <span
-                      className="inline-flex items-center rounded-[9999px] px-3 py-1 text-xs font-bold"
-                      style={{
-                        background: '#E0E5EC',
-                        color: '#3D4852',
-                        boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                      }}
-                    >
-                      {row.kat_kode}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm" style={{ color: '#6B7280' }}>
-                  {row.permintaan || '—'}
-                </TableCell>
-                <TableCell className="text-sm font-mono" style={{ color: '#6B7280' }}>
-                  {row.te?.toLocaleString() || '—'}
-                </TableCell>
-                <TableCell className="text-sm" style={{ color: '#6B7280' }}>
+                </td>
+
+                {/* Type */}
+                <td style={{ padding: '0 16px', height: 44, fontSize: 12, color: '#6B7280' }}>
+                  {row.kat_kode || '—'}
+                </td>
+
+                {/* TE */}
+                <td style={{ padding: '0 16px', height: 44, fontSize: 12, color: '#6B7280', fontVariantNumeric: 'tabular-nums' }}>
+                  {row.te != null ? row.te.toLocaleString() : '—'}
+                </td>
+
+                {/* Color */}
+                <td style={{ padding: '0 16px', height: 44, fontSize: 12, color: '#6B7280' }}>
                   {row.ket_warna || '—'}
-                </TableCell>
-                <TableCell>
-                  <ChevronRight className="w-4 h-4" style={{ color: '#9CA3AF' }} />
-                </TableCell>
-              </TableRow>
+                </td>
+
+                {/* Action */}
+                <td
+                  style={{ padding: '0 16px 0 0', height: 44, textAlign: 'right' }}
+                  onClick={e => { e.stopPropagation(); router.push(`${formBasePath}/${row.kp}`); }}
+                >
+                  <span style={{ fontSize: 12, color: '#1D4ED8', fontWeight: 500, cursor: 'pointer' }}>
+                    Fill Form &rarr;
+                  </span>
+                </td>
+              </tr>
             ))
-          )}
-        </TableBody>
-      </Table>
+          )
+        }</tbody>
+      </table>
     </div>
   );
 }

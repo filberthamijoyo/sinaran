@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/AuthContext';
 
@@ -12,43 +12,35 @@ interface Props {
 export default function RequireAuth({ children, roles }: Props) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-
-  // Prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Do nothing while context is still reading localStorage or not mounted
-    if (!mounted || isLoading) return;
+    // Don't do anything while auth is still loading
+    if (isLoading) return;
+    // Already redirected once — don't loop
+    if (hasRedirected.current) return;
 
     if (!user) {
+      hasRedirected.current = true;
       router.replace('/login');
       return;
     }
 
     if (roles && !roles.includes(user.role)) {
-      router.replace('/denim/sales-contract');
+      hasRedirected.current = true;
+      const fallback =
+        user.role === 'jakarta' ? '/denim/approvals/pending' :
+        user.role === 'factory' ? `/denim/inbox/${user.stage ?? 'warping'}` :
+        '/denim/admin/dashboard';
+      router.replace(fallback);
     }
-  }, [mounted, isLoading, user, roles]);
+  }, [user, isLoading, roles, router]);
 
-  // While loading or not mounted: show consistent loading state
-  if (!mounted || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <div className="flex items-center gap-2 text-sm" style={{ color: '#9CA3AF' }}>
-          <div className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid rgb(163 177 198 / 0.4)', borderTopColor: '#6C63FF', background: 'transparent' }} />
-          Loading...
-        </div>
-      </div>
-    );
-  }
-
-  // Not logged in: show nothing while redirect fires
+  // While loading: show nothing (avoids flash)
+  if (isLoading) return null;
+  // Not logged in: show nothing (redirect fires in useEffect)
   if (!user) return null;
-
-  // Wrong role: show nothing while redirect fires
+  // Wrong role: show nothing
   if (roles && !roles.includes(user.role)) return null;
 
   return <>{children}</>;

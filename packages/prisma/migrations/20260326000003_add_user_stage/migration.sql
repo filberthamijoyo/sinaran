@@ -1,0 +1,2 @@
+-- add-user-stage: User model with stage field already created by baseline migration.
+-- No additional schema changes needed.

@@ -35,23 +35,16 @@ export default function StageCard({
   const router = useRouter();
 
   return (
-    <div style={{
-      background: '#E0E5EC',
-      borderRadius: '32px',
-      overflow: 'hidden',
-      flex: 'flex',
-      flexDirection: 'column',
-      boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-    }}>
+    <div className="rounded-2xl overflow-hidden bg-[#F7F8FA] border border-[#E5E7EB] flex flex-col">
 
       {/* Top accent bar */}
       <div style={{ height: '4px', width: '100%', background: color || '#6C63FF' }} />
 
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+      <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-[#E5E7EB]">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#6B7280' }}>{label}</p>
-          <p className="text-3xl font-bold mt-0.5" style={{ color: '#3D4852' }}>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#6B7280]">{label}</p>
+          <p className="text-3xl font-bold mt-0.5 text-[#0F1117]">
             {count}
           </p>
         </div>
@@ -59,8 +52,7 @@ export default function StageCard({
           onClick={() =>
             router.push(`/denim/admin/pipeline?stage=${stage}`)
           }
-          className="text-xs flex items-center gap-0.5 transition-colors"
-          style={{ color: '#6B7280' }}
+          className="text-xs flex items-center gap-0.5 transition-colors text-[#6B7280]"
         >
           View all
           <ChevronRight className="w-3 h-3" />
@@ -70,7 +62,7 @@ export default function StageCard({
       {/* Recent orders list */}
       <div className="flex-1">
         {recent.length === 0 ? (
-          <p className="px-5 py-4 text-xs text-center" style={{ color: '#9CA3AF' }}>
+          <p className="px-5 py-4 text-xs text-center text-[#9CA3AF]">
             No orders at this stage
           </p>
         ) : (
@@ -80,33 +72,32 @@ export default function StageCard({
               onClick={() =>
                 router.push(`/denim/admin/orders/${order.kp}`)
               }
-              className="w-full px-5 py-2.5 flex items-center justify-between text-left group"
-              style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}
+              className="w-full px-5 py-2.5 flex items-center justify-between text-left group border-b border-[#E5E7EB] last:border-b-0"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-semibold" style={{ color: '#3D4852' }}>
+                  <span className="text-xs font-mono font-semibold text-[#0F1117]">
                     {order.kp}
                   </span>
                   {order.kat_kode && (
-                    <span className="inline-flex items-center rounded-[9999px] px-1.5 py-px text-[10px] font-medium leading-none" style={{ background: '#E0E5EC', color: TYPE_COLORS[order.kat_kode] || '#6B7280', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' }}>
+                    <span className="inline-flex items-center rounded-full px-1.5 py-px text-[10px] font-medium leading-none bg-[#F3F4F6] text-[#6B7280]">
                       {order.kat_kode}
                     </span>
                   )}
                 </div>
-                <p className="text-xs truncate mt-0.5" style={{ color: '#6B7280' }}>
+                <p className="text-xs truncate mt-0.5 text-[#6B7280]">
                   {order.codename || '—'}
                   {order.permintaan
                     ? ` · ${order.permintaan}` : ''}
                 </p>
               </div>
               <div className="flex-shrink-0 ml-3 text-right">
-                <p className="text-[10px]" style={{ color: '#9CA3AF' }}>
+                <p className="text-[10px] text-[#9CA3AF]">
                   {order.tgl
                     ? format(new Date(order.tgl), 'd MMM')
                     : '—'}
                 </p>
-                <ChevronRight className="w-3 h-3 ml-auto mt-0.5 transition-colors" style={{ color: '#9CA3AF' }} />
+                <ChevronRight className="w-3 h-3 ml-auto mt-0.5 transition-colors text-[#9CA3AF]" />
               </div>
             </button>
           ))

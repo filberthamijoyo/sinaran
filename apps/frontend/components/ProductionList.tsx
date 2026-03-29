@@ -12,7 +12,52 @@ import { CollapsibleFilters } from './ui/CollapsibleFilters';
 const API_BASE_URL = API_ENDPOINTS.production;
 
 // Aggregate raw daily rows into a Date‑Wise summary
-const aggregateDateWiseSummary = (rows, filters: any = {}) => {
+type BaseRow = {
+  id?: number;
+  productionDate?: string;
+  month?: string;
+  year?: string;
+  millsUnit?: { id?: number; name?: string };
+  unitPabrik?: { name?: string };
+  yarnJenisBenang?: { name?: string; id?: number };
+  countNe?: { value?: string; id?: number };
+  lotBenang?: { name?: string; id?: number };
+  lot?: { id?: number };
+  spk?: { name?: string; id?: number };
+  slubCode?: { name?: string; code?: string; id?: number };
+  warnaConeCheese?: { name?: string; id?: number };
+  beratConeCheeseKg?: number;
+  tm?: number;
+  tpi?: number;
+  speed?: number;
+  jumlahSpindelRotorTerpasang?: number;
+  jumlahConesCheese?: number;
+  produksiKgs?: number;
+  produksiLbs?: number;
+  aktualProduksiBales?: number;
+  produksi100PercentBales?: number;
+  targetProduksiOnTargetOprBales?: number;
+  targetOpsOpr?: number;
+  opsOprAktual?: number;
+  opsOprWorked?: number;
+  powerElectricMin?: number;
+  countMengubahMin?: number;
+  creelMengubahMin?: number;
+  preventiveMtcMin?: number;
+  creelShortStoppageMin?: number;
+  totalPenghentianMin?: number;
+  powerPenghentian?: number;
+  countMengubahLoss?: number;
+  creelMengubahLoss?: number;
+  preventiveMtcLoss?: number;
+  creelShortLoss?: number;
+  keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr?: number;
+  produksiEffisiensiPercent?: number;
+  effisiensiKerjaPercent?: number;
+  kerugianTotal?: number;
+};
+
+const aggregateDateWiseSummary = (rows: BaseRow[], filters: Record<string, unknown> = {}) => {
   if (!rows || rows.length === 0) return [];
 
   const groups = new Map();
@@ -52,7 +97,7 @@ const aggregateDateWiseSummary = (rows, filters: any = {}) => {
         aktualProduksiBales: 0,
         produksi100PercentBales: 0,
         targetProduksiOnTargetOprBales: 0,
-        keuntunganKerugianEfisiensiBalesOnTargetOpsOpr: 0,
+        keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr: 0,
         targetOpsOpr: 0,
         opsOprAktual: 0,
         opsOprWorked: 0,
@@ -81,7 +126,7 @@ const aggregateDateWiseSummary = (rows, filters: any = {}) => {
     addNumberToObj(agg, 'aktualProduksiBales', row.aktualProduksiBales);
     addNumberToObj(agg, 'produksi100PercentBales', row.produksi100PercentBales);
     addNumberToObj(agg, 'targetProduksiOnTargetOprBales', row.targetProduksiOnTargetOprBales);
-    addNumberToObj(agg, 'keuntunganKerugianEfisiensiBalesOnTargetOpsOpr', row.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr);
+    addNumberToObj(agg, 'keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr', row.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr);
     addNumberToObj(agg, 'targetOpsOpr', row.targetOpsOpr);
     addNumberToObj(agg, 'opsOprAktual', row.opsOprAktual);
     addNumberToObj(agg, 'opsOprWorked', row.opsOprWorked);
@@ -113,8 +158,8 @@ const aggregateDateWiseSummary = (rows, filters: any = {}) => {
       aktualProduksiBales: g.aktualProduksiBales / denom,
       produksi100PercentBales: g.produksi100PercentBales / denom,
       targetProduksiOnTargetOprBales: g.targetProduksiOnTargetOprBales / denom,
-      keuntunganKerugianEfisiensiBalesOnTargetOpsOpr:
-        g.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr / denom,
+      keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr:
+        g.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr / denom,
       targetOpsOpr: g.targetOpsOpr / denom,
       opsOprAktual: g.opsOprAktual / denom,
       opsOprWorked: g.opsOprWorked / denom,
@@ -149,7 +194,7 @@ const aggregateDateWiseSummary = (rows, filters: any = {}) => {
 };
 
 // Aggregate by month - calculates averages for the selected month
-const aggregateMonthlySummary = (rows, selectedMonth, filters: any = {}) => {
+const aggregateMonthlySummary = (rows: BaseRow[], selectedMonth: string, filters: Record<string, unknown> = {}) => {
   if (!rows || rows.length === 0) return [];
 
   const groups = new Map();
@@ -201,7 +246,7 @@ const aggregateMonthlySummary = (rows, selectedMonth, filters: any = {}) => {
         aktualProduksiBales: 0,
         produksi100PercentBales: 0,
         targetProduksiOnTargetOprBales: 0,
-        keuntunganKerugianEfisiensiBalesOnTargetOpsOpr: 0,
+        keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr: 0,
         targetOpsOpr: 0,
         opsOprAktual: 0,
         opsOprWorked: 0,
@@ -230,7 +275,7 @@ const aggregateMonthlySummary = (rows, selectedMonth, filters: any = {}) => {
     addNumberToObj(agg, 'aktualProduksiBales', row.aktualProduksiBales);
     addNumberToObj(agg, 'produksi100PercentBales', row.produksi100PercentBales);
     addNumberToObj(agg, 'targetProduksiOnTargetOprBales', row.targetProduksiOnTargetOprBales);
-    addNumberToObj(agg, 'keuntunganKerugianEfisiensiBalesOnTargetOpsOpr', row.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr);
+    addNumberToObj(agg, 'keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr', row.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr);
     addNumberToObj(agg, 'targetOpsOpr', row.targetOpsOpr);
     addNumberToObj(agg, 'opsOprAktual', row.opsOprAktual);
     addNumberToObj(agg, 'opsOprWorked', row.opsOprWorked);
@@ -262,8 +307,8 @@ const aggregateMonthlySummary = (rows, selectedMonth, filters: any = {}) => {
       aktualProduksiBales: g.aktualProduksiBales / denom,
       produksi100PercentBales: g.produksi100PercentBales / denom,
       targetProduksiOnTargetOprBales: g.targetProduksiOnTargetOprBales / denom,
-      keuntunganKerugianEfisiensiBalesOnTargetOpsOpr:
-        g.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr / denom,
+      keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr:
+        g.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr / denom,
       targetOpsOpr: g.targetOpsOpr / denom,
       opsOprAktual: g.opsOprAktual / denom,
       opsOprWorked: g.opsOprWorked / denom,
@@ -296,7 +341,7 @@ const aggregateMonthlySummary = (rows, selectedMonth, filters: any = {}) => {
 };
 
 // Aggregate by year - calculates averages for the selected year
-const aggregateYearlySummary = (rows, selectedYear, filters: any = {}) => {
+const aggregateYearlySummary = (rows: BaseRow[], selectedYear: string, filters: Record<string, unknown> = {}) => {
   if (!rows || rows.length === 0) return [];
 
   const groups = new Map();
@@ -348,7 +393,7 @@ const aggregateYearlySummary = (rows, selectedYear, filters: any = {}) => {
         aktualProduksiBales: 0,
         produksi100PercentBales: 0,
         targetProduksiOnTargetOprBales: 0,
-        keuntunganKerugianEfisiensiBalesOnTargetOpsOpr: 0,
+        keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr: 0,
         targetOpsOpr: 0,
         opsOprAktual: 0,
         opsOprWorked: 0,
@@ -377,7 +422,7 @@ const aggregateYearlySummary = (rows, selectedYear, filters: any = {}) => {
     addNumberToObj(agg, 'aktualProduksiBales', row.aktualProduksiBales);
     addNumberToObj(agg, 'produksi100PercentBales', row.produksi100PercentBales);
     addNumberToObj(agg, 'targetProduksiOnTargetOprBales', row.targetProduksiOnTargetOprBales);
-    addNumberToObj(agg, 'keuntunganKerugianEfisiensiBalesOnTargetOpsOpr', row.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr);
+    addNumberToObj(agg, 'keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr', row.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr);
     addNumberToObj(agg, 'targetOpsOpr', row.targetOpsOpr);
     addNumberToObj(agg, 'opsOprAktual', row.opsOprAktual);
     addNumberToObj(agg, 'opsOprWorked', row.opsOprWorked);
@@ -409,8 +454,8 @@ const aggregateYearlySummary = (rows, selectedYear, filters: any = {}) => {
       aktualProduksiBales: g.aktualProduksiBales / denom,
       produksi100PercentBales: g.produksi100PercentBales / denom,
       targetProduksiOnTargetOprBales: g.targetProduksiOnTargetOprBales / denom,
-      keuntunganKerugianEfisiensiBalesOnTargetOpsOpr:
-        g.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr / denom,
+      keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr:
+        g.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr / denom,
       targetOpsOpr: g.targetOpsOpr / denom,
       opsOprAktual: g.opsOprAktual / denom,
       opsOprWorked: g.opsOprWorked / denom,
@@ -482,7 +527,7 @@ const getDefaultFilters = () => ({
 
 function ProductionList() {
   const router = useRouter();
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
@@ -494,15 +539,15 @@ function ProductionList() {
   const [filters, setFilters] = usePersistedState('production_list_filters', getDefaultFilters);
   
   // Dropdown data
-  const [units, setUnits] = useState([]);
-  const [yarnTypes, setYarnTypes] = useState([]);
-  const [counts, setCounts] = useState([]);
-  const [slubCodes, setSlubCodes] = useState([]);
-  const [lots, setLots] = useState([]);
-  const [spks, setSpks] = useState([]);
-  const [colors, setColors] = useState([]);
-  const [, setBlends] = useState([]);
-  const [, setRayonBrands] = useState([]);
+  const [units, setUnits] = useState<any[]>([]);
+  const [yarnTypes, setYarnTypes] = useState<any[]>([]);
+  const [counts, setCounts] = useState<any[]>([]);
+  const [slubCodes, setSlubCodes] = useState<any[]>([]);
+  const [lots, setLots] = useState<any[]>([]);
+  const [spks, setSpks] = useState<any[]>([]);
+  const [colors, setColors] = useState<any[]>([]);
+  const [, setBlends] = useState<any[]>([]);
+  const [, setRayonBrands] = useState<any[]>([]);
 
   // Derived: summary based on view mode + a TOTAL row
   const summary = React.useMemo(() => {
@@ -541,7 +586,7 @@ function ProductionList() {
       aktualProduksiBales: 0,
       produksi100PercentBales: 0,
       targetProduksiOnTargetOprBales: 0,
-      keuntunganKerugianEfisiensiBalesOnTargetOpsOpr: 0,
+      keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr: 0,
       targetOpsOpr: 0,
       opsOprAktual: 0,
       opsOprWorked: 0,
@@ -579,8 +624,8 @@ function ProductionList() {
       total.aktualProduksiBales += row.aktualProduksiBales || 0;
       total.produksi100PercentBales += row.produksi100PercentBales || 0;
       total.targetProduksiOnTargetOprBales += row.targetProduksiOnTargetOprBales || 0;
-      total.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr +=
-        row.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr || 0;
+      total.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr +=
+        row.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr || 0;
       total.targetOpsOpr += row.targetOpsOpr || 0;
       total.opsOprAktual += row.opsOprAktual || 0;
       total.opsOprWorked += row.opsOprWorked || 0;
@@ -616,7 +661,7 @@ function ProductionList() {
           aktualProduksiBales: 0,
           produksi100PercentBales: 0,
           targetProduksiOnTargetOprBales: 0,
-          keuntunganKerugianEfisiensiBalesOnTargetOpsOpr: 0,
+          keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr: 0,
           targetOpsOpr: 0,
           opsOprAktual: 0,
           opsOprWorked: 0,
@@ -649,8 +694,8 @@ function ProductionList() {
       agg.produksi100PercentBales += row.produksi100PercentBales || 0;
       agg.targetProduksiOnTargetOprBales +=
         row.targetProduksiOnTargetOprBales || 0;
-      agg.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr +=
-        row.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr || 0;
+      agg.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr +=
+        row.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr || 0;
       agg.targetOpsOpr += row.targetOpsOpr || 0;
       agg.opsOprAktual += row.opsOprAktual || 0;
       agg.opsOprWorked += row.opsOprWorked || 0;
@@ -683,7 +728,7 @@ function ProductionList() {
     });
 
     const unitCount = perUnit.size;
-    const unitTotalRows = [];
+      const unitTotalRows: Record<string, unknown>[] = [];
     if (unitCount > 0) {
       perUnit.forEach((agg, unitName) => {
         const unitEffProd =
@@ -732,8 +777,8 @@ function ProductionList() {
           aktualProduksiBales: unitAktualBalesAvg,
           produksi100PercentBales: unitProd100BalesAvg,
           targetProduksiOnTargetOprBales: unitTargetProdBalesAvg,
-          keuntunganKerugianEfisiensiBalesOnTargetOpsOpr:
-            agg.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr,
+          keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr:
+            agg.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr,
           targetOpsOpr: agg.targetOpsOpr,
           opsOprAktual: agg.opsOprAktual,
           opsOprWorked: agg.opsOprWorked,
@@ -759,10 +804,10 @@ function ProductionList() {
     // For the global TOTAL row, show MAV (sum of all rows / number of rows)
     // for all numeric fact metrics:
     if (total.effProdCount > 0) {
-      total.produksiEffisiensiPercentAvg = total.effProdSum / total.effProdCount;
+      (total as Record<string, unknown>).produksiEffisiensiPercentAvg = total.effProdSum / total.effProdCount;
     }
     if (total.effKerjaCount > 0) {
-      total.effisiensiKerjaPercentAvg = total.effKerjaSum / total.effKerjaCount;
+      (total as Record<string, unknown>).effisiensiKerjaPercentAvg = total.effKerjaSum / total.effKerjaCount;
     }
     if (total._rowCount > 0) {
       const denom = total._rowCount;
@@ -810,18 +855,18 @@ function ProductionList() {
           apiCall(`${API_BASE_URL}/rayon-brands`).catch(() => []) // Optional, may not exist
         ]);
         
-        setUnits((unitsData as any[]) || []);
-        setYarnTypes((yarnTypesData as any[]) || []);
-        setCounts((countsData as any[]) || []);
-        setSlubCodes((slubCodesData as any[]) || []);
-        setLots((lotsData as any[]) || []);
-        setSpks((spksData as any[]) || []);
-        setColors((colorsData as any[]) || []);
-        setBlends((blendsData as any[]) || []);
-        setRayonBrands((rayonBrandsData as any[]) || []);
+        setUnits(unitsData as any[]);
+        setYarnTypes(yarnTypesData as any[]);
+        setCounts(countsData as any[]);
+        setSlubCodes(slubCodesData as any[]);
+        setLots(lotsData as any[]);
+        setSpks(spksData as any[]);
+        setColors(colorsData as any[]);
+        setBlends(blendsData as any[]);
+        setRayonBrands(rayonBrandsData as any[]);
       } catch (err) {
         console.error('Error fetching dropdowns:', err);
-        const errorMessage = err?.message || err?.toString() || 'Unknown error';
+        const errorMessage = (err as Error)?.message || String(err) || 'Unknown error';
         setFeedback({ type: 'error', message: `Error loading dropdown data: ${errorMessage}` });
       }
     };
@@ -830,7 +875,7 @@ function ProductionList() {
   }, []);
 
   // Handle filter changes
-  const handleFilterChange = (e) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
@@ -888,7 +933,7 @@ function ProductionList() {
       if (filters.effProduksiMin) params.append('effProduksiMin', filters.effProduksiMin);
       if (filters.effProduksiMax) params.append('effProduksiMax', filters.effProduksiMax);
       
-      const data = (await apiCall(`${API_BASE_URL}/records?${params}`)) as any;
+      const data = (await apiCall(`${API_BASE_URL}/records?${params}`)) as { data?: Record<string, unknown>[]; pagination?: { page: number; limit: number; total: number; totalPages: number } };
       setRows(data?.data || []);
       setPagination(data?.pagination || pagination);
     } catch (err) {
@@ -905,7 +950,7 @@ function ProductionList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
-  const handleSelectRow = (row) => {
+  const handleSelectRow = (row: Record<string, unknown>) => {
     router.push(`/production/edit/${row.id}`);
   };
 
@@ -925,18 +970,18 @@ function ProductionList() {
       setFeedback({ type: 'success', message: 'Production record deleted successfully!' });
       await fetchRecords(pagination.page);
     } catch (err) {
-      setFeedback({ type: 'error', message: err.message || 'Failed to delete record' });
+      setFeedback({ type: 'error', message: (err as Error)?.message || 'Failed to delete record' });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDuplicate = (row) => {
-    router.push(`/production/edit/${row.id}`);
+  const handleDuplicate = (row: Record<string, unknown>) => {
+    router.push(`/production/edit/${String(row.id)}`);
   };
 
-  const handleEditRow = (row) => {
-    router.push(`/production/edit/${row.id}`);
+  const handleEditRow = (row: Record<string, unknown>) => {
+    router.push(`/production/edit/${String(row.id)}`);
   };
 
   return (
@@ -1253,53 +1298,55 @@ function ProductionList() {
                       </td>
                     </tr>
                   ) : (
-                    rows.map((row) => (
+                    rows.map((row) => {
+                      const r = row as Record<string, unknown>;
+                      return (
                       <tr
-                        key={row.id}
+                        key={String(r.id)}
                         onClick={() => handleSelectRow(row)}
                       >
-                        <td>{displayValue(formatDate(row.productionDate))}</td>
-                        <td>{displayValue(getYear(row.productionDate))}</td>
-                        <td>{displayValue(row.month)}</td>
-                        <td>{displayValue(row.millsUnit?.name || row.unitPabrik?.name)}</td>
-                        <td>{displayValue(row.yarnJenisBenang?.name)}</td>
-                        <td>{displayValue(row.countNe?.value)}</td>
-                        <td>{displayValue(row.slubCode?.name || row.slubCode?.code)}</td>
-                        <td>{displayValue(row.lotBenang?.name)}</td>
-                        <td>{displayValue(row.spk?.name)}</td>
-                        <td>{displayValue(row.warnaConeCheese?.name)}</td>
-                        <td>{displayValue(row.beratConeCheeseKg, (v) => formatDecimal(v, 3))}</td>
-                        <td>{displayValue(row.tm, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.tpi, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.speed)}</td>
-                        <td>{displayValue(row.jumlahSpindelRotorTerpasang)}</td>
-                        <td>{displayValue(row.jumlahConesCheese)}</td>
-                        <td>{displayValue(row.produksiKgs, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.produksiLbs, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.aktualProduksiBales, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.produksi100PercentBales, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.targetProduksiOnTargetOprBales, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.targetOpsOpr, (v) => formatDecimal(v, 4))}</td>
-                        <td>{displayValue(row.opsOprAktual, (v) => formatDecimal(v, 4))}</td>
-                        <td>{displayValue(row.opsOprWorked, (v) => formatDecimal(v, 4))}</td>
-                        <td>{displayValue(row.powerElectricMin)}</td>
-                        <td>{displayValue(row.countMengubahMin)}</td>
-                        <td>{displayValue(row.creelMengubahMin)}</td>
-                        <td>{displayValue(row.preventiveMtcMin)}</td>
-                        <td>{displayValue(row.creelShortStoppageMin)}</td>
-                        <td>{displayValue(row.totalPenghentianMin)}</td>
-                        <td>{displayValue(row.powerPenghentian, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.countMengubahLoss, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.creelMengubahLoss, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.preventiveMtcLoss, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.creelShortLoss, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(formatDate(r.productionDate as string | Date | null | undefined))}</td>
+                        <td>{displayValue(getYear(r.productionDate as string | Date | null | undefined))}</td>
+                        <td>{displayValue(r.month)}</td>
+                        <td>{displayValue((r.millsUnit as Record<string, unknown>)?.name as string || (r.unitPabrik as Record<string, unknown>)?.name as string || '')}</td>
+                        <td>{displayValue((r.yarnJenisBenang as Record<string, unknown>)?.name as string || '')}</td>
+                        <td>{displayValue((r.countNe as Record<string, unknown>)?.value as string || '')}</td>
+                        <td>{displayValue((r.slubCode as Record<string, unknown>)?.name as string || (r.slubCode as Record<string, unknown>)?.code as string || '')}</td>
+                        <td>{displayValue((r.lotBenang as Record<string, unknown>)?.name as string || '')}</td>
+                        <td>{displayValue((r.spk as Record<string, unknown>)?.name as string || '')}</td>
+                        <td>{displayValue((r.warnaConeCheese as Record<string, unknown>)?.name as string || '')}</td>
+                        <td>{displayValue(r.beratConeCheeseKg, (v) => formatDecimal(v, 3))}</td>
+                        <td>{displayValue(r.tm, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.tpi, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.speed)}</td>
+                        <td>{displayValue(r.jumlahSpindelRotorTerpasang)}</td>
+                        <td>{displayValue(r.jumlahConesCheese)}</td>
+                        <td>{displayValue(r.produksiKgs, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.produksiLbs, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.aktualProduksiBales, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.produksi100PercentBales, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.targetProduksiOnTargetOprBales, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.targetOpsOpr, (v) => formatDecimal(v, 4))}</td>
+                        <td>{displayValue(r.opsOprAktual, (v) => formatDecimal(v, 4))}</td>
+                        <td>{displayValue(r.opsOprWorked, (v) => formatDecimal(v, 4))}</td>
+                        <td>{displayValue(r.powerElectricMin)}</td>
+                        <td>{displayValue(r.countMengubahMin)}</td>
+                        <td>{displayValue(r.creelMengubahMin)}</td>
+                        <td>{displayValue(r.preventiveMtcMin)}</td>
+                        <td>{displayValue(r.creelShortStoppageMin)}</td>
+                        <td>{displayValue(r.totalPenghentianMin)}</td>
+                        <td>{displayValue(r.powerPenghentian, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.countMengubahLoss, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.creelMengubahLoss, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.preventiveMtcLoss, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.creelShortLoss, (v) => formatDecimal(v, 2))}</td>
                         <td>{displayValue(
-                          row.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr,
+                          r.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr,
                           (v) => formatDecimal(v, 2)
                         )}</td>
-                        <td>{displayValue(row.produksiEffisiensiPercent, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.effisiensiKerjaPercent, (v) => formatDecimal(v, 2))}</td>
-                        <td>{displayValue(row.kerugianTotal, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.produksiEffisiensiPercent, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.effisiensiKerjaPercent, (v) => formatDecimal(v, 2))}</td>
+                        <td>{displayValue(r.kerugianTotal, (v) => formatDecimal(v, 2))}</td>
                         <td className="production-actions-cell" onClick={(e) => e.stopPropagation()}>
                           <div className="production-row-actions">
                             <button
@@ -1321,7 +1368,7 @@ function ProductionList() {
                             <button
                               type="button"
                               className="production-action-btn production-action-btn--delete"
-                              onClick={() => handleDelete(row.id)}
+                              onClick={() => handleDelete(row.id as any)}
                               title="Delete"
                             >
                               🗑️
@@ -1329,7 +1376,8 @@ function ProductionList() {
                           </div>
                         </td>
                       </tr>
-                    ))
+                    );
+                    })
                   )}
                 </tbody>
               </table>
@@ -1507,7 +1555,7 @@ function ProductionList() {
                             <td>{displayValue(row.preventiveMtcLoss, (v) => formatDecimal(v, 2))}</td>
                             <td>{displayValue(row.creelShortLoss, (v) => formatDecimal(v, 2))}</td>
                             <td>{displayValue(
-                              row.keuntunganKerugianEfisiensiBalesOnTargetOpsOpr,
+                              row.keuntunganKeruntunganEfisiensiBalesOnTargetOpsOpr,
                               (v) => formatDecimal(v, 2)
                             )}</td>
                             <td>{displayValue(

@@ -1,12 +1,10 @@
-import type { Metadata } from 'next';
-import ProductionForm from '../../../components/ProductionForm';
+import RequireAuth from '@/components/RequireAuth';
+import ProductionForm from '@/components/ProductionForm';
 
-export const metadata: Metadata = {
-  title: 'New Production Row',
-  description: 'Create a new production record',
-};
-
-export default function ProductionNewPage() {
-  return <ProductionForm />;
+export default function Page() {
+  return (
+    <RequireAuth>
+      <ProductionForm />
+    </RequireAuth>
+  );
 }
-

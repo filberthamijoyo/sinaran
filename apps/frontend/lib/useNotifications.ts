@@ -7,7 +7,7 @@ import { getToken, getUser } from './auth';
 export interface Notification {
   id: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   kp?: string;
   timestamp: number;
 }
@@ -70,5 +70,5 @@ export const useNotifications = () => {
     setNotifications(prev => prev.filter(x => x.id !== id));
   };
 
-  return { notifications, dismiss };
+  return { notifications, dismiss, addNotification };
 };

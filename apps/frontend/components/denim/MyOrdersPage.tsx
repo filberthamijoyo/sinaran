@@ -69,9 +69,9 @@ export default function MyOrdersPage() {
         params.set('pipeline_status', filters.stage);
       if (filters.type && filters.type !== 'ALL')
         params.set('type', filters.type);
-      const data = await authFetch(
+      const data = await authFetch<{ items?: SC[]; pagination?: { total?: number } }>(
         `/denim/sales-contracts?${params}`
-      ) as any;
+      );
       setRows(data?.items || []);
       setTotal(data?.pagination?.total || 0);
     } catch (e) {
@@ -96,12 +96,7 @@ export default function MyOrdersPage() {
         actions={
           <Button
             onClick={() => router.push('/denim/new-order')}
-            style={{
-              background: '#6C63FF',
-              color: '#FFFFFF',
-              border: 'none',
-            }}
-            className="h-8 text-sm gap-1.5"
+            className="h-8 text-sm gap-1.5 bg-[#1D4ED8] text-white border-none"
           >
             <Plus className="w-3.5 h-3.5" />
             New Order
@@ -123,41 +118,25 @@ export default function MyOrdersPage() {
             size="sm"
             onClick={fetchOrders}
             className="h-8 w-8 p-0"
-            style={{
-              background: '#E0E5EC',
-              color: '#6B7280',
-              boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-              border: 'none',
-            }}
+            variant="outline"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </Button>
         </div>
 
         {/* Table */}
-        <div
-          className="rounded-[32px] p-6 overflow-hidden"
-          style={{
-            background: '#E0E5EC',
-            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-          }}
-        >
+        <div className="rounded-xl p-6 overflow-hidden bg-[#F7F8FA] border border-[#E5E7EB]">
           <Table>
             <TableHeader>
-              <TableRow
-                style={{
-                  background: '#E0E5EC',
-                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                }}
-              >
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Date</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>KP</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Construction</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Type</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Customer</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>TE</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Color</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Pipeline</TableHead>
+              <TableRow className="border-b border-[#E5E7EB]">
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Date</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">KP</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Construction</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Type</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Customer</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">TE</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Color</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">Pipeline</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -172,15 +151,9 @@ export default function MyOrdersPage() {
                   </TableRow>
                 ))
               ) : rows.length === 0 ? (
-                <TableRow
-                  style={{
-                    background: '#E0E5EC',
-                    borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                  }}
-                >
+                <TableRow className="border-b border-[#E5E7EB]">
                   <TableCell colSpan={8}
-                    className="text-center text-sm py-16"
-                    style={{ color: '#6B7280' }}
+                    className="text-center text-sm py-16 text-[#6B7280]"
                   >
                     No orders found.
                   </TableCell>
@@ -189,48 +162,36 @@ export default function MyOrdersPage() {
                 rows.map(row => (
                   <TableRow
                     key={row.id}
-                    style={{
-                      background: '#E0E5EC',
-                      borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                    }}
-                    className="cursor-pointer transition-all duration-100 hover:translate-x-[2px]"
+                    className="border-b border-[#E5E7EB] cursor-pointer hover:bg-[#F3F4F6] transition-colors"
                     onClick={() =>
                       router.push(`/denim/orders/${row.kp}`)
                     }
                   >
-                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
+                    <TableCell className="text-sm text-[#6B7280]">
                       {formatDate(row.tgl)}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm font-mono font-semibold"
-                        style={{ color: '#3D4852' }}>
+                      <span className="text-sm font-mono font-semibold text-[#0F1117]">
                         {row.kp}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm" style={{ color: '#3D4852' }}>
+                    <TableCell className="text-sm text-[#0F1117]">
                       {row.codename || '—'}
                     </TableCell>
                     <TableCell>
                       {row.kat_kode && (
-                        <span className={`inline-flex items-center rounded-[9999px] px-3 py-1 text-xs font-bold`}
-                          style={{
-                            background: '#E0E5EC',
-                            color: '#3D4852',
-                            boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                          }}
-                        >
+                        <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold bg-[#F3F4F6] text-[#0F1117]">
                           {row.kat_kode}
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
+                    <TableCell className="text-sm text-[#6B7280]">
                       {row.permintaan || '—'}
                     </TableCell>
-                    <TableCell className="text-sm font-mono"
-                      style={{ color: '#6B7280' }}>
+                    <TableCell className="text-sm font-mono text-[#6B7280]">
                       {row.te?.toLocaleString() || '—'}
                     </TableCell>
-                    <TableCell className="text-sm" style={{ color: '#6B7280' }}>
+                    <TableCell className="text-sm text-[#6B7280]">
                       {row.ket_warna || '—'}
                     </TableCell>
                     <TableCell>
@@ -248,7 +209,7 @@ export default function MyOrdersPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
-            <p className="text-xs" style={{ color: '#6B7280' }}>
+            <p className="text-xs text-[#6B7280]">
               Page {page} of {totalPages}
               {' '}· {total.toLocaleString()} orders
             </p>
@@ -258,12 +219,7 @@ export default function MyOrdersPage() {
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
                 className="h-7 text-xs"
-                style={{
-                  background: '#E0E5EC',
-                  color: '#3D4852',
-                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                  border: 'none',
-                }}
+                variant="outline"
               >
                 Previous
               </Button>
@@ -272,12 +228,7 @@ export default function MyOrdersPage() {
                 disabled={page >= totalPages}
                 onClick={() => setPage(p => p + 1)}
                 className="h-7 text-xs"
-                style={{
-                  background: '#E0E5EC',
-                  color: '#3D4852',
-                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                  border: 'none',
-                }}
+                variant="outline"
               >
                 Next
               </Button>

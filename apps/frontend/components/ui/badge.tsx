@@ -1,66 +1,88 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { Slot } from "radix-ui"
+'use client';
 
-import { cn } from "@/lib/utils"
+import * as React from 'react';
 
-const badgeVariants = cva(
-  "inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold w-fit whitespace-nowrap shrink-0 gap-1",
-  {
-    variants: {
-      variant: {
-        default: "",
-        secondary: "",
-        destructive: "",
-        outline: "",
-        ghost: "",
-        link: "",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
+/* ─────────────────────────────────────────────────────────
+   Design tokens (from globals.css)
+   ───────────────────────────────────────────────────────── */
+const T = {
+  denim100:      'var(--denim-100)',
+  textSecondary: 'var(--text-secondary)',
+  textMuted:     'var(--text-muted)',
+  textPrimary:   'var(--text-primary)',
+  primary:       'var(--primary)',
+  successBg:     'var(--success-bg)',
+  successText:   'var(--success-text)',
+  warningBg:     'var(--warning-bg)',
+  warningText:   'var(--warning-text)',
+  dangerBg:      'var(--danger-bg)',
+  dangerText:    'var(--danger-text)',
+  infoBg:        'var(--info-bg)',
+  infoText:      'var(--info-text)',
+  purpleBg:      'var(--purple-bg)',
+  purpleText:    'var(--purple-text)',
+  orangeBg:      'var(--orange-bg)',
+  orangeText:    'var(--orange-text)',
+  badgeRadius:   'var(--badge-radius)',
+} as const;
 
-function Badge({
-  className,
-  variant = "default",
-  asChild = false,
-  style,
-  ...props
-}: React.ComponentProps<"span"> &
-  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot.Root : "span"
+/* ─────────────────────────────────────────────────────────
+   Variants
+   ───────────────────────────────────────────────────────── */
+type BadgeVariant =
+  | 'default'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'info'
+  | 'purple'
+  | 'orange'
+  | 'primary';
 
-  const variantStyle: React.CSSProperties = (() => {
-    switch (variant) {
-      case "default":
-        return { background: '#E0E5EC', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)', color: '#6C63FF' }
-      case "secondary":
-        return { background: '#E0E5EC', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)', color: '#6B7280' }
-      case "destructive":
-        return { background: '#DC2626', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)', color: '#fff' }
-      case "outline":
-        return { background: '#E0E5EC', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)', color: '#6B7280' }
-      case "ghost":
-        return { background: 'transparent', color: '#6B7280' }
-      case "link":
-        return { background: '#E0E5EC', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)', color: '#6C63FF', fontWeight: 600 }
-      default:
-        return { background: '#E0E5EC', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.5), -3px -3px 6px rgba(255,255,255,0.5)', color: '#6C63FF' }
-    }
-  })()
+const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
+  default: { backgroundColor: T.denim100,      color: T.textSecondary },
+  success: { backgroundColor: T.successBg,    color: T.successText   },
+  warning: { backgroundColor: T.warningBg,    color: T.warningText   },
+  danger:  { backgroundColor: T.dangerBg,     color: T.dangerText    },
+  info:    { backgroundColor: T.infoBg,       color: T.infoText      },
+  purple:  { backgroundColor: T.purpleBg,     color: T.purpleText    },
+  orange:  { backgroundColor: T.orangeBg,     color: T.orangeText    },
+  primary: { backgroundColor: T.denim100,     color: T.primary       },
+};
 
-  return (
-    <Comp
-      data-slot="badge"
-      data-variant={variant}
-      className={cn(badgeVariants({ variant }), className)}
-      style={{ ...variantStyle, ...style }}
-      {...props}
-    />
-  )
+/* ─────────────────────────────────────────────────────────
+   Badge
+   ───────────────────────────────────────────────────────── */
+interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  variant?: BadgeVariant;
 }
 
-export { Badge, badgeVariants }
+function Badge({
+  variant = 'default',
+  style,
+  children,
+  ...rest
+}: BadgeProps) {
+  return (
+    <span
+      style={{
+        borderRadius:   T.badgeRadius,
+        padding:        '2px 8px',
+        fontSize:      11,
+        fontWeight:    500,
+        display:       'inline-flex',
+        alignItems:    'center',
+        gap:           4,
+        whiteSpace:    'nowrap',
+        ...variantStyles[variant],
+        ...style,
+      }}
+      {...rest}
+    >
+      {children}
+    </span>
+  );
+}
+
+export { Badge };
+export type { BadgeVariant, BadgeProps };

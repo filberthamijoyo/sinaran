@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Spinning module utilities - stub implementations
-export const toStr = (v: any): string => String(v ?? '');
+export const toStr = <T>(v: T): string => String(v ?? '');
 export const toYMD = (d: Date | string | null | undefined): string => {
   if (!d) return '';
   const date = typeof d === 'string' ? new Date(d) : d;
@@ -20,12 +20,13 @@ export const generateLocalId = (prefix: string): string => {
   return `${prefix}-${y}${m}-${seq}`;
 };
 export const addNumber = (a: number, b: number): number => a + b;
-export const addNumberToObj = (obj: any, key: string, value: number): void => {
-  obj[key] = (obj[key] || 0) + value;
-};
-export const displayValue = (v: any, formatter?: (v: any) => string): string => {
+export const addNumberToObj = <T extends Record<string, unknown>>(obj: T, key: string, value: number | undefined): T => ({
+  ...obj,
+  [key]: ((obj[key] as number) || 0) + (value ?? 0),
+});
+export const displayValue = <T>(v: T, formatter?: (v: T) => string): string => {
   if (formatter) return formatter(v);
-  return v ?? '-';
+  return v == null ? '-' : String(v);
 };
 export const formatDate = (d: Date | string | null | undefined): string => {
   if (!d) return '';

@@ -13,9 +13,9 @@ export type FilterConfig = {
 };
 
 interface FilterBarProps {
-  filters: Record<string, any>;
+  filters: Record<string, string>;
   filterConfigs: FilterConfig[];
-  onChange: (key: string, value: any) => void;
+  onChange: (key: string, value: string) => void;
   className?: string;
 }
 
@@ -54,7 +54,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               <Select
                 options={config.options || []}
                 value={filters[config.key] || ''}
-                onChange={(value) => onChange(config.key, value)}
+                onValueChange={(value) => onChange(config.key, value)}
                 placeholder={config.placeholder}
               />
             </div>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 interface PageHeaderProps {
   title: string;
@@ -10,36 +10,60 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, actions, backHref }: PageHeaderProps) {
   return (
-    <div
-      className="flex items-start justify-between px-4 sm:px-6 lg:px-8 pt-6 pb-5 sticky top-0 z-10"
-      style={{
-        background: '#E0E5EC',
-        boxShadow: '0 4px 12px rgb(163 177 198 / 0.4)',
-      }}
-    >
-      <div className="flex-1 min-w-0">
+    <header style={{
+      height: 52,
+      background: 'rgba(246,248,251,0.85)',
+      backdropFilter: 'blur(12px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+      borderBottom: '1px solid rgba(227,232,239,0.8)',
+      padding: '0 28px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      position: 'sticky',
+      top: 0,
+      zIndex: 30,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {backHref && (
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1.5 text-xs font-medium mb-3 group transition-all duration-200"
-            style={{ color: '#6B7280' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 12,
+              color: 'var(--t3)',
+              transition: 'color 0.12s',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t2)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t3)'; }}
           >
-            <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <ChevronLeft size={16} />
             Back
           </Link>
         )}
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate font-display" style={{ color: '#3D4852' }}>
+        {backHref && (
+          <span style={{ width: 1, height: 16, background: 'var(--border-2)', margin: '0 0' }} />
+        )}
+        <h1 style={{ fontSize: 15, fontWeight: 600, color: 'var(--t1)', lineHeight: 1 }}>
           {title}
         </h1>
         {subtitle && (
-          <p className="text-sm mt-1.5 truncate" style={{ color: '#6B7280' }}>{subtitle}</p>
+          <>
+            <span style={{ width: 1, height: 16, background: 'var(--border-2)', margin: '0 8px' }} />
+            <p style={{ fontSize: 13, color: 'var(--t3)' }}>
+              {subtitle}
+            </p>
+          </>
         )}
       </div>
       {actions && (
-        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {actions}
         </div>
       )}
-    </div>
+    </header>
   );
 }

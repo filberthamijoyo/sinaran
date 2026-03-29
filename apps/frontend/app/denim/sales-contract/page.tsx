@@ -1,12 +1,5 @@
-import RequireAuth from '../../../components/RequireAuth';
-import DenimSalesContractPage from '../../../components/DenimSalesContractPage';
-
-export const metadata = { title: 'Sales Contract — Denim' };
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return (
-    <RequireAuth>
-      <DenimSalesContractPage />
-    </RequireAuth>
-  );
+  redirect('/denim/admin/orders');
 }

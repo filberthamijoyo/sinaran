@@ -710,6 +710,7 @@ model SalesContract {
   j_c                  Decimal?
   b_c                  Decimal?
   tb                   Decimal?
+  tb_real              Decimal?
   bale_lusi            Decimal?
   total_pakan          Decimal?
   bale_pakan           Decimal?
@@ -733,6 +734,7 @@ model SalesContract {
   @@index([kp])
   @@index([kons_kode, kode_number])
   @@index([tgl])
+  @@index([pipeline_status])
 }
 
 model WarpingRun {
@@ -1298,4 +1300,77 @@ model spk_fiber_usages {
   @@unique([spk_id, fiber_type_id], map: "idx_spk_fiber_usages_spk_fiber")
   @@index([fiber_type_id], map: "idx_spk_fiber_usages_fiber_type_id")
   @@index([spk_id], map: "idx_spk_fiber_usages_spk_id")
+}
+
+model BBSFProductionRecord {
+  id        Int      @id @default(autoincrement())
+  tanggal   DateTime
+  shift     String?
+  kp        String
+  kode      String?
+  qty       Decimal?
+  line      String?
+  createdAt DateTime @default(now())
+
+  @@index([kp])
+  @@index([tanggal])
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  email     String    @unique @db.VarChar(255)
+  password  String    @db.VarChar(255)
+  role      String    @db.VarChar(50)
+  stage     String?   @db.VarChar(50)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamp(6)
+  // Valid role values (enforced by application logic):
+  // admin | factory | jakarta
+  // Valid stage values (required when role=factory):
+  // warping | indigo | weaving | inspect_gray | bbsf | inspect_finish | sacon
+
+  @@map("users")
+}
+
+model BBSFSusutRecord {
+  id                 Int      @id @default(autoincrement())
+  tanggal            DateTime
+  no                 Int?
+  kp                 String
+  kp_kode            String?
+  kereta             Int?
+  susut_lusi_awal    Decimal?
+  set_lusi_awal      Decimal?
+  susut_lusi_tengah  Decimal?
+  set_lusi_tengah    Decimal?
+  susut_lusi_akhir   Decimal?
+  set_lusi_akhir     Decimal?
+  susut_pakan_awal   Decimal?
+  set_pakan_awal     Decimal?
+  susut_pakan_tengah Decimal?
+  set_pakan_tengah   Decimal?
+  susut_pakan_akhir  Decimal?
+  set_pakan_akhir    Decimal?
+  skew_awal          Decimal?
+  skew_tengah        Decimal?
+  skew_akhir         Decimal?
+  set_skew           Decimal?
+  keterangan         String?
+  createdAt          DateTime @default(now())
+
+  @@index([kp])
+  @@index([tanggal])
+}
+
+model PipelineEvent {
+  id         Int      @id @default(autoincrement())
+  kp         String
+  from_stage String?
+  to_stage   String
+  created_at DateTime @default(now())
+
+  @@index([to_stage, created_at])
+  @@index([kp])
 }

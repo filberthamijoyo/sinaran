@@ -11,10 +11,11 @@ const API_BASE_URL = API_ENDPOINTS.sacon;
 
 type Feedback = { type: '' | 'error' | 'success'; message: string };
 
-const createEmptyForm = () => {
-  const form: any = {
-    id: '',
-  };
+type RecordType = Record<string, unknown>;
+type FormType = Record<string, string>;
+
+const createEmptyForm = (): FormType => {
+  const form: FormType = { id: '' };
 
   SACON_COLUMNS.forEach((col) => {
     form[col.id] = '';
@@ -23,15 +24,15 @@ const createEmptyForm = () => {
   return form;
 };
 
-const mapRecordToForm = (record: any) => {
+const mapRecordToForm = (record: RecordType): FormType => {
   if (!record) return createEmptyForm();
 
   const form = createEmptyForm();
-  form.id = record.id?.toString() || '';
+  form.id = String(record.id ?? '');
 
   SACON_COLUMNS.forEach((col) => {
     if (col.id === 'tgl') {
-      form.tgl = toYMD(record.tgl);
+      form.tgl = toYMD(record.tgl as string | Date | null | undefined);
     } else {
       form[col.id] = toStr(record[col.id]);
     }
@@ -40,8 +41,8 @@ const mapRecordToForm = (record: any) => {
   return form;
 };
 
-const mapFormToPayload = (form: any) => {
-  const payload: any = {};
+const mapFormToPayload = (form: FormType): Record<string, string> => {
+  const payload: Record<string, string> = {};
   SACON_COLUMNS.forEach((col) => {
     payload[col.id] = form[col.id] ?? '';
   });
@@ -49,14 +50,14 @@ const mapFormToPayload = (form: any) => {
 };
 
 export default function SaconFormPage() {
-  const params = useParams() as any;
+  const params = useParams() as { id?: string | string[] };
   const router = useRouter();
 
   const rawId = params?.id;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
   const isEdit = Boolean(id);
 
-  const [form, setForm] = useState<any>(createEmptyForm);
+  const [form, setForm] = useState<FormType>(createEmptyForm);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({ type: '', message: '' });
@@ -70,13 +71,11 @@ export default function SaconFormPage() {
 
       try {
         setLoading(true);
-        const record = (await apiCall(`${API_BASE_URL}/records/${id}`)) as any;
+        const record = (await apiCall(`${API_BASE_URL}/records/${id}`)) as Record<string, unknown>;
         setForm(mapRecordToForm(record));
-      } catch (err: any) {
-        setFeedback({
-          type: 'error',
-          message: err?.message || 'Failed to load Sacon record',
-        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load Sacon record';
+        setFeedback({ type: 'error', message });
       } finally {
         setLoading(false);
       }
@@ -93,7 +92,7 @@ export default function SaconFormPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm((prev: any) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -114,11 +113,9 @@ export default function SaconFormPage() {
 
       await apiCall(url, { method, body: payload });
       router.push('/sacon');
-    } catch (err: any) {
-      setFeedback({
-        type: 'error',
-        message: err?.message || 'Failed to save Sacon record',
-      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to save Sacon record';
+      setFeedback({ type: 'error', message });
     } finally {
       setSaving(false);
     }
@@ -134,11 +131,9 @@ export default function SaconFormPage() {
       setSaving(true);
       await apiCall(`${API_BASE_URL}/records/${id}`, { method: 'DELETE' });
       router.push('/sacon');
-    } catch (err: any) {
-      setFeedback({
-        type: 'error',
-        message: err?.message || 'Failed to delete Sacon record',
-      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete Sacon record';
+      setFeedback({ type: 'error', message });
     } finally {
       setSaving(false);
     }

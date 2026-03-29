@@ -1,40 +1,42 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useEffect, useState, useRef, Suspense, useDeferredValue } from 'react';
+import { PageShell } from '../../ui/erp/PageShell';
 import { authFetch } from '../../../lib/authFetch';
-import PageHeader from '../../layout/PageHeader';
-import { Skeleton } from '../../ui/skeleton';
-import { Search, Loader2, Inbox } from 'lucide-react';
-import StatusBadge from '../../ui/StatusBadge';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell, Legend, AreaChart, Area,
-} from 'recharts';
+import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { CHART_COLORS, chartDefaults } from '../../../lib/chart-theme';
+import dynamic from 'next/dynamic';
 
-interface AnalyticsData {
+// ─── Module-level chart dynamic imports (ERROR 2 fix) ──────────────────
+const BarChart      = dynamic(() => import('recharts').then(m => ({ default: m.BarChart })),      { ssr: false });
+const AreaChart     = dynamic(() => import('recharts').then(m => ({ default: m.AreaChart })),     { ssr: false });
+const LineChart     = dynamic(() => import('recharts').then(m => ({ default: m.LineChart })),     { ssr: false });
+const ScatterChart  = dynamic(() => import('recharts').then(m => ({ default: m.ScatterChart })),  { ssr: false });
+const Bar           = dynamic(() => import('recharts').then(m => ({ default: m.Bar })),           { ssr: false });
+const Area          = dynamic(() => import('recharts').then(m => ({ default: m.Area })),          { ssr: false });
+const Line          = dynamic(() => import('recharts').then(m => ({ default: m.Line })),           { ssr: false });
+const Scatter       = dynamic(() => import('recharts').then(m => ({ default: m.Scatter })),        { ssr: false });
+const XAxis         = dynamic(() => import('recharts').then(m => ({ default: m.XAxis })),          { ssr: false });
+const YAxis         = dynamic(() => import('recharts').then(m => ({ default: m.YAxis })),          { ssr: false });
+const CartesianGrid  = dynamic(() => import('recharts').then(m => ({ default: m.CartesianGrid })), { ssr: false });
+const Tooltip        = dynamic(() => import('recharts').then(m => ({ default: m.Tooltip })),       { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then(m => ({ default: m.ResponsiveContainer })), { ssr: false });
+const Legend        = dynamic(() => import('recharts').then(m => ({ default: m.Legend })),         { ssr: false });
+const Cell          = dynamic(() => import('recharts').then(m => ({ default: m.Cell })),           { ssr: false });
+const ZAxis         = dynamic(() => import('recharts').then(m => ({ default: m.ZAxis })),          { ssr: false });
+
+// ─── Types ──────────────────────────────────────────────────────────
+type ThroughputPoint = { bucket: string; stage: string; count: number };
+type ThroughputResponse = { period: string; data: ThroughputPoint[] };
+
+type AnalyticsData = {
   weeklyEfficiency: Array<{ week: string; avg_efficiency: number; record_count: number }>;
   weeklyProduction: Array<{ week: string; total_meters: number; total_picks: number; record_count: number }>;
   monthlyChemicals: Array<{ month: string; avg_indigo: number; avg_caustic: number; avg_hydro: number }>;
   cycleTimeDistribution: Array<{ kp: string; days_contract_to_weaving: number | null }>;
-  machineList: string[];
   efficiencyByMachine: Array<{ machine: string; avg_efficiency: number; record_count: number }>;
-  productionVelocity: Array<{ day: string; total_meters: number; machines: number }>;
-  machineHeatmap: Array<{ machine: string; week: string; avg_efficiency: number; records: number }>;
-}
-
-interface KpData {
-  // Sales Contract
-  sc: { kp: string; codename: string; kat_kode: string; te: string; ket_warna: string; tgl: Date } | null;
-  // Warping
-  warping: { tgl: Date; no_mc: string; rpm: number; total_beam: number; total_putusan: number; elongasi: number; strength: number; cv_pct: number; tension_badan: number; tension_pinggir: number } | null;
-  // Indigo
-  indigo: { tanggal: Date; mc: string; speed: number; bak_celup: number; indigo: number; caustic: number; hydro: number; temp_dryer: number; strength: number; elongasi_idg: number } | null;
-  // Weaving Summary
-  weavingSummary: { totalRecords: number; avgEfficiency: number; totalMeters: number; uniqueMachines: number; firstDate: string; lastDate: string } | null;
-}
+  bbsfSanforStats: Array<{ week: string; sanfor_type: string; avg_shrinkage: number; record_count: number }>;
+};
 
 type KpSearchResult = {
   kp: string;
@@ -43,1210 +45,971 @@ type KpSearchResult = {
   ket_warna: string | null;
   tgl: string;
   pipeline_status: string;
-  has_warping: boolean;
-  has_indigo: boolean;
-  weaving_count: number;
-  avg_efficiency: number | null;
 };
 
-type Tab = 'efficiency' | 'production' | 'comparison' | 'machines';
+type PipelineData = {
+  sc: { kp: string; codename: string | null; kat_kode: string | null; tgl: string | null; te: number | null; acc: string | null; pipeline_status: string; permintaan: string | null } | null;
+  warping: { no_mc: string; rpm: number; total_beam: number; total_putusan: number; elongasi: number; strength: number; cv_pct: number; beam_count: number; tgl: string | null } | null;
+  indigo: { mc: string; speed: number; indigo_conc: number; caustic: number; hydro: number; elongasi: number; total_meters: number; tgl: string | null } | null;
+  weaving: Array<{ avg_efficiency: number; total_meters: number; record_count: number; shift_count: number }>;
+  inspectGray: Array<{ total_rolls: number; grade_a_count: number; grade_b_count: number; grade_reject_count: number }>;
+  bbsfWashing: Array<{ washing_speed: number; susut: number }>;
+  bbsfSanfor: Array<{ susut_sanfor: number; sanfor_type: string }>;
+  inspectFinish: Array<{ total_rolls: number; grade_a_count: number; total_kg: number }>;
+};
 
-const DEFAULT_FROM = '2025-01-01';
-const DEFAULT_TO = new Date().toISOString().split('T')[0];
+// ─── Chart colours ──────────────────────────────────────────────────────
+const STAGE_COLORS: Record<string, string> = {
+  WARPING:         '#4A7A9B',
+  INDIGO:          '#0891B2',
+  WEAVING:         '#059669',
+  INSPECT_GRAY:    '#D97706',
+  BBSF:            '#EA580C',
+  INSPECT_FINISH:  '#2B506E',
+  COMPLETE:        '#059669',
+  REJECTED:        '#DC2626',
+};
 
-export default function AnalyticsPage() {
-  const [data, setData] = useState<AnalyticsData | null>(null);
+const CHEM_LINES = {
+  Indigo:  '#0891B2',
+  Caustic: '#D97706',
+  Hydro:   '#7C3AED',
+};
+
+// ─── Shared chart utilities ─────────────────────────────────────────────
+function ChartSkeleton({ height }: { height: number }) {
+  return (
+    <div
+      style={{
+        height,
+        borderRadius: 8,
+        background: '#F3F4F6',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <style>{`
+        @keyframes __analytics_shimmer__ {
+          0%   { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .analytics-shimmer::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+          animation: __analytics_shimmer__ 1.5s ease-in-out infinite;
+        }
+      `}</style>
+      <div className="analytics-shimmer" style={{ position: 'absolute', inset: 0 }} />
+    </div>
+  );
+}
+
+const TOOLTIP_DARK_STYLE = {
+  background:   'var(--denim-950)',
+  border:       '1px solid rgba(255,255,255,0.12)',
+  borderRadius:  8,
+  padding:      '8px 12px',
+  fontSize:     12,
+  color:        '#EEF3F7',
+  boxShadow:    '0 4px 12px rgba(0,0,0,0.3)',
+};
+
+// ─── Tab bar ───────────────────────────────────────────────────────────
+function TabBar({ tabs, active, onChange }: {
+  tabs: Array<{ key: string; label: string }>;
+  active: string;
+  onChange: (k: string) => void;
+}) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{
+        display:       'inline-flex',
+        gap:           2,
+        background:    '#FFFFFF',
+        border:        '1px solid #E5E7EB',
+        borderRadius:  10,
+        padding:       '4px',
+      }}>
+        {tabs.map(t => {
+          const isActive = t.key === active;
+          return (
+            <button
+              key={t.key}
+              onClick={() => onChange(t.key)}
+              style={{
+                height:       32,
+                padding:     '0 16px',
+                borderRadius: 7,
+                fontSize:    13,
+                fontWeight:  500,
+                cursor:     'pointer',
+                border:     'none',
+                transition: 'background 150ms ease, color 150ms ease',
+                background: isActive ? '#1D4ED8' : 'transparent',
+                color:      isActive ? '#FFFFFF' : '#6B7280',
+              }}
+              onMouseEnter={e => {
+                if (!isActive) {
+                  (e.currentTarget as HTMLElement).style.background = '#F3F4F6';
+                  (e.currentTarget as HTMLElement).style.color    = '#374151';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isActive) {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  (e.currentTarget as HTMLElement).style.color    = '#6B7280';
+                }
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Chart components (ERROR 1 fix: all sync, no async/await) ──────────
+
+// SECTION 1 — Stage Throughput
+function StageThroughputChart({ period }: { period: 'week' | 'month' }) {
+  const [data, setData] = useState<ThroughputPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('efficiency');
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const activeTabRef = useRef<HTMLButtonElement | null>(null);
-
-  // Filter state
-  const [fromDate, setFromDate] = useState(DEFAULT_FROM);
-  const [toDate, setToDate] = useState(DEFAULT_TO);
-  const [selectedMachine, setSelectedMachine] = useState('all');
-
-  // KP Search & Comparison state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchCodename, setSearchCodename] = useState('all');
-  const [searchKatKode, setSearchKatKode] = useState('all');
-  const [kpFilterFrom, setKpFilterFrom] = useState('');
-  const [kpFilterTo, setKpFilterTo] = useState('');
-  const [searchResults, setSearchResults] = useState<KpSearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [codenameOptions, setCodenameOptions] = useState<string[]>([]);
-  const [katKodeOptions, setKatKodeOptions] = useState<string[]>([]);
-  const [pinnedKps, setPinnedKps] = useState<KpData[]>([]);
-  const [loadingKpCode, setLoadingKpCode] = useState<string | null>(null);
-
-  // Get URL query params
-  const searchParams = useSearchParams();
-  const kpFromUrl = searchParams.get('kp');
-  const tabFromUrl = searchParams.get('tab');
-
-  // Handle kp query param from URL - auto-pin the KP
-  useEffect(() => {
-    if (kpFromUrl && activeTab === 'comparison') {
-      const fetchAndPinKp = async () => {
-        if (pinnedKps.some(k => k.sc?.kp === kpFromUrl)) {
-          return; // Already pinned
-        }
-        setLoadingKpCode(kpFromUrl);
-        try {
-          const result = await authFetch(`/denim/admin/pipeline/${kpFromUrl}`);
-          if (result) {
-            setPinnedKps(prev => [...prev, result as KpData]);
-          }
-        } catch (err) {
-          console.error('Failed to fetch KP:', err);
-        } finally {
-          setLoadingKpCode(null);
-        }
-      };
-      fetchAndPinKp();
-    }
-  }, [kpFromUrl, activeTab]);
-
-  // Switch to comparison tab if tab=comparison in URL
-  useEffect(() => {
-    if (tabFromUrl === 'comparison') {
-      setActiveTab('comparison');
-    }
-  }, [tabFromUrl]);
-
-  // Update activeTabRef when activeTab changes
-  useEffect(() => {
-    activeTabRef.current = tabRefs.current[activeTab] ?? null;
-  }, [activeTab]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        from: fromDate,
-        to: toDate,
-        machine: selectedMachine,
-      });
-      const result = await authFetch(`/denim/analytics/full?${params}`);
-      setData(result as AnalyticsData);
-    } catch (err) {
-      console.error('Failed to fetch analytics:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchData();
-    fetchKpSearch();
+    authFetch<ThroughputResponse>(`/denim/admin/throughput?period=${period}`)
+      .then(d => setData(d?.data ?? []))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, [period]);
+
+  if (loading) return <ChartSkeleton height={240} />;
+  if (data.length === 0) {
+    return (
+      <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontSize: 13, color: '#9CA3AF' }}>No throughput data yet.</p>
+      </div>
+    );
+  }
+
+  const stages = Object.keys(STAGE_COLORS).filter(k => data[0] && k in (data[0] as Record<string, unknown>));
+
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <BarChart data={data} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="bucket" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+        <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+        <Tooltip contentStyle={TOOLTIP_DARK_STYLE} />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)', paddingTop: 8 }} />
+        {stages.map(stage => (
+          <Bar key={stage} dataKey={stage} fill={STAGE_COLORS[stage]} radius={[3, 3, 0, 0]} />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// SECTION 2 LEFT — Weekly Efficiency Area
+function WeeklyEfficiencyChart() {
+  const [data, setData] = useState<Array<{ week: string; label: string; avg_efficiency: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    authFetch<AnalyticsData>('/denim/analytics/full')
+      .then(d => {
+        const weekly = (d?.weeklyEfficiency ?? []).map(w => ({
+          ...w,
+          label: format(parseISO(w.week), 'MMM d'),
+        }));
+        setData(weekly.slice(-8));
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleApply = () => {
-    fetchData();
-  };
-
-  // KP Search function
-  const fetchKpSearch = async (query?: string, filterFrom?: string, filterTo?: string) => {
-    setSearchLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: '50' });
-      const q = query ?? searchQuery;
-      if (q) params.set('q', q);
-      if (searchCodename !== 'all') params.set('codename', searchCodename);
-      if (searchKatKode !== 'all') params.set('kat_kode', searchKatKode);
-      const from = filterFrom ?? kpFilterFrom;
-      const to = filterTo ?? kpFilterTo;
-      if (from) params.set('from', from);
-      if (to) params.set('to', to);
-      const result: any = await authFetch(`/denim/admin/kp-search?${params}`);
-      // Deduplicate results by KP to avoid duplicate keys
-      const uniqueResults = (result.results || []).filter(
-        (item: KpSearchResult, index: number, self: KpSearchResult[]) =>
-          self.findIndex((t: KpSearchResult) => t.kp === item.kp) === index
-      );
-      setSearchResults(uniqueResults);
-      if (result.codenameOptions?.length) setCodenameOptions(result.codenameOptions);
-      if (result.katKodeOptions?.length) setKatKodeOptions(result.katKodeOptions);
-    } catch (err) {
-      console.error('Failed to search KPs:', err);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
-
-  // Debounced search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (activeTab === 'comparison') {
-        fetchKpSearch();
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, searchCodename, searchKatKode, activeTab]);
-
-  const pinKp = async (kp: string) => {
-    if (pinnedKps.length >= 4) return;
-    if (pinnedKps.find(p => p.sc?.kp === kp)) return;
-    setLoadingKpCode(kp);
-    try {
-      const result: any = await authFetch(`/denim/admin/pipeline/${kp}`);
-      setPinnedKps(prev => [...prev, result as KpData]);
-    } catch (err) {
-      console.error('Failed to load KP:', err);
-      alert(`KP ${kp} not found`);
-    } finally {
-      setLoadingKpCode(null);
-    }
-  };
-
-  const unpinKp = (kp: string) => {
-    setPinnedKps(prev => prev.filter(p => p.sc?.kp !== kp));
-  };
-
-  // Computed values
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'efficiency', label: 'Efficiency' },
-    { id: 'production', label: 'Production' },
-    { id: 'comparison', label: 'KP Comparison' },
-    { id: 'machines', label: 'Machines' },
-  ];
-
-  // Efficiency tab calculations
-  const avgEfficiency = data?.weeklyEfficiency.length
-    ? (data.weeklyEfficiency.reduce((s, w) => s + w.avg_efficiency, 0) / data.weeklyEfficiency.length).toFixed(1)
-    : '0';
-  const totalShifts = data?.weeklyEfficiency.reduce((s, w) => s + w.record_count, 0) ?? 0;
-  const bestWeek = data?.weeklyEfficiency.reduce((best, w) => 
-    w.avg_efficiency > (best?.avg_efficiency ?? 0) ? w : best, null as any);
-
-  // Production tab calculations
-  const totalMeters = data?.weeklyProduction.reduce((s, w) => s + w.total_meters, 0) ?? 0;
-  const totalPicks = data?.weeklyProduction.reduce((s, w) => s + w.total_picks, 0) ?? 0;
-  const avgWeeklyOutput = data?.weeklyProduction.length ? (totalMeters / data.weeklyProduction.length).toFixed(0) : '0';
-
-  // Format data for charts
-  const efficiencyChartData = data?.weeklyEfficiency.map(w => ({
-    ...w,
-    weekLabel: format(parseISO(w.week), 'MMM d'),
-  })) ?? [];
-
-  const productionChartData = data?.weeklyProduction.map(w => ({
-    ...w,
-    weekLabel: format(parseISO(w.week), 'MMM d'),
-  })) ?? [];
-
-  const chemicalChartData = data?.monthlyChemicals.map(m => ({
-    ...m,
-    monthLabel: format(parseISO(m.month), 'MMM yyyy'),
-  })) ?? [];
-
-  const machineChartData = data?.efficiencyByMachine.map(m => ({
-    ...m,
-    fill: m.avg_efficiency >= 80 ? '#16a34a' : m.avg_efficiency >= 70 ? '#ca8a04' : '#dc2626',
-  })) ?? [];
+  if (loading) return <ChartSkeleton height={240} />;
+  const current = data.length > 0 ? data[data.length - 1].avg_efficiency.toFixed(1) : null;
 
   return (
     <div>
-      <PageHeader
-        title="Analytics"
-        subtitle="Production insights and performance analysis"
-      />
-
-      {/* Filter Bar */}
-      <div
-        className="px-4 sm:px-8 py-4"
-        style={{
-          background: '#E0E5EC',
-          boxShadow: 'inset 0 2px 4px rgb(163 177 198 / 0.3)',
-        }}
-      >
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#9CA3AF' }}>From</label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              style={{
-                background: '#E0E5EC',
-                border: 'none',
-                borderRadius: '16px',
-                boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                padding: '8px 12px',
-                fontSize: '14px',
-                color: '#3D4852',
-              }}
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#9CA3AF' }}>To</label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              style={{
-                background: '#E0E5EC',
-                border: 'none',
-                borderRadius: '16px',
-                boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                padding: '8px 12px',
-                fontSize: '14px',
-                color: '#3D4852',
-              }}
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#9CA3AF' }}>Machine</label>
-            <select
-              value={selectedMachine}
-              onChange={(e) => setSelectedMachine(e.target.value)}
-              style={{
-                background: '#E0E5EC',
-                border: 'none',
-                borderRadius: '16px',
-                boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                padding: '8px 12px',
-                fontSize: '14px',
-                color: '#3D4852',
-                minWidth: '160px',
-              }}
-            >
-              <option value="all">All Machines</option>
-              {data?.machineList.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-          <button
-            onClick={handleApply}
-            style={{
-              background: '#6C63FF',
-              borderRadius: '16px',
-              boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-              color: '#fff',
-              padding: '8px 16px',
-              fontSize: '14px',
-              fontWeight: '500',
-              border: 'none',
-            }}
-          >
-            Apply
-          </button>
+      {current ? (
+        <div style={{ marginBottom: 12 }}>
+          <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-primary)' }}>{current}%</span>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>avg this week</p>
         </div>
-            </div>
-
-      {/* Tab Navigation */}
-      <div
-        className="px-4 pt-4 sm:px-8"
-        style={{
-          background: '#E0E5EC',
-          boxShadow: 'inset 0 2px 4px rgb(163 177 198 / 0.3)',
-        }}
-      >
-        <div className="flex gap-8 relative">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              ref={el => { tabRefs.current[tab.id] = el; }}
-              onClick={() => setActiveTab(tab.id)}
-              className="pb-3 text-sm font-medium transition-colors"
-              style={{
-                borderBottom: activeTab === tab.id ? '2px solid #6C63FF' : '2px solid transparent',
-                color: activeTab === tab.id ? '#6C63FF' : '#9CA3AF',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-          {/* Sliding indicator */}
-          <div
-            className="absolute bottom-0 h-0.5 transition-all duration-300 ease-out"
-            style={{
-              background: '#6C63FF',
-              width: activeTabRef.current?.offsetWidth ?? 0,
-              transform: `translateX(${activeTabRef.current?.offsetLeft ?? 0}px)`,
-            }}
+      ) : (
+        <div style={{ height: 52 }} />
+      )}
+      <ResponsiveContainer width="100%" height={170}>
+        <AreaChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+          <defs>
+            <linearGradient id="analyticsEffGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor="#4A7A9B" stopOpacity={0.15} />
+              <stop offset="95%" stopColor="#4A7A9B" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
+          <YAxis domain={[50, 100]} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
+          <Tooltip contentStyle={TOOLTIP_DARK_STYLE} formatter={(v: unknown) => [`${Number(v).toFixed(1)}%`, 'Efficiency']} />
+          <Area
+            type="monotone" dataKey="avg_efficiency" stroke="#4A7A9B" strokeWidth={2}
+            fill="url(#analyticsEffGrad)" dot={false}
           />
-        </div>
-        </div>
-
-      <div className="px-4 sm:px-8 pb-8">
-        {loading ? (
-          <div className="space-y-4 mt-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full"
-                style={{
-                  background: '#E0E5EC',
-                  boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                  borderRadius: '32px',
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-          <>
-            {/* ==================== TAB 1: EFFICIENCY ==================== */}
-            {activeTab === 'efficiency' && (
-              <div className="space-y-6 mt-6">
-                {/* Row 1: 3 KPI Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div
-                    className="rounded-[32px] p-5"
-                    style={{
-                      background: '#E0E5EC',
-                      boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Efficiency</p>
-                    <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>{avgEfficiency}%</p>
-                  </div>
-                  <div
-                    className="rounded-[32px] p-5"
-                    style={{
-                      background: '#E0E5EC',
-                      boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Shifts</p>
-                    <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>{totalShifts.toLocaleString()}</p>
-                  </div>
-                  <div
-                    className="rounded-[32px] p-5"
-                    style={{
-                      background: '#E0E5EC',
-                      boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Best Week</p>
-                    <p className="text-xl font-bold mt-1" style={{ color: '#3D4852' }}>
-                      {bestWeek ? `${bestWeek.avg_efficiency}%` : '—'}
-                    </p>
-                    <p className="text-xs" style={{ color: '#9CA3AF' }}>
-                      {bestWeek ? format(parseISO(bestWeek.week), 'MMM d, yyyy') : ''}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Row 2: Weekly Efficiency Line Chart */}
-                <div
-                  className="rounded-[32px] p-6"
-                  style={{
-                    background: '#E0E5EC',
-                    boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                  }}
-                >
-                  <h3 className="text-sm font-semibold mb-4" style={{ color: '#3D4852' }}>
-                    Weekly Efficiency
-                  </h3>
-                  {efficiencyChartData.length === 0 ? (
-                    <div className="h-72 flex items-center justify-center" style={{ color: '#9CA3AF' }}>
-                      No efficiency data available for the selected period
-                    </div>
-                  ) : (
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={efficiencyChartData}>
-                          <defs>
-                            <linearGradient id="effGradientAnalytics" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={CHART_COLORS.indigo} stopOpacity={0.15}/>
-                              <stop offset="95%" stopColor={CHART_COLORS.indigo} stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid {...chartDefaults.cartesianGrid} />
-                          <XAxis dataKey="weekLabel" {...chartDefaults.xAxis} />
-                          <YAxis domain={[50, 100]} {...chartDefaults.yAxis} />
-                          <Tooltip {...chartDefaults.tooltip} formatter={(value: number) => [`${value}%`, 'Efficiency']} />
-                          <Area
-                            type="monotone"
-                            dataKey="avg_efficiency"
-                            stroke={CHART_COLORS.indigo}
-                            strokeWidth={2}
-                            fill="url(#effGradientAnalytics)"
-                            dot={false}
-                            name="Efficiency %"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </div>
-
-                {/* Row 3: Efficiency by Machine Bar Chart */}
-                {selectedMachine === 'all' && machineChartData.length > 0 && (
-                  <div
-                    className="rounded-[32px] p-6"
-                    style={{
-                      background: '#E0E5EC',
-                      boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                    }}
-                  >
-                    <h3 className="text-sm font-semibold mb-4" style={{ color: '#3D4852' }}>
-                      Efficiency by Machine
-                    </h3>
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={machineChartData.slice(0, 30)} layout="vertical">
-                          <CartesianGrid {...chartDefaults.cartesianGrid} />
-                          <XAxis type="number" domain={[0, 100]} {...chartDefaults.xAxis} />
-                          <YAxis dataKey="machine" type="category" tick={{ fontSize: 10 }} stroke="#999" width={50} />
-                          <Tooltip {...chartDefaults.tooltip} formatter={(value: number) => [`${value}%`, 'Efficiency']} />
-                          <Bar dataKey="avg_efficiency" name="Efficiency %">
-                            {machineChartData.slice(0, 30).map((entry, index) => (
-                              <Cell key={index} fill={entry.fill} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ==================== TAB 2: PRODUCTION ==================== */}
-            {activeTab === 'production' && (
-              <div className="space-y-6 mt-6">
-                {/* Row 1: 3 KPI Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div
-                  className="rounded-[32px] p-5"
-                  style={{
-                    background: '#E0E5EC',
-                    boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                  }}
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Meters</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>{parseInt(String(totalMeters)).toLocaleString()}</p>
-                </div>
-                <div
-                  className="rounded-[32px] p-5"
-                  style={{
-                    background: '#E0E5EC',
-                    boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                  }}
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Picks</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>{parseInt(String(totalPicks)).toLocaleString()}</p>
-                </div>
-                <div
-                  className="rounded-[32px] p-5"
-                  style={{
-                    background: '#E0E5EC',
-                    boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                  }}
-                >
-                  <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Weekly Output</p>
-                  <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>{parseInt(avgWeeklyOutput).toLocaleString()}</p>
-                  <p className="text-xs" style={{ color: '#9CA3AF' }}>meters/week</p>
-          </div>
-        </div>
-
-                {/* Row 2: Weekly Production Bar Chart */}
-                <div
-                  className="rounded-[32px] p-6"
-                  style={{
-                    background: '#E0E5EC',
-                    boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                  }}
-                >
-                  <h3 className="text-sm font-semibold mb-4" style={{ color: '#3D4852' }}>
-                    Weekly Production
-                  </h3>
-                  {productionChartData.length === 0 ? (
-                    <div className="h-72 flex items-center justify-center" style={{ color: '#9CA3AF' }}>
-                      No production data available for the selected period
-                    </div>
-                  ) : (
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={productionChartData}>
-                          <CartesianGrid {...chartDefaults.cartesianGrid} />
-                          <XAxis dataKey="weekLabel" {...chartDefaults.xAxis} />
-                          <YAxis {...chartDefaults.yAxis} />
-                          <Tooltip {...chartDefaults.tooltip} formatter={(value: number, name: string) => [value.toLocaleString(), name === 'total_meters' ? 'Meters' : 'Picks']} />
-                          <Legend />
-                          <Bar dataKey="total_meters" fill={CHART_COLORS.indigo} name="Meters" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="total_picks" fill={CHART_COLORS.slate} name="Picks" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </div>
-          
-                {/* Row 3: Chemical Usage Line Chart */}
-                <div
-                  className="rounded-[32px] p-6"
-                  style={{
-                    background: '#E0E5EC',
-                    boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                  }}
-                >
-                  <h3 className="text-sm font-semibold mb-4" style={{ color: '#3D4852' }}>
-                    Chemical Usage Over Time
-                  </h3>
-                  {chemicalChartData.length === 0 ? (
-                    <div className="h-72 flex items-center justify-center" style={{ color: '#9CA3AF' }}>
-                      No chemical usage data available for the selected period
-                    </div>
-                  ) : (
-                    <div className="h-72">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chemicalChartData}>
-                          <CartesianGrid {...chartDefaults.cartesianGrid} />
-                          <XAxis dataKey="monthLabel" {...chartDefaults.xAxis} />
-                          <YAxis {...chartDefaults.yAxis} />
-                          <Tooltip {...chartDefaults.tooltip} formatter={(value: number, name: string) => [`${value} g/L`, name === 'avg_indigo' ? 'Indigo' : name === 'avg_caustic' ? 'Caustic' : 'Hydro']} />
-                          <Legend />
-                          <Line type="monotone" dataKey="avg_indigo" stroke={CHART_COLORS.indigo} strokeWidth={2} dot={{ r: 3 }} name="Indigo" />
-                          <Line type="monotone" dataKey="avg_caustic" stroke={CHART_COLORS.amber} strokeWidth={2} dot={{ r: 3 }} name="Caustic" />
-                          <Line type="monotone" dataKey="avg_hydro" stroke={CHART_COLORS.emerald} strokeWidth={2} dot={{ r: 3 }} name="Hydro" />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ==================== TAB 3: KP COMPARISON ==================== */}
-            {activeTab === 'comparison' && (
-              <div className="mt-6">
-                {/* Two-column layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                  {/* LEFT PANEL - Find KPs */}
-                  <div
-                    style={{
-                      background: '#E0E5EC',
-                      boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                      borderRadius: '32px',
-                      padding: '20px',
-                    }}
-                  >
-                    <h3 className="text-sm font-semibold mb-3" style={{ color: '#3D4852' }}>Find KPs</h3>
-                    
-                    {/* Search input */}
-                    <div className="relative mb-3">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
-                      <input
-                        type="text"
-                        placeholder="Search KP, construction, color..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                          background: '#E0E5EC',
-                          border: 'none',
-                          borderRadius: '16px',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                          padding: '8px 16px',
-                          width: '100%',
-                          color: '#3D4852',
-                        }}
-                      />
-                      {searchQuery && (
-                        <button
-                          onClick={() => setSearchQuery('')}
-                          style={{
-                            position: 'absolute',
-                            right: '0.75rem',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            color: '#9CA3AF',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: '18px',
-                          }}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Filter dropdowns */}
-                    <div className="flex gap-2 mb-3">
-                      <select
-                        value={searchCodename}
-                        onChange={(e) => setSearchCodename(e.target.value)}
-                        style={{
-                          flex: 1,
-                          padding: '6px 8px',
-                          background: '#E0E5EC',
-                          border: 'none',
-                          borderRadius: '16px',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                          fontSize: '12px',
-                          color: '#3D4852',
-                        }}
-                      >
-                        <option value="all">All Constructions</option>
-                        {codenameOptions.map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      <select
-                        value={searchKatKode}
-                        onChange={(e) => setSearchKatKode(e.target.value)}
-                        style={{
-                          width: '6rem',
-                          padding: '6px 8px',
-                          background: '#E0E5EC',
-                          border: 'none',
-                          borderRadius: '16px',
-                          boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                          fontSize: '12px',
-                          color: '#3D4852',
-                        }}
-                      >
-                        <option value="all">All Types</option>
-                        {katKodeOptions.map(k => (
-                          <option key={k} value={k}>{k}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Date filter row */}
-                    <div className="flex flex-wrap gap-2 mt-2 mb-3">
-                      <div className="flex-1">
-                        <label className="block text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#9CA3AF' }}>From</label>
-                        <input type="date" value={kpFilterFrom}
-                          onChange={e => { setKpFilterFrom(e.target.value); fetchKpSearch(undefined, e.target.value, undefined); }}
-                          style={{
-                            width: '100%',
-                            padding: '6px 8px',
-                            background: '#E0E5EC',
-                            border: 'none',
-                            borderRadius: '16px',
-                            boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                            fontSize: '12px',
-                            color: '#3D4852',
-                          }} />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#9CA3AF' }}>To</label>
-                        <input type="date" value={kpFilterTo}
-                          onChange={e => { setKpFilterTo(e.target.value); fetchKpSearch(undefined, undefined, e.target.value); }}
-                          style={{
-                            width: '100%',
-                            padding: '6px 8px',
-                            background: '#E0E5EC',
-                            border: 'none',
-                            borderRadius: '16px',
-                            boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                            fontSize: '12px',
-                            color: '#3D4852',
-                          }} />
-                      </div>
-                    </div>
-
-                    {/* Results list */}
-                    <div className="overflow-y-auto max-h-[480px]">
-                      {searchLoading ? (
-                        <>
-                          {[1, 2, 3].map(i => (
-                            <div key={i} style={{ borderBottom: '1px solid rgb(163 177 198 / 0.4)', padding: '12px 16px', marginBottom: '8px' }}>
-                              <div className="h-4 rounded w-16 mb-2" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}></div>
-                              <div className="h-3 rounded w-32 mb-1" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}></div>
-                              <div className="h-3 rounded w-24" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}></div>
-                            </div>
-                          ))}
-                        </>
-                      ) : searchResults.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-8" style={{ color: '#9CA3AF' }}>
-                          <Inbox className="w-8 h-8 mb-2" />
-                          <p className="text-sm font-medium">No KPs found</p>
-                          <p className="text-xs mt-1">Try a different search term</p>
-                        </div>
-                      ) : (
-                        searchResults.map((result) => {
-                          const isPinned = pinnedKps.some(p => p.sc?.kp === result.kp);
-                          const isFull = pinnedKps.length >= 4 && !isPinned;
-                          const isLoading = loadingKpCode === result.kp;
-                          return (
-                            <div
-                              key={result.kp}
-                              onClick={() => {
-                                if (!isPinned && !isFull && !isLoading) {
-                                  pinKp(result.kp);
-                                }
-                              }}
-                              style={{
-                                background: '#E0E5EC',
-                                boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)',
-                                borderRadius: '20px',
-                                padding: '12px 16px',
-                                marginBottom: '8px',
-                                cursor: isPinned ? 'default' : isFull ? 'not-allowed' : 'pointer',
-                                borderBottom: '1px solid rgb(163 177 198 / 0.4)',
-                              }}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-mono font-semibold text-sm" style={{ color: '#6C63FF' }}>{result.kp}</span>
-                                  <StatusBadge status={result.pipeline_status} size="sm" />
-                                </div>
-                                {isLoading ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#6C63FF' }} />
-                                ) : isPinned ? (
-                                  <span className="text-xs font-bold" style={{ color: '#16A34A' }}>✓</span>
-                                ) : null}
-                              </div>
-                              <div className="text-sm mt-1" style={{ color: '#6B7280' }}>{result.codename}</div>
-                              <div className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
-                                {result.ket_warna || '—'} · {result.kat_kode} · {result.tgl ? format(new Date(result.tgl), 'dd MMM yyyy') : '—'}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1">
-                                {result.has_warping && (
-                                  <span className="text-xs px-1.5 py-0.5 rounded-[9999px]" style={{ background: '#E0E5EC', color: '#6B7280', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' }}>W</span>
-                                )}
-                                {result.has_indigo && (
-                                  <span className="text-xs px-1.5 py-0.5 rounded-[9999px]" style={{ background: '#E0E5EC', color: '#6B7280', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' }}>I</span>
-                                )}
-                                {result.weaving_count > 0 && (
-                                  <span className="text-xs px-1.5 py-0.5 rounded-[9999px]" style={result.avg_efficiency && result.avg_efficiency >= 80 ? { background: 'rgb(22 163 74 / 0.15)', color: '#16A34A', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' } : result.avg_efficiency && result.avg_efficiency >= 70 ? { background: 'rgb(217 119 6 / 0.15)', color: '#D97706', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' } : { background: 'rgb(220 38 38 / 0.15)', color: '#DC2626', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' }}>
-                                    ⌛ {result.weaving_count} shifts · {result.avg_efficiency?.toFixed(1) ?? '—'}%
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                    
-                    {/* Results count */}
-                    {!searchLoading && (
-                      <div className="text-xs mt-2" style={{ color: '#9CA3AF' }}>
-                        Showing {searchResults.length} results
-                      </div>
-          )}
-        </div>
-
-                  {/* RIGHT PANEL - Compare */}
-                  <div className="lg:col-span-3">
-                    {/* Pinned chips */}
-                    {pinnedKps.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {pinnedKps.map((kp) => (
-                          <span key={kp.sc?.kp} style={{ background: '#E0E5EC', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', borderRadius: '9999px', padding: '4px 12px', fontSize: '12px', color: '#6C63FF', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {kp.sc?.kp} · {kp.sc?.codename?.substring(0, 15)}...
-                            <button onClick={() => unpinKp(kp.sc!.kp)} style={{ background: 'none', border: 'none', color: '#6C63FF', cursor: 'pointer', marginLeft: '4px' }}>×</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Empty state */}
-                    {pinnedKps.length < 2 && (
-                      <div
-                        className="rounded-[32px] p-12 text-center"
-                        style={{
-                          background: '#E0E5EC',
-                          boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                        }}
-                      >
-                        <p style={{ color: '#9CA3AF' }}>
-                          {pinnedKps.length === 0 
-                            ? 'Add 2–4 KPs from the left panel to compare them'
-                            : 'Add one more KP to start comparing'
-                          }
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Comparison table */}
-                    {pinnedKps.length >= 2 && (
-                      <div
-                        style={{
-                          background: '#E0E5EC',
-                          boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-                          borderRadius: '32px',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div className="overflow-x-auto">
-                          <table className="w-full">
-                            <thead style={{ background: '#E0E5EC' }}>
-                              <tr style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
-                                <th className="text-left text-xs font-bold uppercase tracking-widest px-4 py-3 w-40" style={{ color: '#9CA3AF' }}>Metric</th>
-                                {pinnedKps.map((kp) => (
-                                  <th key={kp.sc?.kp} className="text-right text-xs font-bold uppercase tracking-widest px-4 py-3" style={{ color: '#9CA3AF' }}>
-                                    <div className="font-mono" style={{ color: '#3D4852' }}>{kp.sc?.kp}</div>
-                                    <div className="text-[10px] font-normal truncate max-w-[120px]" style={{ color: '#9CA3AF' }}>{kp.sc?.codename}</div>
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
-                              {/* Sales Contract Section */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Sales Contract</span></td></tr>
-                              <ComparisonRow label="Construction (codename)" values={pinnedKps.map(p => p.sc?.codename ?? '—')} />
-                              <ComparisonRow label="Type (kat_kode)" values={pinnedKps.map(p => p.sc?.kat_kode ?? '—')} />
-                              <ComparisonRow label="TE" values={pinnedKps.map(p => p.sc?.te?.toString() ?? '—')} />
-                              <ComparisonRow label="Color (ket_warna)" values={pinnedKps.map(p => p.sc?.ket_warna ?? '—')} />
-                              <ComparisonRow label="Date" values={pinnedKps.map(p => p.sc?.tgl ? format(new Date(p.sc.tgl), 'yyyy-MM-dd') : '—')} />
-
-                              {/* Warping Section */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Warping</span></td></tr>
-                              <ComparisonRow label="Date" values={pinnedKps.map(p => p.warping?.tgl ? format(new Date(p.warping.tgl), 'yyyy-MM-dd') : '—')} />
-                              <ComparisonRow label="Machine No" values={pinnedKps.map(p => p.warping?.no_mc ?? '—')} />
-                              <ComparisonRow label="RPM" values={pinnedKps.map(p => p.warping?.rpm?.toString() ?? '—')} />
-                              <ComparisonRow label="Total Beam" values={pinnedKps.map(p => p.warping?.total_beam?.toString() ?? '—')} />
-                              <ComparisonRow label="Total Putusan" values={pinnedKps.map(p => p.warping?.total_putusan?.toString() ?? '—')} />
-                              <ComparisonRow label="Elongasi" values={pinnedKps.map(p => p.warping?.elongasi?.toString() ?? '—')} isNumeric higherIsBetter={false} />
-                              <ComparisonRow label="Strength" values={pinnedKps.map(p => p.warping?.strength?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="CV%" values={pinnedKps.map(p => p.warping?.cv_pct?.toString() ?? '—')} isNumeric higherIsBetter={false} />
-                              <ComparisonRow label="Tension Badan" values={pinnedKps.map(p => p.warping?.tension_badan?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Tension Pinggir" values={pinnedKps.map(p => p.warping?.tension_pinggir?.toString() ?? '—')} isNumeric />
-
-                              {/* Indigo Section */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Indigo</span></td></tr>
-                              <ComparisonRow label="Date" values={pinnedKps.map(p => p.indigo?.tanggal ? format(new Date(p.indigo.tanggal), 'yyyy-MM-dd') : '—')} />
-                              <ComparisonRow label="Machine" values={pinnedKps.map(p => p.indigo?.mc ?? '—')} />
-                              <ComparisonRow label="Speed" values={pinnedKps.map(p => p.indigo?.speed?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Bak Celup" values={pinnedKps.map(p => p.indigo?.bak_celup?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Indigo g/L" values={pinnedKps.map(p => p.indigo?.indigo?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Caustic g/L" values={pinnedKps.map(p => p.indigo?.caustic?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Hydro g/L" values={pinnedKps.map(p => p.indigo?.hydro?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Temp Dryer" values={pinnedKps.map(p => p.indigo?.temp_dryer?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Strength" values={pinnedKps.map(p => p.indigo?.strength?.toString() ?? '—')} isNumeric />
-                              <ComparisonRow label="Elongasi" values={pinnedKps.map(p => p.indigo?.elongasi_idg?.toString() ?? '—')} isNumeric />
-
-                              {/* Weaving Summary */}
-                              <tr><td colSpan={pinnedKps.length + 1} style={{ background: 'rgb(163 177 198 / 0.2)', padding: '8px 16px' }}><span style={{ fontSize: '12px', fontWeight: 700, color: '#6C63FF' }}>Weaving Summary</span></td></tr>
-                              <ComparisonRow label="Total Records" values={pinnedKps.map(p => p.weavingSummary?.totalRecords?.toString() ?? '—')} />
-                              <ComparisonRow label="Avg Efficiency %" values={pinnedKps.map(p => p.weavingSummary?.avgEfficiency?.toFixed(1) ?? '—')} isNumeric />
-                              <ComparisonRow label="Total Meters" values={pinnedKps.map(p => p.weavingSummary?.totalMeters?.toLocaleString() ?? '—')} />
-                              <ComparisonRow label="Unique Machines" values={pinnedKps.map(p => p.weavingSummary?.uniqueMachines?.toString() ?? '—')} />
-                              <ComparisonRow label="Date Range" values={pinnedKps.map(p => p.weavingSummary
-                                ? `${new Date(p.weavingSummary.firstDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} – ${new Date(p.weavingSummary.lastDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`
-                                : '—')} />
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ==================== TAB 4: MACHINES ==================== */}
-        {activeTab === 'machines' && (
-          <MachinesTab data={data} />
-        )}
-      </div>
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
 
-// Comparison Row Component
-function ComparisonRow({
-  label,
-  values,
-  isNumeric = false,
-  higherIsBetter = true,
-}: {
-  label: string;
-  values: string[];
-  isNumeric?: boolean;
-  higherIsBetter?: boolean;
-}) {
-  // Parse numeric values
-  const numericValues = values.map(v => {
-    if (v === '—') return null;
-    const n = parseFloat(v);
-    return isNaN(n) ? null : n;
-  });
+// SECTION 2 RIGHT — Efficiency by Machine
+function EfficiencyByMachineChart() {
+  const [data, setData] = useState<Array<{ machine: string; avg_efficiency: number }>>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Determine best and worst indices for numeric rows
-  let bestIdx = -1;
-  let worstIdx = -1;
-  
-  if (isNumeric) {
-    const validValues = numericValues.map((v, i) => v !== null ? { v, i } : null).filter(Boolean) as { v: number; i: number }[];
-    if (validValues.length >= 2) {
-      if (higherIsBetter) {
-        bestIdx = validValues.reduce((a, b) => a.v > b.v ? a : b).i;
-        worstIdx = validValues.reduce((a, b) => a.v < b.v ? a : b).i;
-      } else {
-        bestIdx = validValues.reduce((a, b) => a.v < b.v ? a : b).i;
-        worstIdx = validValues.reduce((a, b) => a.v > b.v ? a : b).i;
-      }
-    }
+  useEffect(() => {
+    authFetch<AnalyticsData>('/denim/analytics/full')
+      .then(d => setData((d?.efficiencyByMachine ?? []).slice(0, 30)))
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <ChartSkeleton height={240} />;
+
+  const getBarColor = (eff: number) =>
+    eff >= 80 ? '#059669' : eff >= 70 ? '#D97706' : '#DC2626';
+
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+        <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
+        <YAxis dataKey="machine" type="category" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} width={50} />
+        <Tooltip contentStyle={TOOLTIP_DARK_STYLE} formatter={(v: unknown) => [`${Number(v).toFixed(1)}%`, 'Efficiency']} />
+        <Bar dataKey="avg_efficiency" radius={[0, 3, 3, 0]}>
+          {data.map((entry, i) => (
+            <Cell key={i} fill={getBarColor(entry.avg_efficiency)} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// SECTION 3 — Production Volume
+function ProductionVolumeChart() {
+  const [data, setData] = useState<Array<{ week: string; label: string; total_meters: number; total_picks: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    authFetch<AnalyticsData>('/denim/analytics/full')
+      .then(d => {
+        const weekly = (d?.weeklyProduction ?? []).map(w => ({
+          ...w,
+          label: format(parseISO(w.week), 'MMM d'),
+        }));
+        setData(weekly.slice(-12));
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <ChartSkeleton height={240} />;
+  if (data.length === 0) {
+    return (
+      <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontSize: 13, color: '#9CA3AF' }}>No production data yet.</p>
+      </div>
+    );
   }
 
-  // Check if all non-dash values are the same (for non-numeric)
-  const nonDashValues = values.filter(v => v !== '—');
-  const allSame = nonDashValues.length > 1 && nonDashValues.every(v => v === nonDashValues[0]);
-  const hasDiff = nonDashValues.length > 1 && !allSame;
-
   return (
-    <tr style={hasDiff && !isNumeric ? { background: 'rgb(254 243 199 / 0.3)' } : {}}>
-      <td className="px-4 py-2 text-sm" style={{ color: '#6B7280' }}>{label}</td>
-      {values.map((v, i) => {
-        const isBest = i === bestIdx;
-        const isWorst = i === worstIdx;
-        return (
-          <td
-            key={i}
-            className="px-4 py-2 text-sm text-right font-medium"
-            style={isBest ? { color: '#16A34A', background: 'rgb(220 252 171 / 0.3)' } : isWorst ? { color: '#DC2626', background: 'rgb(254 226 226 / 0.3)' } : { color: '#3D4852' }}
-          >
-            {v}
-          </td>
-        );
-      })}
-    </tr>
+    <ResponsiveContainer width="100%" height={200}>
+      <BarChart data={data} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+        <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
+        <Tooltip contentStyle={TOOLTIP_DARK_STYLE} />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)', paddingTop: 8 }} />
+        <Bar dataKey="total_meters" name="Meters" fill="#4A7A9B" radius={[3, 3, 0, 0]} />
+        <Bar dataKey="total_picks" name="Picks"   fill="#6A96B2" radius={[3, 3, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 
-// Machines Tab Component
-function MachinesTab({ data }: { data: AnalyticsData | null }) {
-  const [showAllMachines, setShowAllMachines] = useState(false);
+// SECTION 4 — Chemical Usage
+function ChemicalUsageChart() {
+  const [data, setData] = useState<Array<{ month: string; label: string; avg_indigo: number; avg_caustic: number; avg_hydro: number }>>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Format velocity data - sort by date first, then format
-  const velocityData = (data?.productionVelocity ?? [])
-    .sort((a, b) => new Date(a.day).getTime() - new Date(b.day).getTime())
-    .map((v, idx) => ({
-      ...v,
-      dayLabel: format(parseISO(v.day), 'MMM d'),
-      showLabel: idx % 7 === 0, // Show every 7th label
-    }));
+  useEffect(() => {
+    authFetch<AnalyticsData>('/denim/analytics/full')
+      .then(d => {
+        const monthly = (d?.monthlyChemicals ?? []).map(m => ({
+          ...m,
+          label: format(parseISO(m.month), 'MMM yyyy'),
+        }));
+        setData(monthly.slice(-12));
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-  // Get Y-axis domain from actual data (explicitly set 0 as min)
-  const maxMeters = Math.max(...(data?.productionVelocity ?? []).map(v => v.total_meters), 0);
-  const yAxisDomain: [number, number] = [0, Math.ceil(maxMeters * 1.1)];
+  if (loading) return <ChartSkeleton height={240} />;
+  if (data.length === 0) {
+    return (
+      <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontSize: 13, color: '#9CA3AF' }}>No chemical data yet.</p>
+      </div>
+    );
+  }
 
-  // Prepare heatmap data
-  const heatmapData = data?.machineHeatmap ?? [];
-  
-  // Get unique weeks (last 8 weeks)
-  const weeks = [...new Set(heatmapData.map(h => h.week))].sort();
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={data} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+        <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+        <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+        <Tooltip contentStyle={TOOLTIP_DARK_STYLE} formatter={(v: unknown) => [`${Number(v).toFixed(2)} g/L`, '']} />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)', paddingTop: 8 }} />
+        <Line type="monotone" dataKey="avg_indigo"  name="Indigo"  stroke={CHEM_LINES.Indigo}  strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="avg_caustic" name="Caustic" stroke={CHEM_LINES.Caustic} strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="avg_hydro"   name="Hydro"   stroke={CHEM_LINES.Hydro}   strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
 
-  // Build heatmap grid - with performance toggle
-  const allMachines = [...new Set(heatmapData.map(h => h.machine))].sort();
-  const displayedMachines = showAllMachines ? allMachines : allMachines.slice(0, 50);
+// SECTION 5 — BBSF Shrinkage
+function BBSFShrinkageChart() {
+  const [data, setData] = useState<Array<{ week: string; label: string; sanfor_type: string; avg_shrinkage: number }>>([]);
+  const [loading, setLoading] = useState(true);
 
-  const heatmapGrid = displayedMachines.map(machine => {
-    const machineData: { [week: string]: number | null } = {};
-    weeks.forEach(week => {
-      const entry = heatmapData.find(h => h.machine === machine && h.week === week);
-      machineData[week] = entry?.avg_efficiency ?? null;
-    });
-    return { machine, data: machineData };
-  });
+  useEffect(() => {
+    authFetch<AnalyticsData>('/denim/analytics/full')
+      .then(d => {
+        const stats = (d?.bbsfSanforStats ?? []).map(s => ({
+          ...s,
+          label: format(parseISO(s.week), 'MMM d'),
+        }));
+        setData(stats.slice(-12));
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-  // KPI calculations
-  const totalMeters60d = data?.productionVelocity?.reduce((s, v) => s + v.total_meters, 0) ?? 0;
-  const avgMachines = data?.productionVelocity?.length
-    ? (data?.productionVelocity?.reduce((s, v) => s + v.machines, 0) ?? 0) / (data?.productionVelocity?.length ?? 1)
-    : '0';
-  const activeMachines = allMachines.length;
+  if (loading) return <ChartSkeleton height={240} />;
+  if (data.length === 0) {
+    return (
+      <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontSize: 13, color: '#9CA3AF' }}>No BBSF data yet.</p>
+      </div>
+    );
+  }
 
-  // Helper for cell background - neumorphic style
-  const getCellColor = (eff: number | null) => {
-    if (eff === null) return { background: 'rgb(163 177 198 / 0.1)' };
-    if (eff >= 80) return { background: 'rgb(22 163 74 / 0.15)' };
-    if (eff >= 70) return { background: 'rgb(217 119 6 / 0.15)' };
-    return { background: 'rgb(220 38 38 / 0.15)' };
-  };
-
-  // Helper for text color - soft, muted colors
-  const getTextColor = (eff: number | null) => {
-    if (eff === null) return { color: '#9CA3AF' };
-    if (eff >= 80) return { color: 'rgb(22 163 74 / 0.7)' };
-    if (eff >= 70) return { color: 'rgb(217 119 6 / 0.7)' };
-    return { color: 'rgb(220 38 38 / 0.7)' };
+  const types = [...new Set(data.map(d => d.sanfor_type))];
+  const BBSF_COLORS: Record<string, string> = {
+    'Zero Wash': '#059669',
+    'Soft Finish': '#0891B2',
+    'Normal': '#D97706',
   };
 
   return (
-    <div className="space-y-6 mt-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
-          className="rounded-[32px] p-5"
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={data} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+        <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+        <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
+        <Tooltip contentStyle={TOOLTIP_DARK_STYLE} formatter={(v: unknown) => [`${Number(v).toFixed(2)}%`, 'Shrinkage']} />
+        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: 'var(--text-muted)', paddingTop: 8 }} />
+        {types.map(type => (
+          <Line
+            key={type}
+            type="monotone"
+            dataKey={`avg_shrinkage_${type}` as string}
+            name={type}
+            stroke={BBSF_COLORS[type] ?? '#4A7A9B'}
+            strokeWidth={2}
+            dot={false}
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+// SECTION 6 — Cycle Time Distribution
+function CycleTimeChart() {
+  const [data, setData] = useState<Array<{ kp: string; days: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    authFetch<AnalyticsData>('/denim/analytics/full')
+      .then(d => {
+        const cycles = (d?.cycleTimeDistribution ?? [])
+          .filter(c => c.days_contract_to_weaving != null)
+          .map(c => ({ kp: c.kp, days: c.days_contract_to_weaving as number }));
+        setData(cycles);
+      })
+      .catch(() => setData([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <ChartSkeleton height={200} />;
+  if (data.length === 0) {
+    return (
+      <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontSize: 13, color: '#9CA3AF' }}>No completed cycle data yet.</p>
+      </div>
+    );
+  }
+
+  const scatterData = data.map((d, i) => ({ x: d.days, y: (i % 10) + 1, kp: d.kp }));
+
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <ScatterChart margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+        <XAxis
+          dataKey="x" name="Days" tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+          tickFormatter={v => `${v}d`
+          }
+          label={{ value: 'Days to weaving', position: 'insideBottom', offset: -2, fontSize: 10, fill: 'var(--text-muted)' }}
+        />
+        <YAxis dataKey="y" hide />
+        <Tooltip
+          contentStyle={TOOLTIP_DARK_STYLE}
+          formatter={(v: unknown, name: unknown) => {
+            if (name === 'x') {
+              const item = data.find(s => s.days === v);
+              return [`${v} days`, item?.kp ?? ''] as [string, string];
+            }
+            return [String(v), String(name)] as [string, string];
+          }}
+        />
+        <Scatter dataKey="x" fill="#4A7A9B" />
+      </ScatterChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ─── Overview Tab ───────────────────────────────────────────────────────
+function OverviewTab() {
+  const [period, setPeriod] = useState<'week' | 'month'>('week');
+
+  const periodToggle = (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {(['week', 'month'] as const).map(p => (
+        <button
+          key={p}
+          onClick={() => setPeriod(p)}
           style={{
-            background: '#E0E5EC',
-            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
+            height:       28,
+            padding:     '0 12px',
+            borderRadius: 14,
+            fontSize:    12,
+            fontWeight:  500,
+            cursor:     'pointer',
+            border:     'none',
+            background:  period === p ? 'rgba(255,255,255,0.15)' : 'transparent',
+            color:       period === p ? '#EEF3F7' : 'rgba(238,243,247,0.45)',
+            transition:  'background 150ms',
           }}
         >
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Production (60 days)</p>
-          <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>
-            {Math.round(totalMeters60d).toLocaleString()}
-          </p>
-          <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>meters</p>
+          {p.charAt(0).toUpperCase() + p.slice(1)}
+        </button>
+      ))}
+    </div>
+  );
+
+  const GRID_2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* SECTION 1 — Stage Throughput */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        border:         '1px solid #E5E7EB',
+        borderRadius:  12,
+        padding:       '20px 24px',
+      }}>
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E' }}>Stage Throughput</p>
+            <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>How many orders completed each stage per period</p>
+          </div>
+          {periodToggle}
         </div>
-        <div
-          className="rounded-[32px] p-5"
-          style={{
-            background: '#E0E5EC',
-            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-          }}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Machines Active</p>
-          <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>{avgMachines}</p>
-          <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>machines/day</p>
-        </div>
-        <div
-          className="rounded-[32px] p-5"
-          style={{
-            background: '#E0E5EC',
-            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-          }}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Active Machines</p>
-          <p className="text-3xl font-bold mt-1" style={{ color: '#3D4852' }}>{activeMachines}</p>
-          <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>in last 8 weeks</p>
+        <div style={{ minHeight: 240, width: '100%' }}>
+          <StageThroughputChart period={period} />
         </div>
       </div>
 
-      {/* Production Velocity Chart */}
-      <div
-        className="rounded-[32px] p-6"
-        style={{
-          background: '#E0E5EC',
-          boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-        }}
-      >
-        <h3 className="text-xs font-medium mb-4" style={{ color: '#6B7280' }}>
-          Production Velocity — Daily Meters
-        </h3>
-        {velocityData.length === 0 ? (
-          <div className="h-72 flex items-center justify-center" style={{ color: '#9CA3AF' }}>
-            No production data available
-          </div>
-        ) : (
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={velocityData}>
-                <defs>
-                  <linearGradient id="velocityGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={CHART_COLORS.emerald} stopOpacity={0.2}/>
-                    <stop offset="100%" stopColor={CHART_COLORS.emerald} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid {...chartDefaults.cartesianGrid} />
-                <XAxis 
-                  dataKey="dayLabel" 
-                  {...chartDefaults.xAxis}
-                  interval={6}
-                  tickFormatter={(value, index) => index % 7 === 0 ? value : ''}
-                />
-                <YAxis domain={[0, yAxisDomain[1]] as [number, number]} {...chartDefaults.yAxis} />
-                <Tooltip 
-                  {...chartDefaults.tooltip} 
-                  formatter={(value: number) => [`${value.toLocaleString()} m`, 'Meters']}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="total_meters"
-                  stroke={CHART_COLORS.emerald}
-                  strokeWidth={2}
-                  fill="url(#velocityGradient)"
-                  dot={false}
-                  activeDot={{ r: 5, fill: CHART_COLORS.emerald }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+      {/* SECTION 2 — Weaving Efficiency */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        border:         '1px solid #E5E7EB',
+        borderRadius:  12,
+        padding:       '20px 24px',
+      }}>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E' }}>Weaving Efficiency</p>
+          <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Weekly average efficiency across all machines</p>
+        </div>
+        <div style={GRID_2}>
+          <WeeklyEfficiencyChart />
+          <EfficiencyByMachineChart />
+        </div>
       </div>
 
-      {/* Machine Efficiency Heatmap */}
-      <div
-        className="rounded-[32px] p-6"
-        style={{
-          background: '#E0E5EC',
-          boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-        }}
-      >
-        <h3 className="text-sm font-semibold mb-4" style={{ color: '#3D4852' }}>
-          Machine Efficiency Heatmap (8 Weeks)
-        </h3>
-        
-        {/* Horizontal scroll container */}
-        <div className="overflow-x-auto">
-          <div className="min-w-[600px]">
-            {/* Header row */}
-            <div className="flex items-center">
-              <div className="w-16 flex-shrink-0" />
-              <div 
-                className="flex gap-0.5"
-                style={{ width: `${weeks.length * 36}px` }}
-              >
-                {weeks.map(week => (
-                  <div 
-                    key={week} 
-                    className="w-8 flex-shrink-0 text-[9px] text-center font-medium"
-                  >
-                    {format(parseISO(week), 'MMM d')}
-                  </div>
+      {/* SECTION 3 — Production Volume */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        border:         '1px solid #E5E7EB',
+        borderRadius:  12,
+        padding:       '20px 24px',
+      }}>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E' }}>Production Volume</p>
+          <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Weekly meters and picks produced</p>
+        </div>
+        <div style={{ minHeight: 240, width: '100%' }}>
+          <ProductionVolumeChart />
+        </div>
+      </div>
+
+      {/* SECTION 4 — Chemical Usage */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        border:         '1px solid #E5E7EB',
+        borderRadius:  12,
+        padding:       '20px 24px',
+      }}>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E' }}>Chemical Usage</p>
+          <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Monthly chemical concentrations (g/L)</p>
+        </div>
+        <div style={{ minHeight: 240, width: '100%' }}>
+          <ChemicalUsageChart />
+        </div>
+      </div>
+
+      {/* SECTION 5 — BBSF Shrinkage */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        border:         '1px solid #E5E7EB',
+        borderRadius:  12,
+        padding:       '20px 24px',
+      }}>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E' }}>BBSF Shrinkage</p>
+          <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Weekly average shrinkage percentage by sanfor type</p>
+        </div>
+        <div style={{ minHeight: 240, width: '100%' }}>
+          <BBSFShrinkageChart />
+        </div>
+      </div>
+
+      {/* SECTION 6 — Cycle Time */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        border:         '1px solid #E5E7EB',
+        borderRadius:  12,
+        padding:       '20px 24px',
+      }}>
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E' }}>Cycle Time Distribution</p>
+          <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Days from contract to weaving completion per order</p>
+        </div>
+        <div style={{ minHeight: 240, width: '100%' }}>
+          <CycleTimeChart />
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+// ─── KP Comparison Tab ──────────────────────────────────────────────────
+
+function KPComparisonTab() {
+  const router = useRouter();
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+  const [results, setResults] = useState<KpSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [pinnedKps, setPinnedKps] = useState<Array<{ kp: string; data: PipelineData }>>([]);
+  const [loadingKp, setLoadingKp] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Debounced search
+  useEffect(() => {
+    if (!deferredQuery.trim()) { setResults([]); setShowDropdown(false); return; }
+    setLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authFetch<{ results: KpSearchResult[] }>(
+          `/denim/admin/kp-search?q=${encodeURIComponent(deferredQuery)}&limit=50`
+        );
+        const unique = (res?.results ?? []).filter(
+          (item, i, self) => self.findIndex(t => t.kp === item.kp) === i
+        );
+        setResults(unique);
+        setShowDropdown(true);
+      } catch { setResults([]); }
+      finally { setLoading(false); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [deferredQuery]);
+
+  const pinKp = async (kp: string) => {
+    if (pinnedKps.length >= 5) return;
+    if (pinnedKps.find(p => p.kp === kp)) return;
+    setLoadingKp(kp);
+    try {
+      const data = await authFetch<PipelineData>(`/denim/admin/pipeline/${kp}`);
+      setPinnedKps(prev => [...prev, { kp, data }]);
+      setShowDropdown(false);
+      setQuery('');
+      inputRef.current?.focus();
+    } catch { /* no-op */ }
+    finally { setLoadingKp(null); }
+  };
+
+  const unpinKp = (kp: string) =>
+    setPinnedKps(prev => prev.filter(p => p.kp !== kp));
+
+  // ── Comparison table rows ──────────────────────────────────────
+  type TableRow = {
+    section: string;
+    label: string;
+    values: (string | number | null)[];
+    field?: string;
+  };
+
+  function buildRows(pinned: typeof pinnedKps): TableRow[] {
+    return [
+      // Sales Contract
+      { section: 'Sales Contract', label: 'Date',           values: pinned.map(p => p.data.sc?.tgl ? format(parseISO(p.data.sc.tgl), 'd MMM yyyy') : null) },
+      { section: 'Sales Contract', label: 'Construction',    values: pinned.map(p => p.data.sc?.codename ?? null) },
+      { section: 'Sales Contract', label: 'Type',           values: pinned.map(p => p.data.sc?.kat_kode ?? null) },
+      { section: 'Sales Contract', label: 'TE',             values: pinned.map(p => p.data.sc?.te ?? null), field: 'te' },
+      { section: 'Sales Contract', label: 'ACC',              values: pinned.map(p => p.data.sc?.acc ?? null) },
+      { section: 'Sales Contract', label: 'Stage',             values: pinned.map(p => p.data.sc?.pipeline_status ?? null) },
+      // Warping
+      { section: 'Warping', label: 'Machine',        values: pinned.map(p => p.data.warping?.no_mc ?? null) },
+      { section: 'Warping', label: 'Elongasi',       values: pinned.map(p => p.data.warping?.elongasi ?? null), field: 'elongasi' },
+      { section: 'Warping', label: 'Strength',       values: pinned.map(p => p.data.warping?.strength ?? null), field: 'strength' },
+      { section: 'Warping', label: 'CV%',            values: pinned.map(p => p.data.warping?.cv_pct ?? null), field: 'cv_pct' },
+      { section: 'Warping', label: 'Total Putusan',  values: pinned.map(p => p.data.warping?.total_putusan ?? null), field: 'putusan_total' },
+      { section: 'Warping', label: 'Beam Count',      values: pinned.map(p => p.data.warping?.beam_count ?? null), field: 'beam_count' },
+      // Indigo
+      { section: 'Indigo', label: 'Machine',          values: pinned.map(p => p.data.indigo?.mc ?? null) },
+      { section: 'Indigo', label: 'Speed',            values: pinned.map(p => p.data.indigo?.speed ?? null), field: 'speed' },
+      { section: 'Indigo', label: 'Indigo g/L',       values: pinned.map(p => p.data.indigo?.indigo_conc ?? null), field: 'indigo_conc' },
+      { section: 'Indigo', label: 'Elongasi IDG',    values: pinned.map(p => p.data.indigo?.elongasi ?? null), field: 'elongasi' },
+      { section: 'Indigo', label: 'Total Meters',    values: pinned.map(p => p.data.indigo?.total_meters ?? null), field: 'total_meters' },
+      // Weaving
+      { section: 'Weaving', label: 'Avg Efficiency',  values: pinned.map(p => p.data.weaving?.[0]?.avg_efficiency ?? null), field: 'avg_efficiency' },
+      { section: 'Weaving', label: 'Total Meters',    values: pinned.map(p => p.data.weaving?.[0]?.total_meters ?? null), field: 'total_meters' },
+      { section: 'Weaving', label: 'Shifts',          values: pinned.map(p => p.data.weaving?.[0]?.shift_count ?? p.data.weaving?.[0]?.record_count ?? null) },
+      // Inspect Gray
+      { section: 'Inspect Gray', label: 'Total Rolls',      values: pinned.map(p => p.data.inspectGray?.[0]?.total_rolls ?? null), field: 'total_rolls' },
+      { section: 'Inspect Gray', label: 'Grade A Count',   values: pinned.map(p => p.data.inspectGray?.[0]?.grade_a_count ?? null), field: 'grade_a_count' },
+      { section: 'Inspect Gray', label: 'Grade B Count',    values: pinned.map(p => p.data.inspectGray?.[0]?.grade_b_count ?? null), field: 'grade_b_count' },
+      { section: 'Inspect Gray', label: 'Reject Count',     values: pinned.map(p => p.data.inspectGray?.[0]?.grade_reject_count ?? null), field: 'grade_reject_count' },
+      // BBSF
+      { section: 'BBSF', label: 'Washing Speed',   values: pinned.map(p => p.data.bbsfWashing?.[0]?.washing_speed ?? null), field: 'washing_speed' },
+      { section: 'BBSF', label: 'Susut Sanfor',    values: pinned.map(p => p.data.bbsfSanfor?.[0]?.susut_sanfor ?? null), field: 'susut_sanfor' },
+      // Inspect Finish
+      { section: 'Inspect Finish', label: 'Total Rolls',  values: pinned.map(p => p.data.inspectFinish?.[0]?.total_rolls ?? null), field: 'total_rolls' },
+      { section: 'Inspect Finish', label: 'Grade A Count',values: pinned.map(p => p.data.inspectFinish?.[0]?.grade_a_count ?? null), field: 'grade_a_count' },
+      { section: 'Inspect Finish', label: 'Total KG',    values: pinned.map(p => p.data.inspectFinish?.[0]?.total_kg ?? null), field: 'total_kg' },
+    ];
+  }
+
+  const HIGHER_BETTER = new Set(['avg_efficiency','elongasi','strength','total_meters','grade_a_pct','total_rolls','grade_a_count','total_kg','total_beam','beam_count','speed','indigo_conc','washing_speed']);
+  const LOWER_BETTER  = new Set(['putusan_total','grade_reject_pct','susut_lusi','susut_pakan','susut_sanfor','cv_pct','grade_b_count','grade_reject_count']);
+
+  const cellStyle = (rowValues: number[], field: string, val: number | null): React.CSSProperties => {
+    if (val == null) return { fontSize: 13, color: '#D1D5DB', fontStyle: 'italic' };
+    const numeric = rowValues.filter(v => v != null);
+    if (numeric.length < 2) return { fontSize: 13, color: '#0F1E2E' };
+    const min = Math.min(...numeric), max = Math.max(...numeric);
+    if (val === max) return { fontSize: 13, fontWeight: 600, color: '#059669', background: '#ECFDF5', borderRadius: 4, padding: '2px 6px' };
+    if (val === min) return { fontSize: 13, fontWeight: 600, color: '#DC2626', background: '#FEF2F2', borderRadius: 4, padding: '2px 6px' };
+    return { fontSize: 13, color: '#0F1E2E' };
+  };
+
+  const rows = buildRows(pinnedKps);
+
+  return (
+    <div>
+      {/* Search input */}
+      <div style={{ position: 'relative' }}>
+        <span style={{
+          position:   'absolute',
+          left:       14,
+          top:        '50%',
+          transform:  'translateY(-50%)',
+          color:     'var(--text-muted)',
+          fontSize:   14,
+          pointerEvents: 'none',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M10 10L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </span>
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Search by KP code, construction, or type..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => { if (results.length > 0) setShowDropdown(true); }}
+          onBlur={() => { setTimeout(() => setShowDropdown(false), 150); }}
+          style={{
+            width:        '100%',
+            height:       40,
+            borderRadius: 8,
+            border:      '1px solid #E5E7EB',
+            background:  '#FFFFFF',
+            padding:     '0 14px 0 40px',
+            fontSize:    14,
+            color:      '#0F1E2E',
+            outline:    'none',
+            boxSizing:  'border-box',
+          }}
+        />
+
+        {/* Dropdown */}
+        {showDropdown && (
+          <div style={{
+            position:     'absolute',
+            top:         'calc(100% + 4px)',
+            left:        0,
+            right:       0,
+            background:  'var(--content-bg)',
+            border:      '1px solid var(--border)',
+            borderRadius: 8,
+            boxShadow:   '0 4px 16px rgba(0,0,0,0.08)',
+            maxHeight:   240,
+            overflowY:   'auto',
+            zIndex:      30,
+          }}>
+            {loading ? (
+              <div style={{ padding: '12px 14px' }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{ height: 14, borderRadius: 4, background: 'var(--denim-100)', marginBottom: 8, animation: `__hist_shimmer__ 1.5s ease-in-out ${i * 100}ms infinite` }} />
                 ))}
               </div>
-            </div>
-            
-            {/* Data rows */}
-            {heatmapGrid.map(({ machine, data: weekData }) => (
-              <div key={machine} className="flex items-center py-0.5">
-                <div className="w-16 flex-shrink-0 text-[10px] font-mono truncate pr-2" style={{ color: '#6B7280' }}>
-                  {machine}
-                </div>
-                <div 
-                  className="flex gap-0.5"
-                  style={{ width: `${weeks.length * 36}px` }}
-                >
-                  {weeks.map(week => {
-                    const eff = weekData[week];
-                    return (
-                      <div
-                        key={week}
-                        className="w-8 h-6 flex-shrink-0 flex items-center justify-center rounded text-[9px] font-medium"
-                        style={{ ...getCellColor(eff), ...getTextColor(eff) }}
-                        title={eff !== null ? `${machine} - Week of ${format(parseISO(week), 'MMM d')}: ${eff}%` : 'No data'}
-                      >
-                        {eff !== null ? `${eff}%` : '—'}
-                      </div>
-                    );
-                  })}
-                </div>
+            ) : results.length === 0 ? (
+              <div style={{ padding: '16px 14px', textAlign: 'center' }}>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No results found.</p>
               </div>
-            ))}
+            ) : (
+              results.map(r => (
+                <div
+                  key={r.kp}
+                  onMouseDown={() => pinKp(r.kp)}
+                  style={{
+                    padding:     '10px 14px',
+                    cursor:     'pointer',
+                    borderBottom: '1px solid var(--denim-100)',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--denim-50)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 600, color: 'var(--primary)' }}>{r.kp}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.kat_kode || '—'}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                    {r.codename || '—'} · {r.pipeline_status}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </div>
-
-        {/* Show all machines toggle */}
-        {allMachines.length > 50 && (
-          <button
-            onClick={() => setShowAllMachines(!showAllMachines)}
-            style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#9CA3AF' }}
-          >
-            {showAllMachines ? 'Show less' : `Show all ${allMachines.length} machines`}
-          </button>
         )}
-
-        {/* Compact Legend */}
-        <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: '1px solid rgb(163 177 198 / 0.3)' }}>
-          <span className="text-[10px] uppercase tracking-wider" style={{ color: '#9CA3AF' }}>Legend:</span>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ background: 'rgb(22 163 74 / 0.15)', border: '1px solid rgb(22 163 74 / 0.3)' }} />
-            <span className="text-[10px]" style={{ color: 'rgb(22 163 74 / 0.7)' }}>≥80%</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ background: 'rgb(217 119 6 / 0.15)', border: '1px solid rgb(217 119 6 / 0.3)' }} />
-            <span className="text-[10px]" style={{ color: 'rgb(217 119 6 / 0.7)' }}>70-79%</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ background: 'rgb(220 38 38 / 0.15)', border: '1px solid rgb(220 38 38 / 0.3)' }} />
-            <span className="text-[10px]" style={{ color: 'rgb(220 38 38 / 0.7)' }}>&lt;70%</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded-sm" style={{ background: 'rgb(163 177 198 / 0.1)', border: '1px solid rgb(163 177 198 / 0.2)' }} />
-            <span className="text-[10px]" style={{ color: '#9CA3AF' }}>No data</span>
-          </div>
-        </div>
       </div>
+
+      {/* Pinned chips */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        {pinnedKps.length === 0 && (
+          <div style={{
+            display:       'inline-flex',
+            alignItems:   'center',
+            padding:       '4px 12px',
+            borderRadius:  20,
+            border:       '1px dashed #E5E7EB',
+            fontSize:     12,
+            color:        '#9CA3AF',
+          }}>
+            Add up to 5 KPs to compare
+          </div>
+        )}
+        {pinnedKps.map(p => (
+          <div
+            key={p.kp}
+            style={{
+              display:       'inline-flex',
+              alignItems:   'center',
+              gap:          6,
+              background:   '#FFFFFF',
+              border:       '1px solid #E5E7EB',
+              borderRadius:  20,
+              padding:       '4px 10px 4px 12px',
+              fontSize:     12,
+            }}
+          >
+            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: '#1D4ED8', fontSize: 13 }}>{p.kp}</span>
+            <button
+              onClick={() => unpinKp(p.kp)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: 0, fontSize: 14, color: '#9CA3AF', lineHeight: 1,
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#DC2626'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#9CA3AF'; }}
+            >
+              &times;
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Comparison table or empty state */}
+      {pinnedKps.length === 0 ? (
+        <div style={{
+          padding:       '64px 20px',
+          textAlign:    'center',
+          background:   '#FFFFFF',
+          border:       '1px solid #E5E7EB',
+          borderRadius: 12,
+        }}>
+          <p style={{ fontSize: 14, color: '#9CA3AF' }}>Search for KP codes above to start comparing.</p>
+        </div>
+      ) : (
+        <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+            <thead>
+              <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                <th style={{
+                  width: 160, padding: '0 12px', height: 36,
+                  fontSize: 11, fontWeight: 500, color: '#6B7280',
+                  textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left',
+                  position: 'sticky', left: 0, background: '#F9FAFB', zIndex: 2,
+                }}>
+                  Field
+                </th>
+                {pinnedKps.map(p => (
+                  <th key={p.kp} style={{
+                    padding: '0 12px', height: 36, minWidth: 160,
+                    fontSize: 13, fontWeight: 600, color: '#1D4ED8',
+                    fontFamily: "'IBM Plex Mono', monospace", textAlign: 'left',
+                  }}>
+                    {p.kp}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, ri) => {
+                const isSection = row.section !== rows[ri - 1]?.section;
+                return (
+                  <React.Fragment key={`${row.section}-${row.label}-${ri}`}>
+                    {isSection && (
+                      <tr>
+                        <td colSpan={pinnedKps.length + 1} style={{
+                          background:    '#F9FAFB',
+                          padding:       '8px 12px',
+                          fontSize:      11,
+                          fontWeight:    600,
+                          color:         '#9CA3AF',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          borderTop:     '1px solid #E5E7EB',
+                        }}>
+                          {row.section}
+                        </td>
+                      </tr>
+                    )}
+                    <tr style={{ borderBottom: '0.5px solid #F3F4F6' }}>
+                      <td style={{
+                        padding: '0 12px', height: 36,
+                        fontSize: 12, fontWeight: 500, color: '#6B7280',
+                        position: 'sticky', left: 0, background: '#F9FAFB', zIndex: 1,
+                      }}>
+                        {row.label}
+                      </td>
+                      {row.values.map((val, ci) => {
+                        const numVals = row.values.filter(v => typeof v === 'number') as number[];
+                        const style = row.field ? cellStyle(numVals, row.field, val as number | null) : { fontSize: 13, color: '#0F1E2E' };
+                        return (
+                          <td key={ci} style={{ padding: '0 12px', height: 36, ...style }}>
+                            {val == null ? (
+                              <span style={{ fontSize: 13, color: '#D1D5DB', fontStyle: 'italic' }}>Not started</span>
+                            ) : typeof val === 'number' ? (
+                              Number(val).toFixed(2)
+                            ) : (
+                              String(val)
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
+  );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────
+function AnalyticsContent() {
+  const [activeTab, setActiveTab] = useState<'overview' | 'comparison'>('overview');
+
+  return (
+    <div style={{ backgroundColor: '#F0F4F8', minHeight: '100vh' }}>
+      <PageShell
+        title="Analytics"
+        subtitle="Production insights and performance analysis"
+        noPadding
+      >
+        <div style={{ padding: '28px 32px' }}>
+          <TabBar
+            tabs={[
+              { key: 'overview',   label: 'Overview' },
+              { key: 'comparison', label: 'KP Comparison' },
+            ]}
+            active={activeTab}
+            onChange={k => setActiveTab(k as 'overview' | 'comparison')}
+          />
+          {activeTab === 'overview'   && <OverviewTab />}
+          {activeTab === 'comparison' && <KPComparisonTab />}
+        </div>
+      </PageShell>
+    </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div style={{ background: 'var(--page-bg)', minHeight: '100vh' }} />}>
+      <AnalyticsContent />
+    </Suspense>
   );
 }

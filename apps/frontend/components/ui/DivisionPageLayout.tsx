@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import { PageHeader } from './PageHeader';
+import PageHeader from '../layout/PageHeader';
 import { FilterBar, FilterConfig } from './FilterBar';
 import { Button } from './button';
 
 interface DivisionPageLayoutProps {
   title: string;
   description?: string;
-  filters: Record<string, any>;
+  filters: Record<string, string>;
   filterConfigs: FilterConfig[];
-  onFilterChange: (key: string, value: any) => void;
+  onFilterChange: (key: string, value: string) => void;
   onAddRow?: () => void;
   children: React.ReactNode;
   className?: string;
@@ -30,7 +30,7 @@ export const DivisionPageLayout: React.FC<DivisionPageLayoutProps> = ({
     <div className={`division-page ${className}`.trim()}>
       <PageHeader
         title={title}
-        description={description}
+        subtitle={description}
         actions={
           onAddRow ? (
             <Button variant="secondary" onClick={onAddRow}>

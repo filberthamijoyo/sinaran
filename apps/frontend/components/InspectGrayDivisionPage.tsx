@@ -180,7 +180,7 @@ const mapRecordToRow = (record: Record<string, unknown>): BaseGridRow => {
 
   INSPECT_GRAY_COLUMNS.forEach((col) => {
     if (col.id === 'tanggal' || col.id === 'tglPotong') {
-      row[col.id] = toYMD(record[col.id] as any);
+      row[col.id] = toYMD(record[col.id] as Date | string | null | undefined);
     } else if (col.type === 'number') {
       row[col.id] = record[col.id] != null ? String(record[col.id]) : '';
     } else {

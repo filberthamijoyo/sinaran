@@ -42,6 +42,13 @@ const SHIFT_LABEL: Record<string, string> = {
   '3': 'Shift 3  ·  22:00 – 05:59',
 };
 
+function effColor(v: number | null) {
+  if (v == null) return 'text-zinc-500';
+  if (v >= 80) return 'text-emerald-400';
+  if (v >= 70) return 'text-amber-400';
+  return 'text-red-400';
+}
+
 export default function WeavingFormPage({ kp }: { kp: string }) {
   const router = useRouter();
   const [data, setData] = useState<PipelineData | null>(null);
@@ -51,10 +58,11 @@ export default function WeavingFormPage({ kp }: { kp: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await authFetch(`/denim/admin/pipeline/${kp}`) as PipelineData;
+      const res = await authFetch<PipelineData>(`/denim/admin/pipeline/${kp}`);
       setData(res);
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to load weaving data');
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to load weaving data';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -71,8 +79,9 @@ export default function WeavingFormPage({ kp }: { kp: string }) {
       });
       toast.success('Weaving complete. Moving to Inspect Gray.');
       router.push('/denim/inbox/weaving');
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to confirm weaving');
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to confirm weaving';
+      toast.error(message);
     } finally {
       setConfirming(false);
     }
@@ -114,13 +123,7 @@ export default function WeavingFormPage({ kp }: { kp: string }) {
           </div>
         )}
         {!loading && !hasData && (
-          <div className="flex flex-col items-center justify-center py-24 rounded-[32px] gap-3"
-            style={{
-              background: '#E0E5EC',
-              boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-              color: '#9CA3AF',
-            }}
-          >
+          <div className="flex flex-col items-center justify-center py-24 rounded-xl gap-3 bg-[#F7F8FA] border border-[#E5E7EB] text-[#6B7280]">
             <Clock className="w-8 h-8" />
             <p className="font-medium">Waiting for production data</p>
             <p className="text-sm text-center max-w-xs">
@@ -151,56 +154,42 @@ export default function WeavingFormPage({ kp }: { kp: string }) {
             <div className="space-y-6 mt-8">
               {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([dateKey, shifts]) => (
                 <div key={dateKey}>
-                  <p className="text-xs font-semibold style={{ color: '#9CA3AF' }} uppercase tracking-widest mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-3 text-[#9CA3AF]">
                     {format(new Date(dateKey), 'EEEE, d MMMM yyyy')}
                   </p>
                   <div className="space-y-2">
                     {Object.entries(shifts).sort(([a], [b]) => a.localeCompare(b)).map(([shift, rows]) => (
-                      <div key={shift} className="rounded-[16px] overflow-hidden" style={{ background: '#E0E5EC', boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)' }}>
-                        <div
-                          className="flex items-center justify-between px-4 py-2.5"
-                          style={{
-                            background: '#E0E5EC',
-                            borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                          }}
-                        >
-                          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>
+                      <div key={shift} className="rounded-xl overflow-hidden bg-[#F7F8FA] border border-[#E5E7EB]">
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#E5E7EB]">
+                          <p className="text-xs font-semibold uppercase tracking-widest text-[#9CA3AF]">
                             {SHIFT_LABEL[shift] ?? `Shift ${shift}`}
                           </p>
-                          <p className="text-xs" style={{ color: '#9CA3AF' }}>{rows.length} machine{rows.length !== 1 ? 's' : ''}</p>
+                          <p className="text-xs text-[#9CA3AF]">{rows.length} machine{rows.length !== 1 ? 's' : ''}</p>
                         </div>
                         <table className="w-full text-sm">
                           <thead>
-                            <tr style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
-                              <th className="text-left px-4 py-2 text-xs font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Machine</th>
-                              <th className="text-right px-4 py-2 text-xs font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Efficiency</th>
-                              <th className="text-right px-4 py-2 text-xs font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Meters</th>
-                              <th className="text-right px-4 py-2 text-xs font-medium uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Source</th>
+                            <tr className="border-b border-[#E5E7EB]">
+                              <th className="text-left px-4 py-2 text-xs font-medium uppercase tracking-wide text-[#9CA3AF]">Machine</th>
+                              <th className="text-right px-4 py-2 text-xs font-medium uppercase tracking-wide text-[#9CA3AF]">Efficiency</th>
+                              <th className="text-right px-4 py-2 text-xs font-medium uppercase tracking-wide text-[#9CA3AF]">Meters</th>
+                              <th className="text-right px-4 py-2 text-xs font-medium uppercase tracking-wide text-[#9CA3AF]">Source</th>
                             </tr>
                           </thead>
                           <tbody>
                             {rows.map(r => (
                               <tr
                                 key={r.id}
-                                className="border-b last:border-0 transition-colors"
-                                style={{
-                                  background: '#E0E5EC',
-                                  borderBottom: '1px solid rgb(163 177 198 / 0.3)',
-                                }}
+                                className="border-b border-[#E5E7EB] last:border-0 transition-colors"
                               >
-                                <td className="px-4 py-3 font-medium" style={{ color: '#3D4852' }}>{r.machine ?? '—'}</td>
-                                <td className={`px-4 py-3 text-right font-semibold tabular-nums`} style={{ color: r.a_pct != null && Number(r.a_pct) >= 85 ? '#16A34A' : r.a_pct != null && Number(r.a_pct) >= 70 ? '#D97706' : '#DC2626' }}>
+                                <td className="px-4 py-3 font-medium text-[#0F1117]">{r.machine ?? '—'}</td>
+                                <td className={`px-4 py-3 text-right font-semibold tabular-nums ${effColor(r.a_pct)}`}>
                                   {r.a_pct != null ? `${Number(r.a_pct).toFixed(1)}%` : '—'}
                                 </td>
-                                <td className="px-4 py-3 text-right tabular-nums" style={{ color: '#6B7280' }}>
+                                <td className="px-4 py-3 text-right tabular-nums text-[#6B7280]">
                                   {r.meters != null ? `${Number(r.meters).toFixed(1)} m` : '—'}
                                 </td>
                                 <td className="px-4 py-3 text-right">
-                                  <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium ${
-                                    r.source === 'TRIPUTRA'
-                                      ? ''
-                                      : ''
-                                  }`} style={{ background: '#E0E5EC', color: '#6C63FF', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)' }}>
+                                  <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full font-medium bg-[#F3F4F6] text-[#6B7280]">
                                     {r.source ?? 'MANUAL'}
                                   </span>
                                 </td>
@@ -214,30 +203,22 @@ export default function WeavingFormPage({ kp }: { kp: string }) {
                 </div>
               ))}
             </div>
-            <div
-              className="border rounded-2xl p-6 mt-8"
-              style={{
-                background: '#E0E5EC',
-                boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-                border: 'none',
-              }}
-            >
+            <div className="border rounded-xl p-6 mt-8 bg-[#F7F8FA] border-[#E5E7EB]">
               <div className="flex items-start justify-between gap-6">
                 <div className="flex gap-3">
-                  <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#D97706' }} />
+                  <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-sm font-semibold style={{ color: '#3D4852' }}">Ready to close this weaving job?</p>
-                    <p className="text-xs mt-1 leading-relaxed" style={{ color: '#9CA3AF' }}>
+                    <p className="text-sm font-semibold text-[#0F1117]">Ready to close this weaving job?</p>
+                    <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">
                       Review all production records above before confirming. Once marked complete, this order moves to
-                      <span className="font-medium style={{ color: '#6B7280' }}"> Inspect Gray</span> and cannot be undone.
+                      <span className="font-medium text-[#6B7280]"> Inspect Gray</span> and cannot be undone.
                     </p>
                   </div>
                 </div>
                 <Button
                   onClick={handleConfirm}
                   disabled={confirming}
-                  className="shrink-0 px-5"
-                  style={{ background: '#6C63FF', color: '#fff', border: 'none', borderRadius: '16px', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', fontWeight: 600, cursor: confirming ? 'not-allowed' : 'pointer', opacity: confirming ? 0.7 : 1 }}
+                  className="shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white px-5 border-none"
                 >
                   {confirming
                     ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Confirming…</>

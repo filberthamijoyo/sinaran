@@ -20,7 +20,14 @@ type Props = {
   fields: FieldConfig[];
   codeField?: string;
   nameField?: string;
-  apiBase?: keyof typeof API_ENDPOINTS | 'quality' | 'production' | 'unified';
+  apiBase?: 'quality' | 'production' | 'unified';
+};
+
+type DimensionItem = {
+  code?: string | number;
+  name?: string;
+  isActive?: boolean;
+  [key: string]: unknown;
 };
 
 const DimensionTable = ({
@@ -30,13 +37,18 @@ const DimensionTable = ({
   fields,
   codeField = 'code',
   nameField = 'name',
-  apiBase = 'quality', // 'quality', 'production', or 'unified'
+  apiBase = 'quality',
 }: Props) => {
-  const API_BASE_URL = (API_ENDPOINTS as any)[apiBase] || API_ENDPOINTS.quality;
-  const [items, setItems] = useState<any[]>([]);
+  const apiEndpoints: Record<string, string> = {
+    quality: API_ENDPOINTS.quality,
+    production: API_ENDPOINTS.production,
+    unified: API_ENDPOINTS.unified,
+  };
+  const API_BASE_URL = apiEndpoints[apiBase] || API_ENDPOINTS.quality;
+  const [items, setItems] = useState<DimensionItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingId, setEditingId] = useState<any>(null);
-  const [formData, setFormData, , restorePersistedForm] = usePersistedState<any>(
+  const [editingId, setEditingId] = useState<string | number | null>(null);
+  const [formData, setFormData, , restorePersistedForm] = usePersistedState<DimensionItem>(
     `dimension_admin_${endpoint}_form`,
     () => ({}),
     !editingId,
@@ -52,9 +64,9 @@ const DimensionTable = ({
       const response = await fetch(`${API_BASE_URL}/${endpoint}?all=true`);
       if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
-      setItems(data);
-    } catch (err: any) {
-      setError(`Error loading ${title}: ${err.message}`);
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(`Error loading ${title}: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -67,14 +79,14 @@ const DimensionTable = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev: any) => ({
+    setFormData((prev: DimensionItem) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
-  const startEdit = (item: any) => {
-    setEditingId(item[primaryKey]);
+  const startEdit = (item: DimensionItem) => {
+    setEditingId(item[primaryKey] as string | number | null);
     setFormData({ ...item });
     setError('');
     setSuccess('');
@@ -128,8 +140,8 @@ const DimensionTable = ({
       setSuccess('Item created successfully');
       setFormData({});
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
@@ -162,12 +174,12 @@ const DimensionTable = ({
       setEditingId(null);
       setFormData({});
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
-  const handleDelete = async (item: any) => {
+  const handleDelete = async (item: DimensionItem) => {
     if (!window.confirm('Are you sure you want to deactivate this item?')) {
       return;
     }
@@ -188,12 +200,12 @@ const DimensionTable = ({
 
       setSuccess('Item deactivated successfully');
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
-  const handleReactivate = async (item: any) => {
+  const handleReactivate = async (item: DimensionItem) => {
     try {
       setError('');
       setSuccess('');
@@ -212,8 +224,8 @@ const DimensionTable = ({
 
       setSuccess('Item reactivated successfully');
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
@@ -256,15 +268,15 @@ const DimensionTable = ({
                 <input
                   type="checkbox"
                   name={field.name}
-                  checked={formData[field.name] || false}
-                  onChange={handleChange as any}
+                  checked={Boolean(formData[field.name])}
+                  onChange={handleChange}
                 />
               ) : (
                 <input
                   type={field.type || 'text'}
                   name={field.name}
-                  value={formData[field.name] ?? ''}
-                  onChange={handleChange as any}
+                  value={(formData[field.name] as string) ?? ''}
+                  onChange={handleChange}
                   placeholder={field.placeholder}
                   required={field.required}
                   step={field.type === 'number' ? 'any' : undefined}
@@ -313,25 +325,27 @@ const DimensionTable = ({
                   </td>
                 </tr>
               ) : (
-                filteredItems.map((item) => (
+                filteredItems.map((item, index) => (
                   <tr
-                    key={item[primaryKey]}
+                    key={(item[primaryKey] as string | number) ?? index}
                     className={!item.isActive ? 'inactive' : ''}
                   >
-                    {fields.map((field) => (
-                      <td key={field.name}>
-                        {field.type === 'checkbox'
-                          ? item[field.name]
-                            ? 'Yes'
-                            : 'No'
-                          : item[field.name] !== null && item[field.name] !== undefined
-                            ? typeof item[field.name] === 'object' &&
-                              item[field.name].toString
-                              ? item[field.name].toString()
-                              : item[field.name]
-                            : '-'}
-                      </td>
-                    ))}
+                    {fields.map((field) => {
+                      const value = item[field.name];
+                      return (
+                        <td key={field.name}>
+                          {field.type === 'checkbox'
+                            ? value
+                              ? 'Yes'
+                              : 'No'
+                            : value !== null && value !== undefined
+                              ? typeof value === 'object' && 'toString' in value
+                                ? String(value)
+                                : String(value)
+                              : '-'}
+                        </td>
+                      );
+                    })}
                     <td>
                       <span
                         className={`status-badge ${

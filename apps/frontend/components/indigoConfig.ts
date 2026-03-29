@@ -241,7 +241,7 @@ export const mapIndigoRecordToValues = (record: Record<string, unknown>): Indigo
   const values = createEmptyIndigoValues();
   INDIGO_COLUMNS.forEach((col) => {
     if (col.id === 'tanggal') {
-      values.tanggal = toYMD(record.tanggal as any);
+      values.tanggal = toYMD(record.tanggal as Date | string | null | undefined);
     } else {
       values[col.id] = toStr(record[col.id]);
     }

@@ -99,7 +99,7 @@ const mapRecordToRow = (record: Record<string, unknown>): BaseGridRow => {
 
   [...WEAVING_BASE_COLUMNS, ...WEAVING_TRIPUTRA_COLUMNS].forEach((col) => {
     if (col.id === 'tanggal') {
-      row.tanggal = toYMD(record.tanggal as any);
+      row.tanggal = toYMD(record.tanggal as Date | string | null | undefined);
     } else {
       row[col.id] = toStr(record[col.id]);
     }

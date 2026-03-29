@@ -21,20 +21,27 @@ type Props = {
   apiBase?: keyof typeof API_ENDPOINTS | 'production' | 'unified';
 };
 
-const ProductionDimensionTable = ({
+const ProductionDimensionTable = <
+  TItem extends Record<string, unknown>,
+  TFormData extends Record<string, unknown> = Record<string, unknown>,
+>({
   title,
   endpoint,
   primaryKey,
   fields,
-  apiBase = 'production', // 'production' or 'unified'
+  apiBase = 'production',
 }: Props) => {
-  const API_BASE_URL = (API_ENDPOINTS as any)[apiBase] || API_ENDPOINTS.production;
-  const [items, setItems] = useState<any[]>([]);
+  const apiBaseUrl = apiBase === 'production'
+    ? API_ENDPOINTS.production
+    : apiBase === 'unified'
+      ? API_ENDPOINTS.unified
+      : API_ENDPOINTS.production;
+  const [items, setItems] = useState<TItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingId, setEditingId] = useState<any>(null);
-  const [formData, setFormData, , restorePersistedForm] = usePersistedState<any>(
+  const [editingId, setEditingId] = useState<string | number | null>(null);
+  const [formData, setFormData, , restorePersistedForm] = usePersistedState<TFormData>(
     `production_dimension_${endpoint}_form`,
-    () => ({}),
+    () => ({} as TFormData),
     !editingId,
   );
   const [error, setError] = useState('');
@@ -45,12 +52,12 @@ const ProductionDimensionTable = ({
     try {
       setLoading(true);
       setError('');
-      const response = await fetch(`${API_BASE_URL}/${endpoint}?all=true`);
+      const response = await fetch(`${apiBaseUrl}/${endpoint}?all=true`);
       if (!response.ok) throw new Error('Failed to fetch');
-      const data = await response.json();
+      const data = await response.json() as TItem[];
       setItems(data);
-    } catch (err: any) {
-      setError(`Error loading ${title}: ${err.message}`);
+    } catch (err: unknown) {
+      setError(`Error loading ${title}: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -63,7 +70,7 @@ const ProductionDimensionTable = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev: any) => ({
+    setFormData((prev: TFormData) => ({
       ...prev,
       [name]:
         type === 'checkbox'
@@ -73,14 +80,14 @@ const ProductionDimensionTable = ({
               ? ''
               : parseFloat(value)
             : value,
-    }));
+    } as unknown as TFormData));
   };
 
-  const startEdit = (item: any) => {
-    setEditingId(item[primaryKey]);
-    const editData = { ...item };
-    if (item.value !== undefined && item.value !== null) {
-      editData.value = item.value.toString();
+  const startEdit = (item: TItem) => {
+    setEditingId(item[primaryKey] as string | number | null);
+    const editData = { ...item } as unknown as TFormData;
+    if ((item as Record<string, unknown>).value !== undefined && (item as Record<string, unknown>).value !== null) {
+      (editData as Record<string, unknown>).value = String((item as Record<string, unknown>).value);
     }
     setFormData(editData);
     setError('');
@@ -121,22 +128,22 @@ const ProductionDimensionTable = ({
         isActive: formData.isActive === true,
       };
 
-      const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      const response = await fetch(`${apiBaseUrl}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error?: string };
         throw new Error(errorData.error || 'Failed to create');
       }
 
       setSuccess('Item created successfully');
-      setFormData({});
+      setFormData({} as TFormData);
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -153,27 +160,27 @@ const ProductionDimensionTable = ({
       };
 
       const id = editingId;
-      const response = await fetch(`${API_BASE_URL}/${endpoint}/${id}`, {
+      const response = await fetch(`${apiBaseUrl}/${endpoint}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error?: string };
         throw new Error(errorData.error || 'Failed to update');
       }
 
       setSuccess('Item updated successfully');
       setEditingId(null);
-      setFormData({});
+      setFormData({} as TFormData);
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
-  const handleDelete = async (item: any) => {
+  const handleDelete = async (item: TItem) => {
     if (!window.confirm('Are you sure you want to deactivate this item?')) {
       return;
     }
@@ -183,43 +190,43 @@ const ProductionDimensionTable = ({
       setSuccess('');
 
       const urlId = item[primaryKey];
-      const response = await fetch(`${API_BASE_URL}/${endpoint}/${urlId}`, {
+      const response = await fetch(`${apiBaseUrl}/${endpoint}/${urlId}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error?: string };
         throw new Error(errorData.error || 'Failed to delete');
       }
 
       setSuccess('Item deactivated successfully');
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
-  const handleReactivate = async (item: any) => {
+  const handleReactivate = async (item: TItem) => {
     try {
       setError('');
       setSuccess('');
 
       const urlId = item[primaryKey];
-      const response = await fetch(`${API_BASE_URL}/${endpoint}/${urlId}`, {
+      const response = await fetch(`${apiBaseUrl}/${endpoint}/${urlId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...item, isActive: true }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error?: string };
         throw new Error(errorData.error || 'Failed to reactivate');
       }
 
       setSuccess('Item reactivated successfully');
       await fetchItems();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -262,15 +269,15 @@ const ProductionDimensionTable = ({
                 <input
                   type="checkbox"
                   name={field.name}
-                  checked={formData[field.name] || false}
-                  onChange={handleChange as any}
+                  checked={Boolean(formData[field.name])}
+                  onChange={handleChange}
                 />
               ) : (
                 <input
                   type={field.type || 'text'}
                   name={field.name}
-                  value={formData[field.name] ?? ''}
-                  onChange={handleChange as any}
+                  value={String(formData[field.name] ?? '')}
+                  onChange={handleChange}
                   placeholder={field.placeholder}
                   required={field.required}
                   step={field.type === 'number' ? 'any' : undefined}
@@ -321,20 +328,20 @@ const ProductionDimensionTable = ({
               ) : (
                 filteredItems.map((item) => (
                   <tr
-                    key={item[primaryKey]}
-                    className={!item.isActive ? 'inactive' : ''}
+                    key={String(item[primaryKey])}
+                    className={!(item as Record<string, unknown>).isActive ? '' : ''}
                   >
                     {fields.map((field) => (
                       <td key={field.name}>
                         {field.type === 'checkbox'
-                          ? item[field.name]
+                          ? (item as Record<string, unknown>)[field.name]
                             ? 'Yes'
                             : 'No'
-                          : item[field.name] !== null && item[field.name] !== undefined
-                            ? typeof item[field.name] === 'object' &&
-                              item[field.name].toString
-                              ? item[field.name].toString()
-                              : item[field.name]
+                          : (item as Record<string, unknown>)[field.name] !== null && (item as Record<string, unknown>)[field.name] !== undefined
+                            ? typeof (item as Record<string, unknown>)[field.name] === 'object' &&
+                              typeof (item as Record<string, unknown>)[field.name]?.toString === 'function'
+                              ? String((item as Record<string, unknown>)[field.name])
+                              : String((item as Record<string, unknown>)[field.name])
                             : '-'}
                       </td>
                     ))}

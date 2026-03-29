@@ -1,33 +1,15 @@
-import { Suspense } from 'react';
-import AdminDashboardPage from '../../../../components/denim/admin/AdminDashboardPage';
-import { KPICardSkeleton, ChartSkeleton, ListSkeleton } from '../../../../components/denim/Skeletons';
+import AdminDashboardPage from '@/components/denim/admin/AdminDashboardPage'
 
-export const metadata = { title: 'Admin Dashboard — Sinaran ERP' };
+export const dynamic = 'force-dynamic'
 
-export default function Page() {
-  return (
-    <Suspense fallback={
-      <div className="p-8 space-y-6">
-        {/* KPI Row Skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICardSkeleton />
-          <KPICardSkeleton />
-          <KPICardSkeleton />
-          <KPICardSkeleton />
-        </div>
-        {/* Charts Row Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ChartSkeleton />
-          <ChartSkeleton />
-        </div>
-        {/* Bottom Panels Row Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ListSkeleton items={5} />
-          <ListSkeleton items={3} />
-        </div>
-      </div>
-    }>
-      <AdminDashboardPage />
-    </Suspense>
-  );
+export default async function Page() {
+  let initialData = null
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/denim/admin/summary`,
+      { next: { revalidate: 30 }, headers: { 'x-internal': '1' } }
+    )
+    if (res.ok) initialData = await res.json()
+  } catch {}
+  return <AdminDashboardPage initialData={initialData} />
 }

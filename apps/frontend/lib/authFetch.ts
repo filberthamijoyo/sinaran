@@ -13,10 +13,16 @@ const getApiUrl = () => {
 
 export const apiBase = getApiUrl();
 
-export const authFetch = async (
+export interface ApiResponse<T = unknown> {
+  data?: T;
+  error?: string;
+  [key: string]: unknown;
+}
+
+export const authFetch = async <T = unknown>(
   path: string,
   options: RequestInit = {}
-): Promise<any> => {
+): Promise<T> => {
   const token = getToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -33,8 +39,8 @@ export const authFetch = async (
   }
 
   const text = await res.text();
-  if (!text) return null;
-  const data = JSON.parse(text);
+  if (!text) return null as T;
+  const data: ApiResponse<T> = JSON.parse(text);
   if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
-  return data;
+  return data as T;
 };

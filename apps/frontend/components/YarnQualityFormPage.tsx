@@ -5,21 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import './Production.css';
 import { API_ENDPOINTS, apiCall } from '../lib/api';
 import { parseLocalizedNumber } from '../lib/numberFormat';
+import { toYMD, toStr } from '../lib/utils';
 
 const API_BASE_URL = API_ENDPOINTS.quality;
-
-const pad2 = (n: any) => String(n).padStart(2, '0');
-const toYMD = (value: any) => {
-  if (!value) return '';
-  const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-};
-
-const toStr = (value: any) => {
-  if (value === null || value === undefined) return '';
-  return String(value);
-};
 
 type Column = {
   id: string;
@@ -366,7 +354,7 @@ const FIELD_GROUPS: Array<{ title: string; fields: string[] }> = [
 ];
 
 export default function YarnQualityFormPage() {
-  const params = useParams() as any;
+  const params = useParams() as { id?: string | string[] };
   const router = useRouter();
 
   const rawId = params?.id;
@@ -391,7 +379,7 @@ export default function YarnQualityFormPage() {
     slubCodes: [] as any[],
   });
 
-  const [formRow, setFormRow] = useState<any>(() => makeBlankRow());
+  const [formRow, setFormRow] = useState<ReturnType<typeof makeBlankRow>>(() => makeBlankRow());
 
   const loadDropdownsAndTests = async () => {
     try {
@@ -439,19 +427,20 @@ export default function YarnQualityFormPage() {
       setDropdownsLoaded(true);
 
       if (errors.length) {
-        setFormRow((prev: any) => ({
+        setFormRow((prev) => ({
           ...prev,
-          _status: 'error',
+          _status: 'error' as const,
           _error: `Failed to load some dropdowns. First error: ${errors[0]}`,
         }));
       }
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Error loading Quality dropdowns/tests:', err);
-      setFormRow((prev: any) => ({
+      const message = err instanceof Error ? err.message : 'Failed to load dropdown data';
+      setFormRow((prev) => ({
         ...prev,
-        _status: 'error',
-        _error: (err as any)?.message || 'Failed to load dropdown data',
+        _status: 'error' as const,
+        _error: message,
       }));
     } finally {
       setLoading(false);
@@ -471,13 +460,14 @@ export default function YarnQualityFormPage() {
       }
       try {
         setLoading(true);
-        const test = (await apiCall(`${API_BASE_URL}/yarn-tests/${id}`)) as any;
+        const test = (await apiCall(`${API_BASE_URL}/yarn-tests/${id}`)) as Record<string, unknown>;
         loadTestIntoForm(test);
-      } catch (err: any) {
-        setFormRow((prev: any) => ({
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load record';
+        setFormRow((prev) => ({
           ...prev,
           _status: 'error',
-          _error: err?.message || 'Failed to load record',
+          _error: message,
         }));
       } finally {
         setLoading(false);
@@ -559,9 +549,9 @@ export default function YarnQualityFormPage() {
     return parts.length >= 4 ? parts.join(' ') : '';
   };
 
-  const handleChange = (name: string, value: any) => {
-    setFormRow((prev: any) => {
-      let updated = { ...prev, [name]: value, _error: '' };
+  const handleChange = (name: string, value: string) => {
+    setFormRow((prev) => {
+      const updated = { ...prev, [name]: value, _error: '' };
       updated._status = prev._status === 'new' ? 'new' : 'dirty';
 
       if (name === 'countNeIdInput') {
@@ -576,32 +566,32 @@ export default function YarnQualityFormPage() {
         }
       }
 
-      updated = recalcDerivedFields(updated);
-      updated.countDescriptionCode = buildCountDescription(updated, dropdowns);
-      return updated;
+      const recalculated = recalcDerivedFields(updated);
+      recalculated.countDescriptionCode = buildCountDescription(recalculated, dropdowns);
+      return recalculated;
     });
   };
 
   const validateLookup = async (field: string) => {
     const row = formRow;
-    const setError = (msg: string) => setFormRow((prev: any) => ({ ...prev, _error: msg }));
+    const setError = (msg: string) => setFormRow((prev) => ({ ...prev, _error: msg }));
 
     if (field === 'lotInput') {
       const value = (row.lotInput || '').trim();
       if (!value) {
         setError('Lot is required');
-        setFormRow((prev: any) => ({ ...prev, lotId: '', blendId: '' }));
+        setFormRow((prev) => ({ ...prev, lotId: '', blendId: '' }));
         return;
       }
       try {
         const res = await fetch(`${API_BASE_URL}/lots/lookup/by-value/${encodeURIComponent(value)}`);
         if (!res.ok) {
           setError('Lot not found in database');
-          setFormRow((prev: any) => ({ ...prev, lotId: '', blendId: '' }));
+          setFormRow((prev) => ({ ...prev, lotId: '', blendId: '' }));
           return;
         }
         const lot = await res.json();
-        setFormRow((prev: any) => {
+        setFormRow((prev) => {
           const updated = {
             ...prev,
             lotId: String(lot.id),
@@ -622,18 +612,18 @@ export default function YarnQualityFormPage() {
     if (field === 'countNeIdInput') {
       const value = (row.countNeIdInput || '').trim();
       if (!value) {
-        setFormRow((prev: any) => ({ ...prev, countNeId: '', countNeIdInput: '' }));
+        setFormRow((prev) => ({ ...prev, countNeId: '', countNeIdInput: '' }));
         return;
       }
       const match = dropdowns.countNe.find(
-        (c: any) => String(c.value) === value || String(c.value) === value.replace(',', '.'),
+        (c) => String(c.value) === value || String(c.value) === value.replace(',', '.'),
       );
       if (!match) {
         setError('Count NE not found');
-        setFormRow((prev: any) => ({ ...prev, countNeId: '', countNeIdInput: value }));
+        setFormRow((prev) => ({ ...prev, countNeId: '', countNeIdInput: value }));
         return;
       }
-      setFormRow((prev: any) => {
+      setFormRow((prev) => {
         const updated = {
           ...prev,
           countNeId: String(match.id),
@@ -662,20 +652,21 @@ export default function YarnQualityFormPage() {
     const cfg = map[field];
     if (!cfg) return;
 
-    const value = (row[field] || '').trim();
+    const rowRecord = row as Record<string, unknown>;
+    const value = ((rowRecord[field] as string) || '').trim();
     if (!value) {
-      setFormRow((prev: any) => ({ ...prev, [cfg.idField]: '', [field]: '' }));
+      setFormRow((prev: ReturnType<typeof makeBlankRow>) => ({ ...prev, [cfg.idField]: '', [field]: '' }));
       return;
     }
 
-    const match = cfg.list.find((item: any) => item.name === value);
+    const match = cfg.list.find((item: { id: number; name: string }) => item.name === value);
     if (!match) {
       setError('Value not found in dropdown options');
       return;
     }
 
-    setFormRow((prev: any) => {
-      const updated = {
+    setFormRow((prev: ReturnType<typeof makeBlankRow>) => {
+      const updated: ReturnType<typeof makeBlankRow> = {
         ...prev,
         [cfg.idField]: String(match.id),
         [field]: match.name,
@@ -686,8 +677,8 @@ export default function YarnQualityFormPage() {
     });
   };
 
-  const buildSubmitPayload = (row: any) => {
-    const payload = { ...row };
+  const buildSubmitPayload = (row: ReturnType<typeof makeBlankRow>) => {
+    const payload = { ...row } as Record<string, unknown>;
     delete payload._localId;
     delete payload._status;
     delete payload._error;
@@ -712,12 +703,12 @@ export default function YarnQualityFormPage() {
     const row = formRow;
 
     if (row.countNeIdInput && !row.countNeId) {
-      setFormRow((prev: any) => ({ ...prev, _error: 'Count NE not found in dropdown options' }));
+      setFormRow((prev) => ({ ...prev, _error: 'Count NE not found in dropdown options' }));
       return;
     }
 
     setSaving(true);
-    setFormRow((prev: any) => ({ ...prev, _status: 'saving', _error: '' }));
+    setFormRow((prev) => ({ ...prev, _status: 'saving' as const, _error: '' }));
 
     try {
       const payload = buildSubmitPayload(row);
@@ -738,10 +729,11 @@ export default function YarnQualityFormPage() {
 
       await res.json().catch(() => null);
       router.push('/quality');
-    } catch (err: any) {
+    } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Error saving quality test:', err);
-      setFormRow((prev: any) => ({ ...prev, _status: 'error', _error: err?.message || 'Failed to save' }));
+      const message = err instanceof Error ? err.message : 'Failed to save';
+      setFormRow((prev) => ({ ...prev, _status: 'error', _error: message }));
     } finally {
       setSaving(false);
     }
@@ -765,8 +757,9 @@ export default function YarnQualityFormPage() {
       setSaving(true);
       await apiCall(`${API_BASE_URL}/yarn-tests/${id}`, { method: 'DELETE' });
       router.push('/quality');
-    } catch (err: any) {
-      setFormRow((prev: any) => ({ ...prev, _status: 'error', _error: err?.message || 'Failed to delete' }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete';
+      setFormRow((prev) => ({ ...prev, _status: 'error', _error: message }));
     } finally {
       setSaving(false);
     }
@@ -926,7 +919,8 @@ export default function YarnQualityFormPage() {
                   {group.fields.map((fieldId) => {
                     const col = colById.get(fieldId);
                     if (!col) return null;
-                    const value = formRow?.[col.id] ?? '';
+                    const formRowRecord = formRow as unknown as Record<string, unknown>;
+                    const value = (formRowRecord[col.id] as string) ?? '';
                     const isReadOnly = col.type === 'readonly';
 
                     const dropdownCfg = DROPDOWN_FIELD_CONFIG[col.id];
@@ -935,12 +929,12 @@ export default function YarnQualityFormPage() {
                     // UI style as the production module, while still keeping the
                     // `*Input` field in sync for display/derived values.
                     if (dropdownCfg) {
-                      const options = (dropdowns as any)[dropdownCfg.sourceKey] || [];
-                      const selectedId = formRow?.[dropdownCfg.idField] || '';
+                      const options = (dropdowns as Record<string, unknown>)[dropdownCfg.sourceKey] as Array<{ id: number; name?: string; code?: string; value?: string | number }> || [];
+                      const selectedId = (formRowRecord[dropdownCfg.idField] as string) || '';
 
-                      const getOptionLabel = (item: any) => {
+                      const getOptionLabel = (item: { value?: string | number; name?: string; code?: string }) => {
                         if (col.id === 'countNeIdInput') {
-                          return item.value ?? '';
+                          return String(item.value ?? '');
                         }
                         if (col.id === 'slubCodeInput') {
                           return item.name || item.code || '';
@@ -958,10 +952,10 @@ export default function YarnQualityFormPage() {
                             onChange={(e) => {
                               const newId = e.target.value;
                               const selected = options.find(
-                                (opt: any) => String(opt.id) === String(newId),
+                                (opt) => String(opt.id) === String(newId),
                               );
-                              setFormRow((prev: any) => {
-                                let updated: any = {
+                              setFormRow((prev) => {
+                                const updated: ReturnType<typeof makeBlankRow> = {
                                   ...prev,
                                   [dropdownCfg.idField]: newId,
                                   _error: '',
@@ -974,21 +968,21 @@ export default function YarnQualityFormPage() {
                                         ? String(selected.value)
                                         : '';
                                   } else {
-                                    updated[col.id] = getOptionLabel(selected);
+                                    (updated as Record<string, unknown>)[col.id] = getOptionLabel(selected);
                                   }
                                 } else {
-                                  updated[col.id] = '';
+                                  (updated as Record<string, unknown>)[col.id] = '';
                                 }
 
                                 updated._status = prev._status === 'new' ? 'new' : 'dirty';
-                                updated = recalcDerivedFields(updated);
-                                updated.countDescriptionCode = buildCountDescription(updated, dropdowns);
-                                return updated;
+                                const recalculated = recalcDerivedFields(updated);
+                                recalculated.countDescriptionCode = buildCountDescription(recalculated, dropdowns);
+                                return recalculated;
                               });
                             }}
                           >
                             <option value="">Select...</option>
-                            {options.map((item: any) => (
+                            {options.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {getOptionLabel(item)}
                               </option>

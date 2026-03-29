@@ -1,11 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-
-const InspectGrayDivisionPage = dynamic(
-  () => import('../../components/InspectGrayDivisionPage') as any,
-  { ssr: false },
-);
+import InspectGrayDivisionPage from '@/components/InspectGrayDivisionPage';
 
 export default function InspectGrayPage() {
   return <InspectGrayDivisionPage />;

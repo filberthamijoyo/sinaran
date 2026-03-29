@@ -83,47 +83,40 @@ export default function WeavingListPage() {
   };
 
   const getEfficiencyColor = (eff: number) => {
-    if (eff >= 80) return '#16A34A';
-    if (eff >= 70) return '#D97706';
-    return '#DC2626';
+    if (eff >= 80) return 'text-emerald-400';
+    if (eff >= 70) return 'text-amber-400';
+    return 'text-red-400';
   };
 
   const getEfficiencyBg = (eff: number) => {
-    if (eff >= 80) return 'rgba(22, 163, 74, 0.15)';
-    if (eff >= 70) return 'rgba(217, 119, 6, 0.15)';
-    return 'rgba(220, 38, 38, 0.15)';
+    if (eff >= 80) return 'bg-emerald-500/15';
+    if (eff >= 70) return 'bg-amber-500/15';
+    return 'bg-red-500/15';
   };
 
   return (
-    <div className="min-h-screen" style={{ background: '#E0E5EC' }}>
+    <div className="min-h-screen bg-[hsl(var(--background))]">
       {/* Header */}
-      <div className="px-8 py-4" style={{ background: '#E0E5EC', boxShadow: '0 2px 8px rgb(163 177 198 / 0.3)' }}>
-        <h1 className="text-xl font-semibold" style={{ color: '#3D4852' }}>Weaving Records</h1>
+      <div className="bg-[hsl(var(--card))] border-b border-[hsl(var(--border))] px-8 py-4">
+        <h1 className="text-xl font-semibold text-zinc-100">Weaving Records</h1>
       </div>
 
       <div className="p-8 space-y-6">
         {/* Search Bar */}
-        <div
-          style={{
-            background: '#E0E5EC',
-            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-            borderRadius: '24px',
-            padding: '16px',
-          }}
-        >
+        <div className="card-glow rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#9CA3AF' }} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
               type="text"
               placeholder="Search by KP..."
               value={searchKp}
               onChange={(e) => setSearchKp(e.target.value)}
-              style={{ background: '#E0E5EC', border: 'none', outline: 'none', borderRadius: '16px', boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)', padding: '10px 16px 10px 40px', color: '#3D4852', width: '100%', fontSize: '14px' }}
+              className="w-full pl-10 pr-10 py-2 bg-[hsl(var(--input))] border border-[hsl(var(--border))] rounded-lg text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500"
             />
             {searchKp && (
               <button
                 onClick={() => setSearchKp('')}
-                style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '18px', lineHeight: 1 }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
               >
                 ×
               </button>
@@ -132,34 +125,27 @@ export default function WeavingListPage() {
         </div>
 
         {/* Table */}
-        <div
-          style={{
-            background: '#E0E5EC',
-            boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-            borderRadius: '32px',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="card-glow rounded-xl bg-[hsl(var(--card))] border border-[hsl(var(--border))] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead style={{ background: '#E0E5EC' }}>
-                <tr style={{ background: '#E0E5EC' }}>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>KP</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>First Date</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Last Date</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Shifts</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Avg Efficiency</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Total Meters</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#9CA3AF' }}>Machines</th>
+              <thead>
+                <tr className="bg-[hsl(var(--muted))] text-xs font-medium text-zinc-500">
+                  <th className="text-left px-4 py-3">KP</th>
+                  <th className="text-left px-4 py-3">First Date</th>
+                  <th className="text-left px-4 py-3">Last Date</th>
+                  <th className="text-right px-4 py-3">Shifts</th>
+                  <th className="text-right px-4 py-3">Avg Efficiency</th>
+                  <th className="text-right px-4 py-3">Total Meters</th>
+                  <th className="text-right px-4 py-3">Machines</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[hsl(var(--border))]">
                 {loading ? (
                   <>
                     {[1, 2, 3].map((i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                      <tr key={i} className="hover:bg-[hsl(var(--muted))]">
                         <td colSpan={7} className="px-4 py-4">
-                          <div className="flex items-center justify-center gap-2" style={{ color: '#9CA3AF' }}>
+                          <div className="flex items-center justify-center gap-2 text-zinc-500">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             Loading...
                           </div>
@@ -169,8 +155,8 @@ export default function WeavingListPage() {
                   </>
                 ) : data.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center" style={{ color: '#9CA3AF' }}>
-                      {debouncedSearch
+                    <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
+                      {debouncedSearch 
                         ? `No weaving records found for '${debouncedSearch}'`
                         : 'No weaving records found'
                       }
@@ -178,25 +164,25 @@ export default function WeavingListPage() {
                   </tr>
                 ) : (
                   data.map((row) => (
-                    <tr key={row.kp} style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
+                    <tr key={row.kp} className="hover:bg-[hsl(var(--muted))]">
                       <td className="px-4 py-3">
                         <button
                           onClick={() => router.push(`/denim/admin/orders/${row.kp}`)}
-                          style={{ fontFamily: 'monospace', fontWeight: 600, color: '#6C63FF', background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px' }}
+                          className="font-mono text-indigo-400 hover:underline cursor-pointer"
                         >
                           {row.kp}
                         </button>
                       </td>
-                      <td className="px-4 py-3" style={{ color: '#6B7280' }}>{formatDate(row.first_date)}</td>
-                      <td className="px-4 py-3" style={{ color: '#6B7280' }}>{formatDate(row.last_date)}</td>
-                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.record_count}</td>
+                      <td className="px-4 py-3 text-zinc-400">{formatDate(row.first_date)}</td>
+                      <td className="px-4 py-3 text-zinc-400">{formatDate(row.last_date)}</td>
+                      <td className="px-4 py-3 text-right text-zinc-400">{row.record_count}</td>
                       <td className="px-4 py-3 text-right">
-                        <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '9999px', background: getEfficiencyBg(row.avg_efficiency), color: getEfficiencyColor(row.avg_efficiency), fontWeight: 600, fontSize: '13px' }}>
+                        <span className={`inline-block px-2 py-1 rounded ${getEfficiencyBg(row.avg_efficiency)} ${getEfficiencyColor(row.avg_efficiency)} font-medium`}>
                           {row.avg_efficiency.toFixed(1)}%
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{formatMeters(row.total_meters)}</td>
-                      <td className="px-4 py-3 text-right" style={{ color: '#6B7280' }}>{row.machine_count}</td>
+                      <td className="px-4 py-3 text-right text-zinc-400">{formatMeters(row.total_meters)}</td>
+                      <td className="px-4 py-3 text-right text-zinc-400">{row.machine_count}</td>
                     </tr>
                   ))
                 )}
@@ -211,19 +197,19 @@ export default function WeavingListPage() {
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              style={{ background: '#E0E5EC', border: 'none', borderRadius: '16px', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', padding: '8px', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
+              className="p-2 rounded-lg border border-[hsl(var(--border))] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[hsl(var(--accent))]"
             >
-              <ChevronLeft className="w-4 h-4" style={{ color: '#6B7280' }} />
+              <ChevronLeft className="w-4 h-4 text-zinc-400" />
             </button>
-            <span className="text-sm px-2" style={{ color: '#9CA3AF' }}>
+            <span className="text-sm text-zinc-500 px-2">
               Page {page} of {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              style={{ background: '#E0E5EC', border: 'none', borderRadius: '16px', boxShadow: '5px 5px 10px rgb(163 177 198 / 0.6), -5px -5px 10px rgba(255,255,255,0.5)', padding: '8px', cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.5 : 1 }}
+              className="p-2 rounded-lg border border-[hsl(var(--border))] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[hsl(var(--accent))]"
             >
-              <ChevronRight className="w-4 h-4" style={{ color: '#6B7280' }} />
+              <ChevronRight className="w-4 h-4 text-zinc-400" />
             </button>
           </div>
         )}

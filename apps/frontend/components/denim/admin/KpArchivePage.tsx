@@ -1,17 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { authFetch } from '../../../lib/authFetch';
-import PageHeader from '../../layout/PageHeader';
-import { Button } from '../../ui/button';
-import { Skeleton } from '../../ui/skeleton';
-import {
-  Table, TableBody, TableCell, TableHead,
-  TableHeader, TableRow,
-} from '../../ui/table';
-import { Archive, Search, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { PageShell } from '@/components/ui/erp/PageShell';
+import { Archive, Search } from 'lucide-react';
 import { format } from 'date-fns';
 
+/* ─────────────────────────────────────────────────────────
+   Types
+   ───────────────────────────────────────────────────────── */
 type ArchivedKP = {
   id: number;
   kp: string;
@@ -30,17 +27,36 @@ type ArchivedKP = {
   kp_status: string;
 };
 
+/* ─────────────────────────────────────────────────────────
+   Helpers
+   ───────────────────────────────────────────────────────── */
 const formatDate = (iso: string) => {
   try { return format(new Date(iso), 'd MMM yyyy'); }
   catch { return '—'; }
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  PO1: 'rgba(59, 130, 246, 0.15)',
-  RP:  'rgba(139, 92, 246, 0.15)',
-  SCN: ''
-};
+/* ─────────────────────────────────────────────────────────
+   Inline field label + value pair
+   ───────────────────────────────────────────────────────── */
+function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <span style={{
+        fontSize: 11, fontWeight: 500, textTransform: 'uppercase',
+        letterSpacing: '0.06em', color: '#9CA3AF',
+      }}>
+        {label}
+      </span>
+      <span style={{ fontSize: 14, fontWeight: 500, color: '#0F1E2E', lineHeight: 1.4 }}>
+        {value ?? '—'}
+      </span>
+    </div>
+  );
+}
 
+/* ─────────────────────────────────────────────────────────
+   Main component
+   ───────────────────────────────────────────────────────── */
 export default function KpArchivePage() {
   const [rows, setRows] = useState<ArchivedKP[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,221 +68,370 @@ export default function KpArchivePage() {
     try {
       const params = new URLSearchParams();
       if (search) params.set('q', search);
-      const res = await authFetch(`/denim/admin/kp-archive?${params}`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await authFetch<ArchivedKP[]>(`/denim/admin/kp-archive?${params}`);
+      if (Array.isArray(data)) {
         setRows(data);
+      } else {
+        setRows([]);
       }
     } catch (err) {
       console.error('Failed to fetch archive:', err);
+      setRows([]);
     } finally {
       setLoading(false);
     }
   }, [search]);
 
   useEffect(() => {
-    fetchArchived();
+    const timer = setTimeout(fetchArchived, 300);
+    return () => clearTimeout(timer);
   }, [fetchArchived]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
-
   const toggleExpand = (id: number) => {
-    setExpandedId(expandedId === id ? null : id);
+    setExpandedId(prev => prev === id ? null : id);
   };
 
-  // Calculate stats
-  const getWeavingStats = (record: ArchivedKP) => {
-    return { count: 0, avgEff: null };
-  };
-
-  const getWarpingStats = (record: ArchivedKP) => {
-    return { runs: 0, beams: 0 };
-  };
-
-  const getIndigoStats = (record: ArchivedKP) => {
-    return { runs: 0 };
-  };
-
-  return (
-    <div className="space-y-6">
-      <PageHeader
+  /* ── Loading skeletons ───────────────────────────── */
+  if (loading) {
+    return (
+      <PageShell
         title="KP Archive"
-        subtitle="Rejected contracts whose KP codes have been recycled"
-      />
-
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" style={{ color: '#9CA3AF' }} />
-          <input
-            type="text"
-            placeholder="Search by original KP code..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 h-10 rounded-[16px] text-sm"
-            style={{
-              background: '#E0E5EC',
-              color: '#3D4852',
-              boxShadow: 'inset 6px 6px 10px rgb(163 177 198 / 0.6), inset -6px -6px 10px rgba(255,255,255,0.5)',
-              border: 'none',
-            }}
-          />
+        subtitle="Archived and rejected contracts"
+        noPadding
+      >
+        <div style={{ padding: '24px 32px' }}>
+          {/* Search skeleton */}
+          <div style={{
+            height: 36, width: 240,
+            background: 'var(--border)', borderRadius: 8,
+            marginBottom: 16,
+          }} />
+          {/* Table skeleton */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            overflow: 'hidden',
+          }}>
+            {/* Header row */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '3px 1fr 1fr 1fr 80px 80px 100px 120px',
+              height: 40,
+              background: 'var(--content-bg)',
+              borderBottom: '1px solid var(--border)',
+              padding: '0 16px',
+              alignItems: 'center',
+            }}>
+              {[...Array(7)].map((_, i) => (
+                <div key={i} style={{
+                  height: 10, borderRadius: 4,
+                  background: 'var(--border)', opacity: 0.6,
+                }} />
+              ))}
+            </div>
+            {/* Data rows */}
+            {[...Array(5)].map((_, r) => (
+              <div key={r} style={{
+                display: 'grid',
+                gridTemplateColumns: '3px 1fr 1fr 1fr 80px 80px 100px 120px',
+                height: 44,
+                borderBottom: '1px solid #F3F4F6',
+                padding: '0 16px',
+                alignItems: 'center',
+                background: '#FFFFFF',
+              }}>
+                <div />
+                {[...Array(7)].map((_, c) => (
+                  <div key={c} style={{
+                    height: 10, borderRadius: 4,
+                    background: 'var(--border)', opacity: 0.4,
+                  }} />
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
-        <Button type="submit" variant="default">
-          Search
-        </Button>
-      </form>
+      </PageShell>
+    );
+  }
 
-      {/* Table */}
-      <div style={{
-        background: '#E0E5EC',
-        borderRadius: '32px',
-        overflow: 'hidden',
-        boxShadow: '9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgba(255,255,255,0.5)',
-      }}>
-        <Table>
-          <TableHeader>
-            <TableRow style={{ background: '#E0E5EC', borderBottom: '1px solid rgb(163 177 198 / 0.3)' }}>
-              <TableHead className="w-12"></TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Original KP</TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Date</TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Construction</TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Type</TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Status</TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Shifts</TableHead>
-              <TableHead className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#9CA3AF' }}>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 8 }).map((_, j) => (
-                    <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center py-12" style={{ color: '#9CA3AF' }}>
-                  {search ? (
-                    <>No archived KPs matching '{search}'</>
-                  ) : (
-                    <>
-                      <Archive className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No archived KPs yet</p>
-                      <p className="text-sm">Rejected contracts will appear here with their original KP codes</p>
-                    </>
-                  )}
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row) => (
-                <>
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      <button
-                        onClick={() => toggleExpand(row.id)}
-                        className="p-1 rounded-[8px]" style={{ background: 'transparent' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgb(163 177 198 / 0.3)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        {expandedId === row.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </button>
-                    </TableCell>
-                    <TableCell className="font-mono font-semibold text-sm" style={{ color: '#6C63FF' }}>{row.original_kp}</TableCell>
-                    <TableCell>{formatDate(row.tgl)}</TableCell>
-                    <TableCell>{row.codename || '—'}</TableCell>
-                    <TableCell>
-                      {row.status && (
-                        <span className={`inline-flex px-2 py-0.5 rounded-[9999px] text-xs font-medium ${TYPE_COLORS[row.status] || ''}`} style={TYPE_COLORS[row.status] ? {} : { background: '#E0E5EC', color: '#6B7280', boxShadow: '3px 3px 6px rgb(163 177 198 / 0.6), -3px -3px 6px rgba(255,255,255,0.5)' }}>
-                          {row.status}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '9999px', fontSize: '12px', fontWeight: 600, background: 'rgba(220, 38, 38, 0.15)', color: '#DC2626' }}>
-                        REJECTED
-                      </span>
-                    </TableCell>
-                    <TableCell>—</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleExpand(row.id)}
-                      >
-                        View Details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  {expandedId === row.id && (
-                    <TableRow key={`${row.id}-detail`}>
-                      <TableCell colSpan={8} className="p-4" style={{ background: '#E0E5EC' }}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Sales Contract Details */}
-                          <div className="space-y-3">
-                            <h4 className="font-semibold text-sm" style={{ color: '#3D4852' }}>Sales Contract Details</h4>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div><span style={{ color: '#6B7280' }}>KP:</span> <span className="font-mono font-semibold" style={{ color: '#D97706' }}>{row.original_kp}</span></div>
-                              <div><span style={{ color: '#6B7280' }}>Date:</span> {formatDate(row.tgl)}</div>
-                              <div><span style={{ color: '#6B7280' }}>Construction:</span> {row.codename || '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>Type:</span> {row.status || '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>Width:</span> {row.lebar ? `${row.lebar} cm` : '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>TE:</span> {row.te || '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>QR:</span> {row.qr || '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>PCS:</span> {row.pcs || '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>Color:</span> {row.ket_warna || '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>Category:</span> {row.kat_kode || '—'}</div>
-                              <div><span style={{ color: '#6B7280' }}>ACC:</span> {row.acc || '—'}</div>
-                            </div>
-                          </div>
+  /* ── Empty state ────────────────────────────────── */
+  if (!loading && rows.length === 0) {
+    return (
+      <PageShell
+        title="KP Archive"
+        subtitle="Archived and rejected contracts"
+        noPadding
+      >
+        <div style={{ padding: '24px 32px' }}>
+          {/* Search bar */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <div style={{ position: 'relative', flex: '0 1 280px' }}>
+              <Search size={14} style={{
+                position: 'absolute', left: 10, top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)', pointerEvents: 'none',
+              }} />
+              <input
+                type="text"
+                placeholder="Search by KP code..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  paddingLeft: 32,
+                  paddingRight: 12,
+                  height: 36,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: '#FFFFFF',
+                  color: 'var(--text-primary)',
+                  fontSize: 13,
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                }}
+                onFocus={e => {
+                  e.currentTarget.style.borderColor = 'var(--primary)';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(74,122,155,0.15)';
+                }}
+                onBlur={e => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+          </div>
+          {/* Empty card */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            padding: '64px 32px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <Archive size={32} style={{ color: 'var(--border)', marginBottom: 8 }} />
+            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>
+              No archived contracts
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              {search ? `No results for "${search}"` : 'Rejected contracts will appear here'}
+            </p>
+          </div>
+        </div>
+      </PageShell>
+    );
+  }
 
-                          {/* Production Stats */}
-                          <div className="space-y-3">
-                            <h4 className="font-semibold text-sm" style={{ color: '#3D4852' }}>Production Summary</h4>
-                            <div className="grid grid-cols-3 gap-4">
-                              <div className="rounded-[16px] p-3 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}>
-                                <div className="text-2xl font-bold" style={{ color: '#6C63FF' }}>{getWarpingStats(row).runs}</div>
-                                <div className="text-xs" style={{ color: '#6B7280' }}>Warping Runs</div>
-                                <div className="text-xs" style={{ color: '#9CA3AF' }}>{getWarpingStats(row).beams} beams</div>
-                              </div>
-                              <div className="rounded-[16px] p-3 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}>
-                                <div className="text-2xl font-bold" style={{ color: '#6C63FF' }}>{getIndigoStats(row).runs}</div>
-                                <div className="text-xs" style={{ color: '#6B7280' }}>Indigo Runs</div>
-                              </div>
-                              <div className="rounded-[16px] p-3 text-center" style={{ background: '#E0E5EC', boxShadow: 'inset 3px 3px 6px rgb(163 177 198 / 0.6), inset -3px -3px 6px rgba(255,255,255,0.5)' }}>
-                                <div className="text-2xl font-bold" style={{ color: '#D97706' }}>{getWeavingStats(row).count}</div>
-                                <div className="text-xs" style={{ color: '#6B7280' }}>Weaving Shifts</div>
-                                {getWeavingStats(row).avgEff && (
-                                  <div className="text-xs" style={{ color: '#9CA3AF' }}>{getWeavingStats(row).avgEff}% eff</div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setExpandedId(null)}
-                          className="mt-4 flex items-center gap-1 text-sm"
-                          style={{ color: '#6B7280' }}
-                        >
-                          <X className="h-4 w-4" /> Close
-                        </button>
-                      </TableCell>
-                    </TableRow>
+  /* ── Main render ─────────────────────────────────── */
+  return (
+    <PageShell
+      title="KP Archive"
+      subtitle="Archived and rejected contracts"
+      noPadding
+    >
+      <div style={{ padding: '24px 32px' }}>
+
+        {/* Search bar */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <div style={{ position: 'relative', flex: '0 1 280px' }}>
+            <Search size={14} style={{
+              position: 'absolute', left: 10, top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-muted)', pointerEvents: 'none',
+            }} />
+            <input
+              type="text"
+              placeholder="Search by KP code..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: '100%',
+                paddingLeft: 32,
+                paddingRight: 12,
+                height: 36,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: '#FFFFFF',
+                color: 'var(--text-primary)',
+                fontSize: 13,
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
+              onFocus={e => {
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(74,122,155,0.15)';
+              }}
+              onBlur={e => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Table */}
+        <div style={{
+          background: '#FFFFFF',
+          border: '1px solid var(--border)',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}>
+          {/* Table header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '3px 1fr 1fr 1fr 80px 80px 100px 120px',
+            height: 40,
+            background: 'var(--content-bg)',
+            borderBottom: '1px solid var(--border)',
+            alignItems: 'center',
+          }}>
+            <div />
+            {['Date', 'Original KP', 'Construction', 'Type', 'Width', 'TE', 'ACC', 'Status'].map(col => (
+              <div key={col} style={{
+                padding: '0 16px',
+                fontSize: 11, fontWeight: 500,
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                color: 'var(--text-muted)',
+              }}>
+                {col}
+              </div>
+            ))}
+          </div>
+
+          {/* Table rows */}
+          {rows.map(row => (
+            <React.Fragment key={row.id}>
+              {/* Data row */}
+              <div
+                onClick={() => toggleExpand(row.id)}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '3px 1fr 1fr 1fr 80px 80px 100px 120px',
+                  height: 44,
+                  borderBottom: '1px solid #F3F4F6',
+                  background: expandedId === row.id ? '#F9FAFB' : '#FFFFFF',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'background 120ms',
+                }}
+                onMouseEnter={e => { if (expandedId !== row.id) e.currentTarget.style.background = '#F9FAFB'; }}
+                onMouseLeave={e => { if (expandedId !== row.id) e.currentTarget.style.background = '#FFFFFF'; }}
+              >
+                <div />
+                <div style={{ padding: '0 16px', fontSize: 13, color: '#6B7280' }}>
+                  {formatDate(row.tgl)}
+                </div>
+                <div style={{ padding: '0 16px' }}>
+                  <span style={{
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontWeight: 600,
+                    color: '#1D4ED8',
+                    fontSize: 13,
+                  }}>
+                    {row.original_kp}
+                  </span>
+                </div>
+                <div style={{ padding: '0 16px', fontSize: 13, color: '#0F1E2E' }}>
+                  {row.codename || '—'}
+                </div>
+                <div style={{ padding: '0 16px' }}>
+                  {row.kat_kode && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center',
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      fontSize: 11, fontWeight: 600,
+                      background: '#F9FAFB',
+                      color: '#6B7280',
+                      border: '1px solid #E5E7EB',
+                    }}>
+                      {row.kat_kode}
+                    </span>
                   )}
-                </>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                </div>
+                <div style={{ padding: '0 16px', fontSize: 13, color: '#6B7280' }}>
+                  {row.lebar ? `${row.lebar} cm` : '—'}
+                </div>
+                <div style={{ padding: '0 16px', fontSize: 13, color: '#6B7280' }}>
+                  {row.te != null ? row.te.toLocaleString() : '—'}
+                </div>
+                <div style={{ padding: '0 16px', fontSize: 13, color: '#6B7280' }}>
+                  {row.acc || '—'}
+                </div>
+                <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    fontSize: 11, fontWeight: 700,
+                    background: 'var(--danger-bg)',
+                    color: 'var(--danger-text)',
+                    border: '1px solid var(--danger-border)',
+                    letterSpacing: '0.03em',
+                  }}>
+                    REJECTED
+                  </span>
+                  <button
+                    onClick={e => { e.stopPropagation(); toggleExpand(row.id); }}
+                    style={{
+                      background: 'none', border: 'none',
+                      cursor: 'pointer', padding: '2px 4px',
+                      fontSize: 12, fontWeight: 500,
+                      color: '#6B7280',
+                      fontFamily: 'inherit',
+                      borderRadius: 4,
+                      transition: 'background 120ms',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F3F4F6'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
+                  >
+                    {expandedId === row.id ? 'Hide' : 'View Details'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded detail row */}
+              {expandedId === row.id && (
+                <div style={{
+                  padding: '16px 24px',
+                  background: '#F9FAFB',
+                  borderTop: '1px solid #E5E7EB',
+                  borderBottom: '1px solid #E5E7EB',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 16,
+                }}>
+                  <DetailField label="KP" value={
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: '#1D4ED8', fontSize: 13 }}>
+                      {row.original_kp}
+                    </span>
+                  } />
+                  <DetailField label="Date" value={formatDate(row.tgl)} />
+                  <DetailField label="Construction" value={row.codename || '—'} />
+                  <DetailField label="Type" value={row.status || '—'} />
+                  <DetailField label="Width" value={row.lebar ? `${row.lebar} cm` : '—'} />
+                  <DetailField label="TE" value={row.te != null ? row.te.toLocaleString() : '—'} />
+                  <DetailField label="QR" value={row.qr || '—'} />
+                  <DetailField label="PCS" value={row.pcs || '—'} />
+                  <DetailField label="Color" value={row.ket_warna || '—'} />
+                  <DetailField label="Category" value={row.kat_kode || '—'} />
+                  <DetailField label="ACC" value={row.acc || '—'} />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
-    </div>
+
+      <style>{`
+        @media (max-width: 767px) {
+          .kp-archive-content { padding: 16px !important; }
+        }
+      `}</style>
+    </PageShell>
   );
 }

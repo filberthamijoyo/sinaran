@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import './Production.css';
 import { API_ENDPOINTS, apiCall } from '../lib/api';
+import { displayValue, toYMD } from '../lib/utils';
 
 const API_BASE_URL = API_ENDPOINTS.quality;
 
@@ -21,18 +22,32 @@ const currentYM = () => {
 
 const currentYear = () => new Date().getFullYear().toString();
 
-const displayValue = (value: any) => {
-  if (value === null || value === undefined || value === '') return '-';
-  return value;
-};
+interface YarnTestRecord {
+  id: string | number;
+  testDate?: string | null;
+  lot?: { name?: string | null } | null;
+  spk?: { name?: string | null } | null;
+  countDescriptionCode?: number | null;
+  countDescription?: { code?: number | null };
+  machineNo?: number | null;
+  meanNe?: number | null;
+  meanStrengthCn?: number | null;
+  uPercent?: number | null;
+  ipis?: number | null;
+  oeIpi?: number | null;
+  clsp?: number | null;
+  tenacityCnTex?: number | null;
+  remarks?: string | null;
+}
 
-const toYMD = (value: any) => {
-  if (!value) return '';
-  const d = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad2 = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-};
+interface YarnTestResponse {
+  tests?: YarnTestRecord[];
+  pagination?: { page: number; limit: number; total: number; totalPages: number };
+  summary?: {
+    total?: number;
+    byCountDescription?: Array<{ code: number | null; description: string | null; count: number | null }>;
+  } | null;
+}
 
 const getDefaultFilters = () => ({
   period: 'range',
@@ -49,7 +64,7 @@ const getDefaultFilters = () => ({
 
 export default function YarnQualityListPage() {
   const router = useRouter();
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<YarnTestRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: string; message: string }>({ type: '', message: '' });
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
@@ -57,7 +72,7 @@ export default function YarnQualityListPage() {
   const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const [filters, setFilters] = useState(getDefaultFilters);
-  const [summary, setSummary] = useState<any>(null);
+  const [summary, setSummary] = useState<YarnTestResponse['summary']>(null);
 
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
@@ -96,12 +111,12 @@ export default function YarnQualityListPage() {
     try {
       setLoading(true);
       setFeedback({ type: '', message: '' });
-      const data = (await apiCall(`${API_BASE_URL}/yarn-tests?${queryParams}`)) as any;
-      setRows(data?.tests || []);
-      setPagination(data?.pagination || pagination);
-      setSummary(data?.summary || null);
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err?.message || 'Failed to fetch tests' });
+      const data = await apiCall(`${API_BASE_URL}/yarn-tests?${queryParams}`) as YarnTestResponse | null;
+      setRows(data && typeof data === 'object' ? (data as YarnTestResponse).tests || [] : []);
+      setPagination(data && typeof data === 'object' ? (data as YarnTestResponse).pagination || pagination : pagination);
+      setSummary(data && typeof data === 'object' ? (data as YarnTestResponse).summary || null : null);
+    } catch {
+      setFeedback({ type: 'error', message: 'Failed to fetch tests' });
     } finally {
       setLoading(false);
     }
@@ -145,15 +160,15 @@ export default function YarnQualityListPage() {
     setFeedback({ type: '', message: '' });
   };
 
-  const handleSelectRow = (row: any) => {
+  const handleSelectRow = (row: YarnTestRecord) => {
     router.push(`/quality/edit/${row.id}`);
   };
 
-  const handleEditRow = (row: any) => {
+  const handleEditRow = (row: YarnTestRecord) => {
     router.push(`/quality/edit/${row.id}`);
   };
 
-  const handleDelete = async (id: any) => {
+  const handleDelete = async (id: string | number) => {
     // eslint-disable-next-line no-alert
     const ok = window.confirm('Delete this yarn test? This action cannot be undone.');
     if (!ok) return;
@@ -162,8 +177,8 @@ export default function YarnQualityListPage() {
       await apiCall(`${API_BASE_URL}/yarn-tests/${id}`, { method: 'DELETE' });
       setFeedback({ type: 'success', message: 'Deleted successfully.' });
       await fetchTests();
-    } catch (err: any) {
-      setFeedback({ type: 'error', message: err?.message || 'Failed to delete' });
+    } catch {
+      setFeedback({ type: 'error', message: 'Failed to delete' });
     } finally {
       setLoading(false);
     }
@@ -442,7 +457,7 @@ export default function YarnQualityListPage() {
                         </td>
                       </tr>
                     ) : (
-                      (summary.byCountDescription || []).slice(0, 30).map((r: any) => (
+                      (summary.byCountDescription || []).slice(0, 30).map((r) => (
                         <tr key={`${r.code}-${r.description}`}>
                           <td>{displayValue(r.code)}</td>
                           <td>{displayValue(r.description)}</td>
