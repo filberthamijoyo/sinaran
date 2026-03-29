@@ -290,7 +290,7 @@ function EfficiencyByMachineChart() {
         <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickFormatter={v => `${v}%`} />
         <YAxis dataKey="machine" type="category" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} width={50} />
         <Tooltip contentStyle={TOOLTIP_DARK_STYLE} formatter={(v: unknown) => [`${Number(v).toFixed(1)}%`, 'Efficiency']} />
-        <Bar dataKey="avg_efficiency" radius={[0, 3, 3, 0]}>
+        <Bar dataKey="avg_efficiency" fill="#1D4ED8" radius={[0, 3, 3, 0]}>
           {data.map((entry, i) => (
             <Cell key={i} fill={getBarColor(entry.avg_efficiency)} />
           ))}
@@ -778,7 +778,7 @@ function KPComparisonTab() {
           onBlur={() => { setTimeout(() => setShowDropdown(false), 150); }}
           style={{
             width:        '100%',
-            height:       40,
+            height:       38,
             borderRadius: 8,
             border:      '1px solid #E5E7EB',
             background:  '#FFFFFF',
@@ -905,7 +905,7 @@ function KPComparisonTab() {
               <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
                 <th style={{
                   width: 160, padding: '0 12px', height: 36,
-                  fontSize: 11, fontWeight: 500, color: '#6B7280',
+                  fontSize: 11, fontWeight: 500, color: '#9CA3AF',
                   textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'left',
                   position: 'sticky', left: 0, background: '#F9FAFB', zIndex: 2,
                 }}>

@@ -4,11 +4,8 @@ import { Sidebar, useSidebar } from '@/components/layout/sidebar';
 import RequireAuth from '@/components/RequireAuth';
 import { Toaster } from 'sonner';
 
-const SIDEBAR_EXPANDED = 220;
-const SIDEBAR_COLLAPSED = 56;
-
 export default function DenimLayout({ children }: { children: React.ReactNode }) {
-  const { isOpen: sidebarOpen, close: closeSidebar, collapsed } = useSidebar();
+  const { isOpen: sidebarOpen, close: closeSidebar } = useSidebar();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -22,8 +19,6 @@ export default function DenimLayout({ children }: { children: React.ReactNode })
     document.body.style.overflow = sidebarOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
-
-  const marginLeft = isMobile ? 0 : collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
 
   return (
     <RequireAuth>
@@ -46,7 +41,7 @@ export default function DenimLayout({ children }: { children: React.ReactNode })
         {/* Main content */}
         <main
           style={{
-            marginLeft,
+            marginLeft: isMobile ? 0 : 'var(--sidebar-w, 256px)',
             flex: 1,
             minWidth: 0,
             minHeight: '100vh',
@@ -54,6 +49,7 @@ export default function DenimLayout({ children }: { children: React.ReactNode })
             flexDirection: 'column',
             overflowY: 'auto',
             backgroundColor: '#F0F4F8',
+            transition: 'margin-left 200ms ease',
           }}
         >
           {/* Page content — PageShell owns the sticky header */}

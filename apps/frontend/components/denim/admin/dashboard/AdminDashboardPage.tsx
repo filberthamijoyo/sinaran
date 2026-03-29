@@ -175,17 +175,17 @@ function HeroCard({
 
   return (
     <div style={{
-      backgroundColor:     '#0D1B3E',
-      backgroundImage:     "url('/denim_bg.jpg')",
-      backgroundSize:      'cover',
-      backgroundBlendMode: 'multiply',
-      border:              '1px solid rgba(255,255,255,0.08)',
-      borderRadius:        12,
-      padding:             '28px 32px',
-      display:             'flex',
-      flexDirection:       'column',
-      justifyContent:      'space-between',
-      minHeight:           200,
+      backgroundColor:      '#0D1B3E',
+      backgroundImage:      "url('/denim_bg.jpg')",
+      backgroundSize:       'cover',
+      backgroundBlendMode:  'multiply',
+      borderRadius:         12,
+      padding:              '28px 32px',
+      border:               '1px solid rgba(255,255,255,0.08)',
+      display:              'flex',
+      flexDirection:        'column',
+      justifyContent:       'space-between',
+      minHeight:            220,
     }}>
       <p style={{
         fontSize:      10,
@@ -209,7 +209,7 @@ function HeroCard({
           </div>
         ) : (
           <p style={{
-            fontSize:      56,
+            fontSize:      64,
             fontWeight:    800,
             color:         '#FFFFFF',
             fontFamily:    "'IBM Plex Mono', monospace",
@@ -230,7 +230,6 @@ function HeroCard({
       </div>
 
       <div>
-        {/* Period toggle */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>
           {PERIODS.map(p => (
             <button
@@ -314,7 +313,7 @@ function HeroCard({
   );
 }
 
-// ─── KPI Card: In Progress ───────────────────────────────────────
+// ─── KPI Card: Active Pipeline ─────────────────────────────────────
 function KpiCardInProgress({ count, loading }: { count: number; loading: boolean }) {
   return (
     <div style={{
@@ -332,7 +331,7 @@ function KpiCardInProgress({ count, loading }: { count: number; loading: boolean
         margin:        0,
         marginBottom:  10,
       }}>
-        In Progress
+        Active Pipeline
       </p>
       {loading ? (
         <div style={{ width: 100, height: 36, background: '#F3F4F6', borderRadius: 4 }} />
@@ -348,8 +347,8 @@ function KpiCardInProgress({ count, loading }: { count: number; loading: boolean
           {count}
         </p>
       )}
-      <p style={{ fontSize: 13, color: '#6B7280', margin: '8px 0 0 0' }}>
-        currently in pipeline
+      <p style={{ fontSize: 13, color: '#9CA3AF', margin: '8px 0 0 0' }}>
+        orders in pipeline
       </p>
     </div>
   );
@@ -476,14 +475,9 @@ function WeavingEfficiencyCard({ weeklyEfficiency }: { weeklyEfficiency: WeeklyE
       display:        'flex',
       flexDirection:  'column',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E', margin: 0 }}>
-          Weaving Efficiency
-        </p>
-        <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>
-          weekly avg
-        </p>
-      </div>
+      <p style={{ fontSize: 14, fontWeight: 600, color: '#0F1E2E', margin: '0 0 16px 0' }}>
+        Weaving Efficiency
+      </p>
 
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, marginBottom: 16 }}>
         <span style={{
@@ -496,7 +490,7 @@ function WeavingEfficiencyCard({ weeklyEfficiency }: { weeklyEfficiency: WeeklyE
           {currentAvg != null ? `${currentAvg.toFixed(1)}%` : '—'}
         </span>
         <span style={{ fontSize: 12, color: '#6B7280', paddingBottom: 4 }}>
-          current week
+          weekly avg
         </span>
       </div>
 
@@ -652,11 +646,11 @@ function RecentActivityCard({ recentActivity }: { recentActivity: RecentActivity
             }}
           >
             <span style={{
-              width:        8,
-              height:       8,
-              borderRadius: '50%',
-              backgroundColor: STAGE_COLORS[item.pipeline_status] ?? '#9CA3AF',
-              flexShrink:   0,
+              width:             8,
+              height:            8,
+              borderRadius:      '50%',
+              backgroundColor:   STAGE_COLORS[item.pipeline_status] ?? '#9CA3AF',
+              flexShrink:        0,
             }} />
             <span style={{
               fontFamily:  "'IBM Plex Mono', monospace",
@@ -681,13 +675,13 @@ function RecentActivityCard({ recentActivity }: { recentActivity: RecentActivity
 
 // ─── Main page ──────────────────────────────────────────────────
 export default function AdminDashboardPage() {
-  const [summary,          setSummary]           = useState<AdminSummary | null>(null);
-  const [throughputDay,   setThroughputDay]      = useState<ThroughputData | null>(null);
-  const [summaryLoading,  setSummaryLoading]     = useState(true);
-  const [summaryError,    setSummaryError]       = useState<string | null>(null);
-  const [throughputLoading, setThroughputLoading] = useState(true);
-  const [throughputError,   setThroughputError]   = useState<string | null>(null);
-  const [period,          setPeriod]             = useState<Period>('day');
+  const [summary,            setSummary]           = useState<AdminSummary | null>(null);
+  const [throughputDay,      setThroughputDay]     = useState<ThroughputData | null>(null);
+  const [summaryLoading,     setSummaryLoading]     = useState(true);
+  const [summaryError,       setSummaryError]       = useState<string | null>(null);
+  const [throughputLoading,  setThroughputLoading]  = useState(true);
+  const [throughputError,    setThroughputError]    = useState<string | null>(null);
+  const [period,             setPeriod]             = useState<Period>('day');
 
   const fetchSummary = useCallback(async () => {
     setSummaryLoading(true);
@@ -719,18 +713,18 @@ export default function AdminDashboardPage() {
   useEffect(() => { fetchThroughputDay(); }, [fetchThroughputDay]);
 
   const todayStats     = throughputDay?.data ? todayCounts(throughputDay.data) : [];
-  const contractsToday  = todayStats.find(s => s.label === 'Contracts Today')?.count ?? 0;
-  const warpingToday    = todayStats.find(s => s.label === 'Warping Today')?.count ?? 0;
-  const bbsfToday        = todayStats.find(s => s.label === 'BBSF Today')?.count ?? 0;
-  const completedToday   = todayStats.find(s => s.label === 'Completed Today')?.count ?? 0;
+  const contractsToday = todayStats.find(s => s.label === 'Contracts Today')?.count ?? 0;
+  const warpingToday   = todayStats.find(s => s.label === 'Warping Today')?.count ?? 0;
+  const bbsfToday      = todayStats.find(s => s.label === 'BBSF Today')?.count ?? 0;
+  const completedToday = todayStats.find(s => s.label === 'Completed Today')?.count ?? 0;
 
-  const stageCounts      = summary?.stageCounts ?? {};
-  const recentActivity   = summary?.recentActivity ?? [];
-  const staleOrders       = summary?.staleOrders ?? [];
-  const weeklyEfficiency  = summary?.weeklyEfficiency ?? [];
-  const total             = summary?.total ?? 0;
-  const inProgress        = summary?.inProgress ?? 0;
-  const blockedCount      = summary?.blockedCount ?? 0;
+  const stageCounts     = summary?.stageCounts ?? {};
+  const recentActivity  = summary?.recentActivity ?? [];
+  const staleOrders     = summary?.staleOrders ?? [];
+  const weeklyEfficiency = summary?.weeklyEfficiency ?? [];
+  const total           = summary?.total ?? 0;
+  const inProgress      = summary?.inProgress ?? 0;
+  const blockedCount    = summary?.blockedCount ?? 0;
 
   return (
     <PageShell
@@ -740,23 +734,20 @@ export default function AdminDashboardPage() {
     >
       <div
         style={{
-          backgroundColor: '#F0F4F8',
           padding:         '24px 28px',
           display:         'flex',
           flexDirection:   'column',
-          gap:              16,
-          maxWidth:         '100%',
-          width:            '100%',
-          boxSizing:        'border-box',
+          gap:             16,
+          boxSizing:       'border-box',
         }}
       >
-        {/* ── Row 1: Hero + KPI cluster ───────────────────────── */}
+        { /* ── Row 1: Hero + KPI cluster ───────────────────────── */ }
         <div
           style={{
             display:           'grid',
             gridTemplateColumns: '2fr 1fr',
             gap:               16,
-            minHeight:         200,
+            minHeight:         220,
           }}
         >
           <HeroCard
@@ -770,12 +761,12 @@ export default function AdminDashboardPage() {
             onRetryThroughput={fetchThroughputDay}
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <KpiCardInProgress count={inProgress} loading={summaryLoading} />
-            <KpiCardAttention count={blockedCount} loading={summaryLoading} />
+            <KpiCardInProgress count={inProgress}  loading={summaryLoading} />
+            <KpiCardAttention  count={blockedCount} loading={summaryLoading} />
           </div>
         </div>
 
-        {/* ── Row 2: 4 stat cards ────────────────────────────── */}
+        { /* ── Row 2: 4 stat cards ────────────────────────────── */ }
         <div
           style={{
             display:           'grid',
@@ -784,32 +775,32 @@ export default function AdminDashboardPage() {
           }}
         >
           <StatCardRow
-            label="Contracts Today"
-            value={throughputLoading ? '' : contractsToday}
-            sublabel="new orders"
-            loading={throughputLoading}
+            label="Pending Approval"
+            value={summaryLoading ? '' : (stageCounts['PENDING_APPROVAL'] ?? 0)}
+            sublabel="awaiting factory"
+            loading={summaryLoading}
           />
           <StatCardRow
-            label="Warping Today"
-            value={throughputLoading ? '' : warpingToday}
-            sublabel="units entered"
-            loading={throughputLoading}
+            label="In Warping"
+            value={summaryLoading ? '' : (stageCounts['WARPING'] ?? 0)}
+            sublabel="at warping station"
+            loading={summaryLoading}
           />
           <StatCardRow
-            label="BBSF Today"
-            value={throughputLoading ? '' : bbsfToday}
-            sublabel="units processed"
-            loading={throughputLoading}
+            label="In Finishing"
+            value={summaryLoading ? '' : ((stageCounts['BBSF'] ?? 0) + (stageCounts['INSPECT_FINISH'] ?? 0))}
+            sublabel="at finishing station"
+            loading={summaryLoading}
           />
           <StatCardRow
-            label="Completed Today"
-            value={throughputLoading ? '' : completedToday}
-            sublabel="orders finished"
-            loading={throughputLoading}
+            label="Completed"
+            value={summaryLoading ? '' : (stageCounts['COMPLETE'] ?? 0)}
+            sublabel="orders completed"
+            loading={summaryLoading}
           />
         </div>
 
-        {/* ── Row 3: Weaving Efficiency + Active Pipeline ───── */}
+        { /* ── Row 3: Weaving Efficiency + Active Pipeline ───── */ }
         <div
           style={{
             display:           'grid',
@@ -822,7 +813,7 @@ export default function AdminDashboardPage() {
           <PipelineStagesCard stageCounts={stageCounts} />
         </div>
 
-        {/* ── Row 4: Stale Orders + Recent Activity ──────────── */}
+        { /* ── Row 4: Stale Orders + Recent Activity ──────────── */ }
         <div
           style={{
             display:           'grid',
@@ -830,20 +821,10 @@ export default function AdminDashboardPage() {
             gap:               16,
           }}
         >
-          <StaleOrdersCard staleOrders={staleOrders} />
+          <StaleOrdersCard    staleOrders={staleOrders} />
           <RecentActivityCard recentActivity={recentActivity} />
         </div>
       </div>
-
-      {/* ── Responsive ──────────────────────────────────────── */}
-      <style>{`
-        @media (max-width: 1023px) {
-          .admin-dashboard-grid > div,
-          .admin-dashboard-grid .row {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </PageShell>
   );
 }

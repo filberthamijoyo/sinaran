@@ -397,13 +397,13 @@ export default function KpArchivePage() {
               {/* Expanded detail row */}
               {expandedId === row.id && (
                 <div style={{
-                  padding: '16px 24px',
-                  background: '#F9FAFB',
-                  borderTop: '1px solid #E5E7EB',
-                  borderBottom: '1px solid #E5E7EB',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: 16,
+                  padding:         '16px 24px',
+                  backgroundColor: '#F9FAFB',
+                  borderTop:      '1px solid #E5E7EB',
+                  borderBottom:   '1px solid #E5E7EB',
+                  display:        'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap:            16,
                 }}>
                   <DetailField label="KP" value={
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: '#1D4ED8', fontSize: 13 }}>

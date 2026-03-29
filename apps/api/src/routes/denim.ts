@@ -561,14 +561,10 @@ router.post('/sales-contracts', requireAuth,
         tgl, permintaan, status, kat_kode, codename, kode,
         kons_kode, ket_warna, ket_ct_ws, kode_number,
         proses, catatan,
-        // Fabric spec fields — destructure frontend field names
+        // Fabric spec fields — only those mapped to SalesContract schema
         te, sisir, p_kons,
         lusi_type, lusi_ne,
-        pick, anyaman, arah, lg_inches, lf_inches,
-        pakan_type, pakan_ne, susut_pakan,
-        warna, pretreatment, indigo_i, indigo_bak_i,
-        sulfur_s, sulfur_bak_s, posttreatment, finish,
-        oz_g, oz_f,
+        pakan_type, pakan_ne,
         // SACON / measurement fields
         j, j_c, b_c, tb, tb_real,
         bale_lusi, total_pakan, bale_pakan,
@@ -598,37 +594,21 @@ router.post('/sales-contracts', requireAuth,
             kode_number:  kode_number  as string ?? null,
             proses:       proses       as string ?? 'PROSES',
             // Fabric spec fields — map frontend names to SalesContract schema fields
+            // SalesContract only stores: te, sisir, p_kons, ne_k_lusi, ne_lusi,
+            //   sp_lusi, ne_k_pakan, ne_pakan, sp_pakan
+            // All other FabricSpec fields (anyaman, arah, lg_inches, warna, etc.)
+            // are display-only in the modal and NOT persisted to SalesContract.
             te:            te            ? parseFloat(te as string) : null,
             sisir:         sisir         as string ?? null,
             p_kons:        p_kons        as string ?? null,
-            // FabricSpec lusi_type → SalesContract ne_k_lusi (string)
             ne_k_lusi:     lusi_type     as string ?? null,
-            // FabricSpec lusi_ne → SalesContract ne_lusi (Decimal)
             ne_lusi:       lusi_ne       ? parseFloat(lusi_ne as string) : null,
-            // FabricSpec pick → SalesContract sp_lusi (string)
-            sp_lusi:       pick          as string ?? null,
-            anyaman:       anyaman       as string ?? null,
-            arah:          arah          as string ?? null,
-            lg_inches:     lg_inches     ? parseFloat(lg_inches as string) : null,
-            lf_inches:     lf_inches     ? parseFloat(lf_inches as string) : null,
-            // FabricSpec pakan_type → SalesContract ne_k_pakan (string)
+            sp_lusi:       null,          // yarn supplier — filled by factory in Warping form
             ne_k_pakan:    pakan_type    as string ?? null,
-            // FabricSpec pakan_ne → SalesContract ne_pakan (Decimal)
             ne_pakan:      pakan_ne      ? parseFloat(pakan_ne as string) : null,
-            susut_pakan:   susut_pakan   ? parseFloat(susut_pakan as string) : null,
-            warna:         warna         as string ?? null,
-            pretreatment:   pretreatment   as string ?? null,
-            indigo_i:      indigo_i     ? parseFloat(indigo_i as string) : null,
-            indigo_bak_i:  indigo_bak_i ? parseInt(indigo_bak_i as string) : null,
-            sulfur_s:      sulfur_s     ? parseFloat(sulfur_s as string) : null,
-            sulfur_bak_s:  sulfur_bak_s ? parseInt(sulfur_bak_s as string) : null,
-            posttreatment: posttreatment as string ?? null,
-            finish:        finish       as string ?? null,
-            oz_g:          oz_g         ? parseFloat(oz_g as string) : null,
-            oz_f:          oz_f         ? parseFloat(oz_f as string) : null,
+            sp_pakan:      null,          // yarn supplier — filled by factory in Warping form
             // SACON fields
             lot_lusi:      lot_lusi     as string ?? null,
-            delivery_time: delivery_time as string ?? null,
             remarks:       remarks      as string ?? null,
             // Yarn parameters
             j:             j            ? parseFloat(j as string) : null,

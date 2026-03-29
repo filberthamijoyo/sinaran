@@ -230,19 +230,3 @@ body {
   background: var(--denim-100);
   color: var(--text-primary);
 }
-
-/* ─────────────────────────────────────
-   PIPELINE BAR FILL
-   Nuclear override: CSS custom property + !important
-   Cannot be overridden by any inline style or scoped class
-   ───────────────────────────────────── */
-.pipeline-bar-fill {
-  position: absolute !important;
-  left: 0 !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  height: 100% !important;
-  background-color: var(--fill-color) !important;
-  border-radius: 3px !important;
-  min-width: 6px !important;
-}

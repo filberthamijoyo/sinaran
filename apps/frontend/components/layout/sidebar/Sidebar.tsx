@@ -54,46 +54,46 @@ interface AdminSummary {
 }
 
 /* ─────────────────────────────────────────────────────────
-   Design tokens — simple, high contrast
+   Design tokens — premium dark, steel-blue accents
    ───────────────────────────────────────────────────────── */
 const C = {
-  sidebarBg:       '#1E3A52',
-  sidebarTexture:   "url('/denim_bg.jpg')",
-  sidebarBlend:     'multiply',
-  sidebarWidth:     220,
-  sidebarCollapsed:  56,
-  headerH:         56,
+  sidebarBg:        '#0D1B3E',
+  sidebarTexture:    "url('/denim_bg.jpg')",
+  sidebarBlend:      'multiply',
+  sidebarWidth:      226,
+  sidebarCollapsed:  64,
+  headerH:           60,
 
-  border:         'rgba(255,255,255,0.15)',
+  textWhite:        '#FFFFFF',
+  textMuted:        'rgba(255,255,255,0.65)',
+  textDim:          'rgba(255,255,255,0.45)',
 
-  textWhite:      '#FFFFFF',
-  textMuted:      'rgba(255,255,255,0.85)',
-  textDim:        'rgba(255,255,255,0.60)',
+  border:           'rgba(255,255,255,0.12)',
+  borderHover:      'rgba(255,255,255,0.20)',
 
-  hover:          'rgba(0,0,0,0.12)',
-  active:         'rgba(0,0,0,0.20)',
-  activeBorder:   'rgba(255,255,255,0.90)',
+  hover:            'rgba(255,255,255,0.08)',
+  active:           'rgba(255,255,255,0.15)',
+  activeBar:        '#FFFFFF',
 
-  searchBg:       'rgba(0,0,0,0.15)',
-  searchBorder:   'rgba(255,255,255,0.20)',
-  searchPlaceholder: 'rgba(255,255,255,0.50)',
+  searchBg:         'rgba(0,0,0,0.18)',
+  searchBorder:     'rgba(255,255,255,0.10)',
+  searchPlaceholder:'rgba(255,255,255,0.45)',
 
-  badgeBg:        'rgba(0,0,0,0.25)',
-  badgeText:      '#FFFFFF',
+  badgeBg:          'rgba(255,255,255,0.15)',
+  badgeText:        '#FFFFFF',
 
-  avatarBg:       'rgba(0,0,0,0.25)',
-  avatarText:     '#FFFFFF',
+  avatarBg:         'rgba(255,255,255,0.12)',
+  avatarText:       '#FFFFFF',
 
-  popupBg:        '#0A1628',
-  popupBorder:    'rgba(255,255,255,0.10)',
+  popupBg:          'rgba(8,13,26,0.92)',
+  popupBorder:      'rgba(148,163,184,0.10)',
 
-  shadowText:     '0 1px 3px rgba(0,0,0,0.60)',
-  shadowLabel:    '0 1px 2px rgba(0,0,0,0.50)',
-  shadowIcon:     'drop-shadow(0 1px 2px rgba(0,0,0,0.50))',
+  shadowIcon:       'drop-shadow(0 1px 1px rgba(0,0,0,0.40))',
+  shadowGlow:       '0 0 14px rgba(139,169,196,0.20)',
 
-  radiusSm:       6,
-  radiusMd:       8,
-  radiusLg:       10,
+  radiusSm:          5,
+  radiusMd:          7,
+  radiusLg:         10,
 } as const;
 
 /* ─────────────────────────────────────────────────────────
@@ -103,23 +103,23 @@ const ADMIN_NAV: NavSection[] = [
   {
     label: 'OVERVIEW',
     items: [
-      { href: '/denim/admin/dashboard',   label: 'Dashboard',      icon: <LayoutDashboard size={16} /> },
-      { href: '/denim/admin/orders',     label: 'Sales Contract',  icon: <List            size={16} /> },
-      { href: '/denim/admin/kp-archive',  label: 'KP Archive',      icon: <Archive         size={16} /> },
-      { href: '/denim/admin/fabric-specs', label: 'Fabric Specs',   icon: <Layers          size={16} /> },
-      { href: '/denim/admin/analytics',   label: 'Analytics',       icon: <BarChart2       size={16} /> },
-      { href: '/denim/admin/users',       label: 'Users',           icon: <User            size={16} /> },
+      { href: '/denim/admin/dashboard',  label: 'Dashboard',     icon: <LayoutDashboard size={16} /> },
+      { href: '/denim/admin/orders',     label: 'Sales Contract', icon: <List            size={16} /> },
+      { href: '/denim/admin/kp-archive', label: 'KP Archive',   icon: <Archive         size={16} /> },
+      { href: '/denim/admin/fabric-specs', label: 'Fabric Specs', icon: <Layers        size={16} /> },
+      { href: '/denim/admin/analytics',  label: 'Analytics',    icon: <BarChart2       size={16} /> },
+      { href: '/denim/admin/users',      label: 'Users',        icon: <User            size={16} /> },
     ],
   },
   {
     label: 'PIPELINE',
     items: [
-      { href: '/denim/inbox/warping',        label: 'Warping',        icon: <Wind       size={16} />, badgeKey: 'WARPING'        },
-      { href: '/denim/inbox/indigo',          label: 'Indigo',          icon: <Droplets   size={16} />, badgeKey: 'INDIGO'         },
-      { href: '/denim/inbox/weaving',          label: 'Weaving',         icon: <Grid2x2    size={16} />, badgeKey: 'WEAVING'        },
-      { href: '/denim/inbox/inspect-gray',    label: 'Inspect Gray',    icon: <ScanLine   size={16} />, badgeKey: 'INSPECT_GRAY'  },
-      { href: '/denim/inbox/bbsf',           label: 'BBSF',            icon: <Waves      size={16} />, badgeKey: 'BBSF'           },
-      { href: '/denim/inbox/inspect-finish',  label: 'Inspect Finish',   icon: <BadgeCheck size={16} />, badgeKey: 'INSPECT_FINISH'},
+      { href: '/denim/inbox/warping',         label: 'Warping',        icon: <Wind       size={16} />, badgeKey: 'WARPING'        },
+      { href: '/denim/inbox/indigo',           label: 'Indigo',          icon: <Droplets   size={16} />, badgeKey: 'INDIGO'         },
+      { href: '/denim/inbox/weaving',           label: 'Weaving',         icon: <Grid2x2    size={16} />, badgeKey: 'WEAVING'        },
+      { href: '/denim/inbox/inspect-gray',     label: 'Inspect Gray',    icon: <ScanLine   size={16} />, badgeKey: 'INSPECT_GRAY'  },
+      { href: '/denim/inbox/bbsf',            label: 'BBSF',            icon: <Waves      size={16} />, badgeKey: 'BBSF'           },
+      { href: '/denim/inbox/inspect-finish',   label: 'Inspect Finish',   icon: <BadgeCheck size={16} />, badgeKey: 'INSPECT_FINISH'},
     ],
   },
   {
@@ -135,15 +135,15 @@ const JAKARTA_NAV: NavSection[] = [
   {
     label: 'OVERVIEW',
     items: [
-      { href: '/denim/jakarta/dashboard', label: 'Dashboard',      icon: <Building2   size={16} /> },
-      { href: '/denim/admin/orders',      label: 'Sales Contract',  icon: <List       size={16} /> },
-      { href: '/denim/admin/analytics',   label: 'Analytics',       icon: <BarChart2   size={16} /> },
+      { href: '/denim/jakarta/dashboard', label: 'Dashboard',    icon: <Building2  size={16} /> },
+      { href: '/denim/admin/orders',     label: 'Sales Contract', icon: <List      size={16} /> },
+      { href: '/denim/admin/analytics',   label: 'Analytics',    icon: <BarChart2  size={16} /> },
     ],
   },
   {
     label: 'APPROVALS',
     items: [
-      { href: '/denim/approvals/pending', label: 'Pending Approvals', icon: <Clock   size={16} />, badgeKey: 'PENDING_APPROVAL' },
+      { href: '/denim/approvals/pending', label: 'Pending Approvals', icon: <Clock size={16} />, badgeKey: 'PENDING_APPROVAL' },
     ],
   },
   {
@@ -158,13 +158,13 @@ const FACTORY_NAV: NavSection[] = [
   {
     label: 'PIPELINE',
     items: [
-      { href: '/denim/inbox/sacon',    label: 'Sales Contract', icon: <ClipboardCheck size={16} />, badgeKey: 'SACON' },
-      { href: '/denim/inbox/warping', label: 'Warping',        icon: <Wind           size={16} />, badgeKey: 'WARPING'        },
-      { href: '/denim/inbox/indigo',  label: 'Indigo',         icon: <Droplets       size={16} />, badgeKey: 'INDIGO'         },
-      { href: '/denim/inbox/weaving', label: 'Weaving',        icon: <Grid2x2        size={16} />, badgeKey: 'WEAVING'        },
-      { href: '/denim/inbox/inspect-gray', label: 'Inspect Gray', icon: <ScanLine     size={16} />, badgeKey: 'INSPECT_GRAY'  },
-      { href: '/denim/inbox/bbsf',    label: 'BBSF',           icon: <Waves          size={16} />, badgeKey: 'BBSF'           },
-      { href: '/denim/inbox/inspect-finish', label: 'Inspect Finish', icon: <BadgeCheck size={16} />, badgeKey: 'INSPECT_FINISH'},
+      { href: '/denim/inbox/sacon',         label: 'Sales Contract', icon: <ClipboardCheck size={16} />, badgeKey: 'SACON' },
+      { href: '/denim/inbox/warping',        label: 'Warping',        icon: <Wind           size={16} />, badgeKey: 'WARPING'        },
+      { href: '/denim/inbox/indigo',          label: 'Indigo',         icon: <Droplets       size={16} />, badgeKey: 'INDIGO'         },
+      { href: '/denim/inbox/weaving',          label: 'Weaving',        icon: <Grid2x2        size={16} />, badgeKey: 'WEAVING'        },
+      { href: '/denim/inbox/inspect-gray',    label: 'Inspect Gray',    icon: <ScanLine       size={16} />, badgeKey: 'INSPECT_GRAY'  },
+      { href: '/denim/inbox/bbsf',           label: 'BBSF',            icon: <Waves          size={16} />, badgeKey: 'BBSF'           },
+      { href: '/denim/inbox/inspect-finish',  label: 'Inspect Finish',  icon: <BadgeCheck     size={16} />, badgeKey: 'INSPECT_FINISH'},
     ],
   },
 ];
@@ -200,38 +200,39 @@ function LogoHeader({ collapsed, onToggle }: { collapsed: boolean; onToggle: () 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', height: C.headerH,
-      padding: collapsed ? '0 14px' : '0 14px',
+      padding: collapsed ? '0 18px' : '0 16px',
       borderBottom: `1px solid ${C.border}`,
+      borderTop: '1px solid rgba(255,255,255,0.18)',
       flexShrink: 0, gap: 10,
       justifyContent: collapsed ? 'center' : 'flex-start',
     }}>
-      {/* S monogram */}
-      <div style={{
-        width: 28, height: 28, borderRadius: C.radiusSm + 1,
-        background: C.avatarBg,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-        fontFamily: "'IBM Plex Mono', monospace",
-        fontSize: 13, fontWeight: 700,
-        color: C.avatarText,
-        letterSpacing: '0.02em',
-      }}>
-        S
-      </div>
-
       {!collapsed && (
         <>
+          {/* Brand text */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.textWhite, lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.60)' }}>
+            <div style={{
+              fontSize: 14, fontWeight: 700,
+              color: C.textWhite,
+              letterSpacing: '-0.01em',
+              lineHeight: 1.2,
+              fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+              textShadow: '0 1px 3px rgba(0,0,0,0.60)',
+            }}>
               Sinaran
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.80)', lineHeight: 1.2, marginTop: 2, textShadow: '0 1px 2px rgba(0,0,0,0.50)' }}>
+            <div style={{
+              fontSize: 9, color: C.textMuted,
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+              lineHeight: 1.2, marginTop: 3,
+              fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+              textShadow: '0 1px 3px rgba(0,0,0,0.60)',
+            }}>
               Triputra Textile
             </div>
           </div>
           {/* Collapse toggle */}
           <button
-            title={collapsed ? 'Expand' : 'Collapse'}
+            title="Collapse"
             onClick={onToggle}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
@@ -258,18 +259,16 @@ function LogoHeader({ collapsed, onToggle }: { collapsed: boolean; onToggle: () 
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
           style={{
-            position: 'absolute', bottom: -14, left: '50%',
-            transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 22, height: 22, borderRadius: C.radiusSm,
-            background: C.hover,
-            border: `1px solid ${C.border}`,
-            cursor: 'pointer',
+            width: 28, height: 28, borderRadius: C.radiusSm,
+            background: hovered ? C.hover : 'transparent',
+            border: 'none', cursor: 'pointer',
             color: hovered ? C.textWhite : C.textMuted,
             transition: 'background 150ms, color 150ms',
+            filter: hovered ? C.shadowIcon : 'none',
           }}
         >
-          <ChevronRight size={12} />
+          <ChevronRight size={14} />
         </button>
       )}
     </div>
@@ -283,20 +282,31 @@ function SearchBar({ collapsed }: { collapsed: boolean }) {
   if (collapsed) return null;
   return (
     <div style={{
-      margin: '12px 10px 4px', height: 32,
+      margin: '14px 12px 6px',
+      height: 34,
       background: C.searchBg,
       border: `1px solid ${C.searchBorder}`,
       borderRadius: C.radiusMd,
-      padding: '0 10px',
-      display: 'flex', alignItems: 'center', gap: 6,
+      padding: '0 12px',
+      display: 'flex', alignItems: 'center', gap: 8,
     }}>
       <Search size={12} style={{ color: C.textDim, flexShrink: 0, filter: C.shadowIcon }} />
-      <span style={{ fontSize: 12, color: C.searchPlaceholder, flex: 1, lineHeight: 1, textShadow: C.shadowLabel }}>
+      <span style={{
+        fontSize: 11.5, color: C.searchPlaceholder,
+        flex: 1, lineHeight: 1,
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      }}>
         Search…
       </span>
       <span style={{
-        fontSize: 10, background: 'rgba(255,255,255,0.08)', borderRadius: 4,
-        padding: '1px 5px', color: C.textDim, flexShrink: 0,
+        fontSize: 10,
+        background: 'rgba(255,255,255,0.06)',
+        borderRadius: 4,
+        padding: '1px 5px',
+        color: C.textDim,
+        flexShrink: 0,
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+        letterSpacing: '0.02em',
       }}>
         ⌘K
       </span>
@@ -310,11 +320,15 @@ function SearchBar({ collapsed }: { collapsed: boolean }) {
 function SectionLabel({ label }: { label: string }) {
   return (
     <div style={{
-      fontSize: 10, fontWeight: 600,
-      textTransform: 'uppercase', letterSpacing: '0.08em',
+      fontSize: 9,
+      fontWeight: 500,
+      textTransform: 'uppercase',
+      letterSpacing: '0.18em',
       color: C.textMuted,
-      padding: '16px 10px 4px',
-      textShadow: C.shadowLabel,
+      padding: '20px 12px 6px',
+      borderBottom: `1px solid ${C.border}`,
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+      textShadow: '0 1px 3px rgba(0,0,0,0.60)',
     }}>
       {label}
     </div>
@@ -335,7 +349,7 @@ function NavItemEl({
 
   if (collapsed) {
     return (
-      <div style={{ position: 'relative', marginBottom: 2 }}>
+      <div style={{ position: 'relative', marginBottom: 3 }}>
         <Link
           href={item.href}
           onClick={onClick}
@@ -344,7 +358,7 @@ function NavItemEl({
           onMouseLeave={() => setHovered(false)}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 40, height: 34, borderRadius: C.radiusMd,
+            width: 44, height: 36, borderRadius: C.radiusMd,
             background: active ? C.active : hovered ? C.hover : 'transparent',
             color: C.textWhite,
             textDecoration: 'none',
@@ -358,12 +372,17 @@ function NavItemEl({
         {/* Tooltip */}
         {hovered && (
           <div style={{
-            position: 'fixed', left: 64,
-            background: C.popupBg, color: C.textWhite,
-            fontSize: 12, padding: '4px 8px',
+            position: 'fixed', left: 72,
+            background: C.popupBg,
+            color: C.textWhite,
+            fontSize: 12,
+            padding: '5px 10px',
             borderRadius: C.radiusSm,
-            pointerEvents: 'none', whiteSpace: 'nowrap',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+            border: `1px solid ${C.border}`,
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+            fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
           }}>
             {item.label}
           </div>
@@ -371,10 +390,13 @@ function NavItemEl({
         {/* Badge */}
         {showBadge && (
           <div style={{
-            position: 'absolute', top: 2, right: 2,
-            background: C.badgeBg, color: C.badgeText,
-            borderRadius: 10, fontSize: 9, fontWeight: 600,
-            minWidth: 14, height: 14,
+            position: 'absolute', top: 3, right: 3,
+            background: C.badgeBg,
+            color: C.badgeText,
+            borderRadius: 10,
+            fontSize: 9,
+            fontWeight: 600,
+            minWidth: 15, height: 15,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '0 3px',
           }}>
@@ -392,37 +414,51 @@ function NavItemEl({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 8, height: 34,
-        padding: '0 10px', borderRadius: C.radiusMd,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        height: 36,
+        padding: '0 12px',
+        borderRadius: C.radiusMd,
         background: active ? C.active : hovered ? C.hover : 'transparent',
+        backdropFilter: (active || hovered) ? 'blur(8px)' : 'none',
+        WebkitBackdropFilter: (active || hovered) ? 'blur(8px)' : 'none',
         textDecoration: 'none',
-        transition: 'background 150ms',
-        borderLeft: active ? `2px solid ${C.activeBorder}` : '2px solid transparent',
-        borderTopRightRadius: '8px',
-        borderBottomRightRadius: '8px',
-        borderTopLeftRadius: 0,
-        borderBottomLeftRadius: 0,
+        transition: 'background 150ms, backdrop-filter 150ms',
+        borderLeft: active ? `2px solid ${C.activeBar}` : '2px solid transparent',
       }}
     >
-      <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, color: C.textWhite, filter: C.shadowIcon }}>
+      <span style={{
+        display: 'flex', alignItems: 'center', flexShrink: 0,
+        color: active || hovered ? C.textWhite : C.textMuted,
+        filter: C.shadowIcon,
+        transition: 'color 150ms',
+      }}>
         {item.icon}
       </span>
       <span style={{
         flex: 1, minWidth: 0, overflow: 'hidden',
         textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        fontWeight: active ? 700 : 600,
-        fontSize: 13,
-        color: C.textWhite,
-        textShadow: C.shadowText,
+        fontWeight: active ? 500 : 400,
+        fontSize: 12.5,
+        color: active ? C.textWhite : C.textMuted,
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+        transition: 'color 150ms',
+        textShadow: '0 1px 3px rgba(0,0,0,0.60)',
       }}>
         {item.label}
       </span>
       {showBadge && (
         <span style={{
           marginLeft: 'auto',
-          background: C.badgeBg, color: C.badgeText,
-          borderRadius: 10, padding: '1px 6px',
-          fontSize: 10, fontWeight: 600, flexShrink: 0,
+          background: C.badgeBg,
+          color: C.badgeText,
+          borderRadius: 10,
+          padding: '1px 7px',
+          fontSize: 10,
+          fontWeight: 600,
+          flexShrink: 0,
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
         }}>
           {badgeCount > 99 ? '99+' : badgeCount}
         </span>
@@ -458,12 +494,20 @@ function ProfileArea({
 
   if (collapsed) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 6px', borderTop: `1px solid ${C.border}` }}>
+      <div style={{
+        display: 'flex', justifyContent: 'center',
+        padding: '12px 0 10px',
+        borderTop: `1px solid ${C.border}`,
+      }}>
         <div style={{
-          width: 28, height: 28, borderRadius: '50%',
+          width: 30, height: 30, borderRadius: '50%',
           background: C.avatarBg,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 600, color: C.avatarText, cursor: 'pointer',
+          fontSize: 11, fontWeight: 600,
+          color: C.avatarText,
+          cursor: 'pointer',
+          boxShadow: '0 0 10px rgba(139,169,196,0.15)',
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
         }}
           title={userName}
           onClick={() => setMenuOpen(o => !o)}
@@ -481,48 +525,84 @@ function ProfileArea({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          cursor: 'pointer', padding: '6px 4px',
+          display: 'flex', alignItems: 'center', gap: 10,
+          cursor: 'pointer',
+          padding: '7px 6px',
           borderRadius: C.radiusMd,
           background: hovered ? C.hover : 'transparent',
-          transition: 'background 150ms',
+          backdropFilter: hovered ? 'blur(8px)' : 'none',
+          WebkitBackdropFilter: hovered ? 'blur(8px)' : 'none',
+          transition: 'background 150ms, backdrop-filter 150ms',
         }}
       >
         <div style={{
-          width: 28, height: 28, borderRadius: '50%',
+          width: 30, height: 30, borderRadius: '50%',
           background: C.avatarBg,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 600, color: C.avatarText, flexShrink: 0,
+          fontSize: 11, fontWeight: 600,
+          color: C.avatarText,
+          flexShrink: 0,
+          boxShadow: '0 0 10px rgba(139,169,196,0.15)',
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
         }}>
           {avatarInitials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: C.textWhite, lineHeight: 1.2, textShadow: C.shadowText }}>
+          <div style={{
+            fontSize: 12, fontWeight: 500,
+            color: C.textWhite, lineHeight: 1.2,
+            fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+            textShadow: '0 1px 3px rgba(0,0,0,0.60)',
+          }}>
             {userName || 'User'}
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', lineHeight: 1.2, marginTop: 2, textShadow: C.shadowLabel }}>
+          <div style={{
+            fontSize: 9, color: C.textMuted,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            lineHeight: 1.2, marginTop: 2,
+            fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+            textShadow: '0 1px 3px rgba(0,0,0,0.60)',
+          }}>
             {ROLE_LABEL[role]}
           </div>
         </div>
+        {/* Chevron indicator */}
+        <svg
+          width="12" height="12" viewBox="0 0 12 12"
+          style={{
+            color: C.textMuted,
+            transition: 'transform 200ms',
+            transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        >
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </svg>
       </div>
 
       {/* Popup menu */}
       {menuOpen && (
         <div style={{
-          position: 'absolute', bottom: 'calc(100% + 8px)', left: 10,
-          width: 180,
+          position: 'absolute', bottom: 'calc(100% + 8px)', left: 10, width: 192,
           background: C.popupBg,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
           border: `1px solid ${C.popupBorder}`,
-          borderRadius: C.radiusMd, padding: 4,
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.4)',
+          borderRadius: C.radiusMd,
+          padding: 4,
+          boxShadow: '0 -4px 28px rgba(0,0,0,0.5)',
+          zIndex: 100,
         }}>
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px 8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px 10px' }}>
             <div style={{
-              width: 28, height: 28, borderRadius: '50%',
+              width: 30, height: 30, borderRadius: '50%',
               background: C.avatarBg,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 600, color: C.avatarText, flexShrink: 0,
+              fontSize: 11, fontWeight: 600,
+              color: C.avatarText,
+              flexShrink: 0,
+              boxShadow: '0 0 10px rgba(139,169,196,0.15)',
+              fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
             }}>
               {avatarInitials}
             </div>
@@ -531,18 +611,20 @@ function ProfileArea({
                 {userName || 'User'}
               </div>
               <span style={{
-                fontSize: 10, color: C.textMuted, fontWeight: 600,
-                letterSpacing: '0.04em', textTransform: 'uppercase',
+                fontSize: 9, color: C.textMuted,
+                fontWeight: 500, letterSpacing: '0.10em',
+                textTransform: 'uppercase',
+                fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
               }}>
                 {role}
               </span>
             </div>
           </div>
-          <div style={{ height: 1, background: C.popupBorder, margin: '0 4px' }} />
+          <div style={{ height: 1, background: C.popupBorder, margin: '0 4px 4px' }} />
           <MenuItem icon={<User size={13} />}      label="Profile"         onClick={() => setMenuOpen(false)} />
-          <MenuItem icon={<Settings size={13} />}  label="Change Password" onClick={() => setMenuOpen(false)} />
-          <div style={{ height: 1, background: C.popupBorder, margin: '0 4px' }} />
-          <MenuItem icon={<LogOut size={13} />}    label="Sign Out"        onClick={() => { setMenuOpen(false); onLogout(); }} danger />
+          <MenuItem icon={<Settings size={13} />} label="Change Password"  onClick={() => setMenuOpen(false)} />
+          <div style={{ height: 1, background: C.popupBorder, margin: '4px 4px' }} />
+          <MenuItem icon={<LogOut size={13} />}   label="Sign Out"         onClick={() => { setMenuOpen(false); onLogout(); }} danger />
         </div>
       )}
     </div>
@@ -559,15 +641,17 @@ function MenuItem({ icon, label, onClick, danger = false }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        width: '100%', padding: '7px 8px',
+        display: 'flex', alignItems: 'center', gap: 9,
+        width: '100%', padding: '8px 10px',
         border: 'none',
-        background: hovered ? danger ? 'rgba(220,38,38,0.15)' : C.hover : 'transparent',
+        background: hovered ? (danger ? 'rgba(220,38,38,0.15)' : C.hover) : 'transparent',
         color: danger ? '#FCA5A5' : C.textMuted,
-        fontSize: 12, cursor: 'pointer',
+        fontSize: 12,
+        cursor: 'pointer',
         borderRadius: C.radiusSm,
         transition: 'background 150ms, color 150ms',
         textAlign: 'left',
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
       }}
     >
       <span style={{ display: 'flex', alignItems: 'center', opacity: 0.8 }}>{icon}</span>
@@ -595,8 +679,20 @@ export default function Sidebar() {
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar_collapsed');
-    if (stored === 'true') setCollapsed(true);
+    const isCollapsed = stored === 'true';
+    setCollapsed(isCollapsed);
+    document.documentElement.style.setProperty(
+      '--sidebar-w', isCollapsed ? `${C.sidebarCollapsed}px` : `${C.sidebarWidth}px`
+    );
   }, []);
+
+  const handleToggleCollapse = (next: boolean) => {
+    setCollapsed(next);
+    localStorage.setItem('sidebar_collapsed', String(next));
+    document.documentElement.style.setProperty(
+      '--sidebar-w', next ? `${C.sidebarCollapsed}px` : `${C.sidebarWidth}px`
+    );
+  };
 
   if (!user) return null;
 
@@ -607,11 +703,7 @@ export default function Sidebar() {
         open: () => setIsOpen(true),
         close: () => setIsOpen(false),
         toggle: () => setIsOpen(o => !o),
-        toggleCollapse: () => setCollapsed(c => {
-          const next = !c;
-          localStorage.setItem('sidebar_collapsed', String(next));
-          return next;
-        }),
+        toggleCollapse: () => handleToggleCollapse(!collapsed),
       }}
     >
       {/* Mobile overlay backdrop */}
@@ -639,7 +731,7 @@ export default function Sidebar() {
           {/* Gradient overlay */}
           <div style={{
             position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-            background: 'linear-gradient(to bottom, rgba(15,25,40,0.30) 0%, rgba(8,16,28,0.55) 100%)',
+            background: 'linear-gradient(to bottom, rgba(8,13,26,0.10) 0%, rgba(8,13,26,0.28) 100%)',
           }} />
           {/* All content: above the gradient */}
           <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -682,7 +774,6 @@ function DesktopSidebar() {
 
   const width = collapsed ? C.sidebarCollapsed : C.sidebarWidth;
   const role = user.role as UserRole;
-  const stage = (user as { stage?: string }).stage ?? 'warping';
 
   const navSections: NavSection[] =
     role === 'admin'   ? ADMIN_NAV
@@ -703,10 +794,10 @@ function DesktopSidebar() {
       zIndex: 40,
       transition: 'width 200ms ease',
     }}>
-      {/* Gradient overlay — darkens top-to-bottom, never blocks clicks */}
+      {/* Gradient overlay — lighter, lets denim texture breathe */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'linear-gradient(to bottom, rgba(15,25,40,0.30) 0%, rgba(8,16,28,0.55) 100%)',
+        background: 'linear-gradient(to bottom, rgba(8,13,26,0.10) 0%, rgba(8,13,26,0.28) 100%)',
       }} />
 
       {/* All content: above the gradient */}
@@ -715,13 +806,14 @@ function DesktopSidebar() {
         <SearchBar collapsed={collapsed} />
         <nav style={{
           flex: 1, overflowY: 'auto', overflowX: 'hidden',
-          padding: collapsed ? '12px 8px' : '4px 10px 20px',
+          padding: '4px 12px 24px',
           display: 'flex', flexDirection: 'column',
-          gap: collapsed ? 8 : 0,
+          gap: collapsed ? 6 : 0,
         }}>
           {navSections.map(section => (
             <div key={section.label}>
-              {!collapsed && <SectionLabel label={section.label} />}
+              {!collapsed && section.label && <SectionLabel label={section.label} />}
+              {!collapsed && !section.label && <div style={{ height: 12 }} />}
               {section.items.map(item => (
                 <NavItemEl
                   key={item.href}
@@ -734,30 +826,6 @@ function DesktopSidebar() {
             </div>
           ))}
         </nav>
-
-        {/* Expand toggle (collapsed mode) */}
-        {collapsed && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '4px 0 2px', borderTop: `1px solid ${C.border}` }}>
-            <button
-              title="Expand sidebar"
-              onClick={toggleCollapse}
-              style={{
-                width: 32, height: 32, borderRadius: 8,
-                background: C.hover,
-                border: `1px solid ${C.border}`,
-                cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto',
-                color: C.textWhite,
-                transition: 'background 150ms',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.18)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = C.hover; }}
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        )}
 
         <ProfileArea collapsed={collapsed} userName={user.name} role={role} onLogout={logout} />
       </div>
@@ -784,7 +852,6 @@ function MobileDrawerNav({ onClose }: { onClose: () => void }) {
   if (!user) return null;
 
   const role = user.role as UserRole;
-  const stage = (user as { stage?: string }).stage ?? 'warping';
 
   const navSections: NavSection[] =
     role === 'admin'   ? ADMIN_NAV
@@ -792,10 +859,11 @@ function MobileDrawerNav({ onClose }: { onClose: () => void }) {
     : buildFactoryNav();
 
   return (
-    <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 10px 20px' }}>
+    <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 12px 24px' }}>
       {navSections.map(section => (
         <div key={section.label}>
-          <SectionLabel label={section.label} />
+          {section.label && <SectionLabel label={section.label} />}
+          {!section.label && <div style={{ height: 12 }} />}
           {section.items.map(item => (
             <NavItemEl
               key={item.href}
