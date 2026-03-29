@@ -209,8 +209,7 @@ function ConfirmSubmitModal({ kp, form, totalBeams, totalPutusan, onConfirm, onC
             }}>
               <span style={{ fontSize: 12, color: '#9CA3AF' }}>{row.label}</span>
               <span style={{
-                fontSize: 14, fontWeight: 500,
-                color: '#0F1E2E',
+                fontSize: 14,
                 fontFamily: (row as { mono?: boolean }).mono ? "'IBM Plex Mono', monospace" : 'inherit',
                 color: (row as { mono?: boolean }).mono ? '#1D4ED8' : '#0F1E2E',
                 fontWeight: (row as { mono?: boolean }).mono ? 600 : 500,
@@ -376,14 +375,41 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
     toast.info('Draft discarded');
   }, [draftKey]);
 
-  // Auto-compute totals whenever beams change
-  useEffect(() => {
-    setForm(f => ({ ...f, total_putusan: String(totalPutusan) }));
-  }, [totalPutusan]);
+  // Auto-calculate jam (hours) and total_waktu (minutes) from start/stop
+  const calcJam = (() => {
+    if (!form.start || !form.stop) return 0;
+    const [sh, sm] = form.start.split(':').map(Number);
+    const [eh, em] = form.stop.split(':').map(Number);
+    if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 0;
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    if (endMin <= startMin) return 0;
+    return (endMin - startMin) / 60;
+  })();
+  const calcTotalWaktu = (() => {
+    if (!form.start || !form.stop) return 0;
+    const [sh, sm] = form.start.split(':').map(Number);
+    const [eh, em] = form.stop.split(':').map(Number);
+    if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 0;
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    if (endMin <= startMin) return 0;
+    return endMin - startMin;
+  })();
 
-  useEffect(() => {
-    setForm(f => ({ ...f, total_beam: String(totalBeams) }));
-  }, [totalBeams]);
+  // Auto-calculate eff_warping from jam and total_putusan
+  const calcEff = (() => {
+    if (!form.start || !form.stop || !form.mtr_per_min || calcJam === 0) return '';
+    const mtrPerMin = parseFloat(form.mtr_per_min);
+    if (isNaN(mtrPerMin) || mtrPerMin <= 0) return '';
+    const totalMtr = totalPanjangAktual;
+    if (totalMtr <= 0) return '';
+    const theoreticalMin = totalMtr / mtrPerMin;
+    if (theoreticalMin <= 0) return '';
+    const eff = (theoreticalMin / (calcTotalWaktu || 1)) * 100;
+    if (eff > 100) return '100.00';
+    return eff.toFixed(2);
+  })();
 
   useEffect(() => {
     const load = async () => {
@@ -523,9 +549,9 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
         tension_badan: form.tension_badan ? parseInt(form.tension_badan) : null,
         tension_pinggir: form.tension_pinggir ? parseInt(form.tension_pinggir) : null,
         lebar_creel: form.lebar_creel ? parseInt(form.lebar_creel) : null,
-        jam: form.jam ? parseFloat(form.jam) : null,
-        total_waktu: form.total_waktu ? parseFloat(form.total_waktu) : null,
-        eff_warping: form.eff_warping ? parseFloat(form.eff_warping) : null,
+        jam: calcJam > 0 ? calcJam : null,
+        total_waktu: calcTotalWaktu > 0 ? calcTotalWaktu : null,
+        eff_warping: calcEff ? parseFloat(calcEff) : null,
         cn_1: form.cn_1 ? parseFloat(form.cn_1) : null,
         lot_lusi: form.lot_lusi || null,
         total_beam: filledBeams.length,
@@ -643,7 +669,31 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
               )}
             </SectionCard>
 
-            {/* Section 3 — Beam Table */}
+            {/* Section 3 — Machine */}
+            <SectionCard title="Machine" subtitle="Machine and speed settings for this run">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                <Field label="Machine No. (NO MC)">
+                  <Input type="number" value={form.no_mc}
+                    onChange={e => { setField('no_mc', e.target.value); setErrors(p => ({ ...p, no_mc: '' })); }}
+                    placeholder="e.g. 1"
+                    style={errors.no_mc ? { ...FIELD_STYLE, border: '1px solid #DC2626' } : FIELD_STYLE} />
+                </Field>
+                <Field label="RPM">
+                  <Input type="number" step="0.1" value={form.rpm}
+                    onChange={e => setField('rpm', e.target.value)}
+                    placeholder="e.g. 650"
+                    style={FIELD_STYLE} />
+                </Field>
+                <Field label="Mtr / Min">
+                  <Input type="number" step="0.01" value={form.mtr_per_min}
+                    onChange={e => setField('mtr_per_min', e.target.value)}
+                    placeholder="e.g. 45.5"
+                    style={FIELD_STYLE} />
+                </Field>
+              </div>
+            </SectionCard>
+
+            {/* Section 4 — Beam Table */}
             <SectionCard
               title="Beam Table"
               subtitle={`${totalBeams} beam${totalBeams !== 1 ? 's' : ''} filled`}
@@ -666,6 +716,10 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
                 {[
                   { label: 'Total Panjang Plan', value: totalPanjangPlan.toFixed(1) },
                   { label: 'Total Panjang Aktual', value: totalPanjangAktual.toFixed(1) },
+                  { label: 'Plan - Actual', value: (() => {
+                    const diff = totalPanjangPlan - totalPanjangAktual;
+                    return diff.toFixed(1) + (diff > 0 ? ' over' : diff < 0 ? ' under' : '');
+                  })() },
                   { label: 'Total Jumlah Ends', value: totalJumlahEnds.toLocaleString() },
                   { label: 'Total Putusan', value: totalPutusan.toLocaleString() },
                 ].map(tile => (
@@ -772,27 +826,9 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
               </div>
             </SectionCard>
 
-            {/* Section 4 — Quality & Machine */}
-            <SectionCard title="Quality &amp; Machine">
+            {/* Section 5 — Quality */}
+            <SectionCard title="Quality" subtitle="Yarn quality measurements">
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                <Field label="Machine No. (NO MC)">
-                  <Input type="number" value={form.no_mc}
-                    onChange={e => { setField('no_mc', e.target.value); setErrors(p => ({ ...p, no_mc: '' })); }}
-                    placeholder="e.g. 1"
-                    style={errors.no_mc ? { ...FIELD_STYLE, border: '1px solid #DC2626' } : FIELD_STYLE} />
-                </Field>
-                <Field label="RPM">
-                  <Input type="number" step="0.1" value={form.rpm}
-                    onChange={e => setField('rpm', e.target.value)}
-                    placeholder="e.g. 650"
-                    style={FIELD_STYLE} />
-                </Field>
-                <Field label="Mtr / Min">
-                  <Input type="number" step="0.01" value={form.mtr_per_min}
-                    onChange={e => setField('mtr_per_min', e.target.value)}
-                    placeholder="e.g. 45.5"
-                    style={FIELD_STYLE} />
-                </Field>
                 <Field label="Elongasi %">
                   <Input type="number" step="0.01" value={form.elongasi}
                     onChange={e => setField('elongasi', e.target.value)}
@@ -832,33 +868,18 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
               </div>
             </SectionCard>
 
-            {/* Section 5 — Time & Efficiency */}
-            <SectionCard title="Time &amp; Efficiency">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-                <Field label="Jam (Hours)">
-                  <Input type="number" step="0.1" value={form.jam}
-                    onChange={e => setField('jam', e.target.value)}
-                    placeholder="e.g. 8.5"
-                    style={FIELD_STYLE} />
-                </Field>
-                <Field label="Total Waktu (min)">
-                  <Input type="number" step="0.1" value={form.total_waktu}
-                    onChange={e => setField('total_waktu', e.target.value)}
-                    placeholder="Auto / manual"
-                    style={FIELD_STYLE} />
-                </Field>
+            {/* Section 6 — Time & Efficiency */}
+            <SectionCard title="Time &amp; Efficiency" subtitle="Auto-calculated from Run Details and beam output">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                <AutoField label="Jam (Hours)" value={calcJam > 0 ? calcJam.toFixed(2) : '—'} />
+                <AutoField label="Total Waktu (min)" value={calcTotalWaktu > 0 ? String(calcTotalWaktu) : '—'} />
                 <Field label="1 CN (Cones)">
                   <Input type="number" step="0.01" value={form.cn_1}
                     onChange={e => setField('cn_1', e.target.value)}
                     placeholder="e.g. 50"
                     style={FIELD_STYLE} />
                 </Field>
-                <Field label="Eff Warping (%)">
-                  <Input type="number" step="0.01" value={form.eff_warping}
-                    onChange={e => setField('eff_warping', e.target.value)}
-                    placeholder="Calculated"
-                    style={FIELD_STYLE} />
-                </Field>
+                <AutoField label="Eff Warping (%)" value={calcEff ? `${calcEff}%` : '—'} />
               </div>
             </SectionCard>
 

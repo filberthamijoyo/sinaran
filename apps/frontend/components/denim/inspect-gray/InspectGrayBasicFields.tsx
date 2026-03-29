@@ -36,9 +36,8 @@ export default function InspectGrayBasicFields({ form, setField }: Props) {
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium text-[#6B7280]">OPG</Label>
-          <Input type="text" value={form.opg}
-            onChange={e => setField('opg', e.target.value)}
-            placeholder="OPG reference" className="h-9 text-sm bg-white border border-[#E5E7EB]" />
+          <Input type="text" value={''}
+            placeholder="OPG is set per roll below" disabled className="h-9 text-sm bg-gray-100 border border-[#E5E7EB] cursor-not-allowed" />
         </div>
       </div>
     </div>

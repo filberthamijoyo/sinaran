@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authFetch } from '../../lib/authFetch';
 import { PageShell } from '../ui/erp/PageShell';
@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 import { toast } from 'sonner';
+import { RotateCcw } from 'lucide-react';
 import RollTable from './inspect-finish/RollTable';
 import GradeSection from './inspect-finish/GradeSection';
 import {
@@ -19,6 +20,152 @@ import {
   emptyRoll,
   calculateBMC,
 } from './inspect-finish/types';
+
+// ── Confirm Modal ─────────────────────────────────────────────────────────────
+interface ConfirmModalProps {
+  kp: string;
+  form: InspectFinishFormState;
+  summary: InspectFinishSummary;
+  onConfirm: () => void;
+  onCancel: () => void;
+  submitting: boolean;
+}
+
+function ConfirmSubmitModal({ kp, form, summary, onConfirm, onCancel, submitting }: ConfirmModalProps) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.50)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 50,
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      paddingTop: '15vh',
+    }}>
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: 16,
+        padding: '28px 32px',
+        width: 480, maxWidth: '90vw',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F1E2E', marginBottom: 20 }}>
+          Confirm Inspect Finish Submission
+        </h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {[
+            { label: 'KP Code', value: kp, mono: true },
+            { label: 'Shift', value: form.shift || '—' },
+            { label: 'Total Rolls', value: String(summary.totalRolls) },
+            { label: 'Total Kg', value: summary.totalKg > 0 ? `${summary.totalKg.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg` : '—' },
+          ].map(row => (
+            <div key={row.label} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              height: 36, borderBottom: '1px solid #F3F4F6',
+            }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>{row.label}</span>
+              <span style={{
+                fontSize: 14,
+                fontFamily: (row as { mono?: boolean }).mono ? "'IBM Plex Mono', monospace" : 'inherit',
+                color: (row as { mono?: boolean }).mono ? '#1D4ED8' : '#0F1E2E',
+                fontWeight: (row as { mono?: boolean }).mono ? 600 : 500,
+              }}>
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            style={{
+              height: 36, padding: '0 16px', borderRadius: 8,
+              background: '#FFFFFF', border: '1px solid #E5E7EB',
+              color: '#374151', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={submitting}
+            style={{
+              height: 36, padding: '0 16px', borderRadius: 8,
+              background: submitting ? '#93C5FD' : '#1D4ED8',
+              border: 'none',
+              color: '#FFFFFF', fontSize: 13, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {submitting ? 'Submitting…' : 'Confirm & Submit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Draft Banner ──────────────────────────────────────────────────────────────
+interface DraftBannerProps {
+  savedAt: number;
+  onRestore: () => void;
+  onDiscard: () => void;
+}
+
+function DraftBanner({ savedAt, onRestore, onDiscard }: DraftBannerProps) {
+  const timeAgo = (() => {
+    const diff = Date.now() - savedAt;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hr ago`;
+    return `${Math.floor(hrs / 24)} day ago`;
+  })();
+
+  return (
+    <div style={{
+      margin: '0 32px',
+      padding: '10px 16px',
+      background: '#EFF6FF',
+      border: '1px solid #BFDBFE',
+      borderRadius: 8,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+    }}>
+      <span style={{ fontSize: 13, color: '#1E40AF', flex: 1 }}>
+        You have a saved draft from <strong>{timeAgo}</strong>.
+      </span>
+      <button
+        onClick={onRestore}
+        style={{
+          height: 28, padding: '0 12px', borderRadius: 6,
+          background: '#FFFFFF', border: '1px solid #BFDBFE',
+          color: '#1D4ED8', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+          fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+        }}
+      >
+        <RotateCcw size={12} />
+        Restore
+      </button>
+      <button
+        onClick={onDiscard}
+        style={{
+          height: 28, padding: '0 12px', borderRadius: 6,
+          background: 'transparent', border: '1px solid #E5E7EB',
+          color: '#6B7280', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        Discard
+      </button>
+    </div>
+  );
+}
 
 export default function InspectFinishFormPage({
   kp,
@@ -33,6 +180,10 @@ export default function InspectFinishFormPage({
   const [sc, setSc] = useState<SCData | null>(null);
   const [loadingSc, setLoadingSc] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+
+  const draftKey = `draft_inspect_finish_${kp}`;
 
   const [form, setForm] = useState<InspectFinishFormState>({
     shift: '', operator: '', rolls: [emptyRoll()],
@@ -51,6 +202,38 @@ export default function InspectFinishFormPage({
     };
   }, [form.rolls]);
 
+  // Draft helpers
+  const saveDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const draft = { form, savedAt: Date.now() };
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      setDraftSavedAt(Date.now());
+      toast.success('Draft saved', { style: { background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0' } });
+    } catch {
+      toast.error('Failed to save draft');
+    }
+  }, [form, draftKey]);
+
+  const loadDraft = useCallback((): InspectFinishFormState | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { form: InspectFinishFormState; savedAt: number };
+      setDraftSavedAt(parsed.savedAt);
+      return parsed.form;
+    } catch { return null; }
+  }, [draftKey]);
+
+  const discardDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(draftKey);
+    setDraftSavedAt(null);
+    setForm({ shift: '', operator: '', rolls: [emptyRoll()] });
+    toast.info('Draft discarded');
+  }, [draftKey]);
+
   useEffect(() => {
     setLoadingSc(true);
     authFetch(`/denim/sales-contracts/${kp}`)
@@ -60,7 +243,11 @@ export default function InspectFinishFormPage({
   }, [kp]);
 
   useEffect(() => {
-    if (!isEditMode) return;
+    if (!isEditMode) {
+      const draft = loadDraft();
+      if (draft) setForm(draft);
+      return;
+    }
     const loadExistingData = async () => {
       try {
         const data = await authFetch<{ inspectFinish?: Array<Record<string, unknown>> }>(`/denim/admin/pipeline/${kp}`);
@@ -89,7 +276,7 @@ export default function InspectFinishFormPage({
       }
     };
     loadExistingData();
-  }, [isEditMode, kp]);
+  }, [isEditMode, kp, loadDraft]);
 
   const setField = (key: keyof InspectFinishFormState, value: string) => setForm(f => ({ ...f, [key]: value }));
 
@@ -105,25 +292,31 @@ export default function InspectFinishFormPage({
   const addRoll = () => setForm(f => ({ ...f, rolls: [...f.rolls, emptyRoll()] }));
   const removeRoll = (i: number) => setForm(f => ({ ...f, rolls: f.rolls.filter((_, idx) => idx !== i) }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSubmit = () => {
     const validRolls = form.rolls.filter(r => r.no_roll.trim());
     if (validRolls.length === 0) { toast.error('Add at least one roll.'); return; }
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSubmit = async () => {
     setSubmitting(true);
     try {
       const { ALL_DEFECTS } = await import('./inspect-finish/types');
+      const validRolls = form.rolls.filter(r => r.no_roll.trim());
       const payload = validRolls.map(r => {
         const defects: Record<string, number> = {};
         ALL_DEFECTS.forEach(d => { if (r.defects[d] && parseInt(r.defects[d]) > 0) defects[d] = parseInt(r.defects[d]); });
         return { no_roll: parseInt(r.no_roll), sn: r.sn || null, tgl_potong: r.tgl_potong || null, lebar: parseFloat(r.lebar) || null, kg: parseFloat(r.kg) || null, susut_lusi: parseFloat(r.susut_lusi) || null, grade: r.grade || null, point: parseFloat(r.point) || null, noda: r.noda || null, kotor: r.kotor || null, bkrt: r.bkrt || null, ket: r.ket || null, ...defects, bmc: calculateBMC(r.defects) };
       });
       await authFetch('/denim/inspect-finish', { method: isEditMode ? 'PUT' : 'POST', body: JSON.stringify({ kp, shift: form.shift || null, operator: form.operator || null, rolls: payload }) });
+      localStorage.removeItem(draftKey);
+      setDraftSavedAt(null);
       toast.success(isEditMode ? `Inspection updated for KP ${kp}.` : `Inspection complete for KP ${kp}. Order marked Complete.`);
       router.push(isEditMode ? `/denim/admin/orders/${kp}` : '/denim/inbox/inspect-finish');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save inspection data.';
       toast.error(message);
-    } finally { setSubmitting(false); }
+    } finally { setSubmitting(false); setShowConfirm(false); }
   };
 
   if (loadingSc) return (
@@ -170,7 +363,19 @@ export default function InspectFinishFormPage({
       }
       noPadding
     >
-      <form onSubmit={handleSubmit}>
+      {/* Draft banner */}
+      {draftSavedAt && !isEditMode && (
+        <DraftBanner
+          savedAt={draftSavedAt}
+          onRestore={() => {
+            const draft = loadDraft();
+            if (draft) { setForm(draft); toast.success('Draft restored'); }
+          }}
+          onDiscard={discardDraft}
+        />
+      )}
+
+      <form onSubmit={(e) => { e.preventDefault(); doSubmit(); }}>
         <div style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Section 1 — Inspection Details */}
@@ -233,11 +438,36 @@ export default function InspectFinishFormPage({
           <Button type="button" variant="secondary" onClick={() => router.back()}>
             Cancel
           </Button>
+          {!isEditMode && (
+            <button
+              type="button"
+              onClick={saveDraft}
+              style={{
+                height: 36, padding: '0 16px', borderRadius: 8,
+                background: '#F9FAFB', border: '1px solid #E5E7EB',
+                color: '#374151', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Save Draft
+            </button>
+          )}
           <Button type="submit" variant="primary" size="lg" loading={submitting}>
             {isEditMode ? 'Save Changes' : 'Complete Order'}
           </Button>
         </div>
       </form>
+
+      {showConfirm && (
+        <ConfirmSubmitModal
+          kp={kp}
+          form={form}
+          summary={summary}
+          onConfirm={handleConfirmSubmit}
+          onCancel={() => setShowConfirm(false)}
+          submitting={submitting}
+        />
+      )}
     </PageShell>
   );
 }

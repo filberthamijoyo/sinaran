@@ -1,18 +1,166 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authFetch } from '../../lib/authFetch';
 import { PageShell } from '../ui/erp/PageShell';
 import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { RotateCcw } from 'lucide-react';
 import { BBSFFormState, TabType, emptyForm } from './bbsf/types';
 import WashingSection from './bbsf/WashingSection';
 import SanforSection from './bbsf/SanforSection';
 import type { SCData, PipelineResponse } from './bbsf/types';
 
+// ── Confirm Modal ─────────────────────────────────────────────────────────────
+interface ConfirmModalProps {
+  kp: string;
+  form: BBSFFormState;
+  onConfirm: () => void;
+  onCancel: () => void;
+  submitting: boolean;
+}
+
+function ConfirmSubmitModal({ kp, form, onConfirm, onCancel, submitting }: ConfirmModalProps) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.50)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 50,
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      paddingTop: '15vh',
+    }}>
+      <div style={{
+        background: '#FFFFFF',
+        borderRadius: 16,
+        padding: '28px 32px',
+        width: 480, maxWidth: '90vw',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F1E2E', marginBottom: 20 }}>
+          Confirm BBSF Submission
+        </h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {[
+            { label: 'KP Code', value: kp, mono: true },
+            { label: 'Date', value: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) },
+            { label: 'Washing Shift', value: form.ws_shift || '—' },
+            { label: 'Washing MC', value: form.ws_mc || '—' },
+            { label: 'Sanfor Shift', value: form.sf1_shift || '—' },
+            { label: 'Sanfor MC', value: form.sf1_mc || '—' },
+          ].map(row => (
+            <div key={row.label} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              height: 36, borderBottom: '1px solid #F3F4F6',
+            }}>
+              <span style={{ fontSize: 12, color: '#9CA3AF' }}>{row.label}</span>
+              <span style={{
+                fontSize: 14,
+                fontFamily: (row as { mono?: boolean }).mono ? "'IBM Plex Mono', monospace" : 'inherit',
+                color: (row as { mono?: boolean }).mono ? '#1D4ED8' : '#0F1E2E',
+                fontWeight: (row as { mono?: boolean }).mono ? 600 : 500,
+              }}>
+                {row.value}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
+          <button
+            onClick={onCancel}
+            disabled={submitting}
+            style={{
+              height: 36, padding: '0 16px', borderRadius: 8,
+              background: '#FFFFFF', border: '1px solid #E5E7EB',
+              color: '#374151', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={submitting}
+            style={{
+              height: 36, padding: '0 16px', borderRadius: 8,
+              background: submitting ? '#93C5FD' : '#1D4ED8',
+              border: 'none',
+              color: '#FFFFFF', fontSize: 13, fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {submitting ? 'Submitting…' : 'Confirm & Submit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Draft Banner ──────────────────────────────────────────────────────────────
+interface DraftBannerProps {
+  savedAt: number;
+  onRestore: () => void;
+  onDiscard: () => void;
+}
+
+function DraftBanner({ savedAt, onRestore, onDiscard }: DraftBannerProps) {
+  const timeAgo = (() => {
+    const diff = Date.now() - savedAt;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hr ago`;
+    return `${Math.floor(hrs / 24)} day ago`;
+  })();
+
+  return (
+    <div style={{
+      margin: '0 32px',
+      padding: '10px 16px',
+      background: '#EFF6FF',
+      border: '1px solid #BFDBFE',
+      borderRadius: 8,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+    }}>
+      <span style={{ fontSize: 13, color: '#1E40AF', flex: 1 }}>
+        You have a saved draft from <strong>{timeAgo}</strong>.
+      </span>
+      <button
+        onClick={onRestore}
+        style={{
+          height: 28, padding: '0 12px', borderRadius: 6,
+          background: '#FFFFFF', border: '1px solid #BFDBFE',
+          color: '#1D4ED8', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+          fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4,
+        }}
+      >
+        <RotateCcw size={12} />
+        Restore
+      </button>
+      <button
+        onClick={onDiscard}
+        style={{
+          height: 28, padding: '0 12px', borderRadius: 6,
+          background: 'transparent', border: '1px solid #E5E7EB',
+          color: '#6B7280', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        Discard
+      </button>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function BBSFFormPage({ kp, editMode = false }: { kp: string; editMode?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,14 +169,54 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
   const [loadingSc, setLoadingSc] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('washing');
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+
+  const draftKey = `draft_bbsf_${kp}`;
 
   const [form, setForm] = useState<BBSFFormState>(emptyForm());
+
+  // Draft helpers
+  const saveDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const draft = { form, savedAt: Date.now() };
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+      setDraftSavedAt(Date.now());
+      toast.success('Draft saved', { style: { background: '#ECFDF5', color: '#059669', border: '1px solid #A7F3D0' } });
+    } catch {
+      toast.error('Failed to save draft');
+    }
+  }, [form, draftKey]);
+
+  const loadDraft = useCallback((): BBSFFormState | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { form: BBSFFormState; savedAt: number };
+      setDraftSavedAt(parsed.savedAt);
+      return parsed.form;
+    } catch { return null; }
+  }, [draftKey]);
+
+  const discardDraft = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(draftKey);
+    setDraftSavedAt(null);
+    setForm(emptyForm());
+    toast.info('Draft discarded');
+  }, [draftKey]);
 
   useEffect(() => {
     const load = async () => {
       try {
         const data = await authFetch<SCData>(`/denim/sales-contracts/${kp}`);
         setSc(data);
+        if (!isEditMode) {
+          const draft = loadDraft();
+          if (draft) setForm(draft);
+        }
       } catch (e) {
         toast.error('Failed to load order data.');
       } finally {
@@ -36,7 +224,7 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
       }
     };
     load();
-  }, [kp]);
+  }, [kp, isEditMode, loadDraft]);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -102,8 +290,9 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
   const setField = (key: keyof BBSFFormState, value: string) =>
     setForm(f => ({ ...f, [key]: value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSubmit = () => setShowConfirm(true);
+
+  const handleConfirmSubmit = async () => {
     setSubmitting(true);
     try {
       await authFetch('/denim/bbsf', {
@@ -114,12 +303,15 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
           ...form,
         }),
       });
+      localStorage.removeItem(draftKey);
+      setDraftSavedAt(null);
       toast.success(isEditMode ? `BBSF updated for KP ${kp}.` : `BBSF complete for KP ${kp}. Order moved to Inspect Finish.`);
       router.push(isEditMode ? `/denim/admin/orders/${kp}` : '/denim/inbox/inspect-finish');
     } catch {
       toast.error('Failed to save BBSF data.');
     } finally {
       setSubmitting(false);
+      setShowConfirm(false);
     }
   };
 
@@ -153,7 +345,19 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
       }
       noPadding
     >
-      <form onSubmit={handleSubmit}>
+      {/* Draft banner */}
+      {draftSavedAt && !isEditMode && (
+        <DraftBanner
+          savedAt={draftSavedAt}
+          onRestore={() => {
+            const draft = loadDraft();
+            if (draft) { setForm(draft); toast.success('Draft restored'); }
+          }}
+          onDiscard={discardDraft}
+        />
+      )}
+
+      <form onSubmit={(e) => { e.preventDefault(); doSubmit(); }}>
         <div style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Tab bar */}
@@ -224,11 +428,35 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
           <Button type="button" variant="secondary" onClick={() => router.back()}>
             Cancel
           </Button>
+          {!isEditMode && (
+            <button
+              type="button"
+              onClick={saveDraft}
+              style={{
+                height: 36, padding: '0 16px', borderRadius: 8,
+                background: '#F9FAFB', border: '1px solid #E5E7EB',
+                color: '#374151', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Save Draft
+            </button>
+          )}
           <Button type="submit" variant="primary" size="lg" loading={submitting}>
             {isEditMode ? 'Save Changes' : 'Complete & Send to Inspect Finish'}
           </Button>
         </div>
       </form>
+
+      {showConfirm && (
+        <ConfirmSubmitModal
+          kp={kp}
+          form={form}
+          onConfirm={handleConfirmSubmit}
+          onCancel={() => setShowConfirm(false)}
+          submitting={submitting}
+        />
+      )}
     </PageShell>
   );
 }

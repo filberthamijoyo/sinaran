@@ -27,7 +27,6 @@ export interface RollRow {
 export interface InspectGrayFormState {
   inspector_name: string;
   sj: string;
-  opg: string;
   rolls: RollRow[];
 }
 

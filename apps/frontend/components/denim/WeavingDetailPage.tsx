@@ -182,11 +182,11 @@ export default function WeavingDetailPage({ kp }: { kp: string }) {
               <StatTile
                 label="Avg Efficiency (A%)"
                 value={summary?.avgEfficiency != null ? `${(summary.avgEfficiency).toFixed(1)}%` : '—'}
-                sub={summary?.machines.length ? `${summary.machines.length} machine${summary.machines.length !== 1 ? 's' : ''}` : undefined}
+                sub={summary?.machines?.length ? `${summary.machines.length} machine${summary.machines.length !== 1 ? 's' : ''}` : undefined}
               />
               <StatTile
                 label="Avg Pick (P%)"
-                value={summary?.machines.length
+                value={summary?.machines?.length
                   ? (summary.machines.reduce((s, m) => s + m.avgP, 0) / summary.machines.length).toFixed(1) + '%'
                   : '—'}
               />
@@ -197,7 +197,7 @@ export default function WeavingDetailPage({ kp }: { kp: string }) {
             </div>
 
             {/* Machine breakdown */}
-            {summary && summary.machines.length > 0 && (
+            {summary && summary.machines?.length > 0 && (
               <div style={{
                 background: '#FFFFFF',
                 border: '1px solid #E5E7EB',
@@ -227,7 +227,7 @@ export default function WeavingDetailPage({ kp }: { kp: string }) {
                   <tbody>
                     {summary.machines.map((row, i) => (
                       <tr key={row.machine} style={{
-                        borderBottom: i < summary.machines.length - 1 ? '1px solid #F3F4F6' : 'none',
+                        borderBottom: i < (summary.machines?.length ?? 0) - 1 ? '1px solid #F3F4F6' : 'none',
                         background: i % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
                       }}>
                         <td style={{ padding: '10px 16px', fontWeight: 600, color: '#0F1E2E' }}>
@@ -252,7 +252,7 @@ export default function WeavingDetailPage({ kp }: { kp: string }) {
             )}
 
             {/* Recent datalog */}
-            {summary && summary.recentLogs.length > 0 && (
+            {summary && summary.recentLogs?.length > 0 && (
               <div style={{
                 background: '#FFFFFF',
                 border: '1px solid #E5E7EB',
@@ -280,9 +280,9 @@ export default function WeavingDetailPage({ kp }: { kp: string }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {summary.recentLogs.map((row, i) => (
+                    {summary.recentLogs?.map((row, i) => (
                       <tr key={i} style={{
-                        borderBottom: i < summary.recentLogs.length - 1 ? '1px solid #F3F4F6' : 'none',
+                        borderBottom: i < (summary.recentLogs?.length ?? 0) - 1 ? '1px solid #F3F4F6' : 'none',
                         background: i % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
                       }}>
                         <td style={{ padding: '10px 16px', fontSize: 13, color: '#6B7280', whiteSpace: 'nowrap' }}>
@@ -364,7 +364,7 @@ export default function WeavingDetailPage({ kp }: { kp: string }) {
               {[
                 { label: 'Total Meters', value: summary?.totalMeters != null ? `${summary.totalMeters.toLocaleString('id-ID')} m` : '—' },
                 { label: 'Avg Efficiency', value: summary?.avgEfficiency != null ? `${(summary.avgEfficiency).toFixed(1)}%` : '—' },
-                { label: 'Machines', value: String(summary?.machines.length ?? 0) },
+                { label: 'Machines', value: String(summary?.machines?.length ?? 0) },
                 { label: 'Days Active', value: String(summary?.daysActive ?? 0) },
               ].map(row => (
                 <div key={row.label} style={{
