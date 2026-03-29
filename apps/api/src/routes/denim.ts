@@ -541,9 +541,10 @@ router.post('/fabric-specs', requireAuth, requireRole('admin'), async (req: Requ
 // PUT /api/denim/fabric-specs/:id — update spec (admin only)
 router.put('/fabric-specs/:id', requireAuth, requireRole('admin'), async (req: Request, res: Response) => {
   try {
+    const { id: _id, usage_count: _uc, ...updateData } = req.body;
     const spec = await prisma.fabricSpec.update({
       where: { id: Number(req.params.id) },
-      data: req.body,
+      data: updateData,
     });
     return res.json(spec);
   } catch (err: any) {
@@ -1425,13 +1426,27 @@ router.post('/inspect-gray', requireAuth,
         });
       }
 
-      // Mark as COMPLETE
-      await prisma.salesContract.update({
+      // Fetch previous stage before updating
+      const prev = await prisma.salesContract.findUnique({
         where: { kp },
-        data: { pipeline_status: 'COMPLETE' },
+        select: { pipeline_status: true },
       });
 
-      return res.json({ success: true });
+      // Advance pipeline to BBSF
+      await prisma.salesContract.update({
+        where: { kp },
+        data: { pipeline_status: 'BBSF' },
+      });
+
+      await prisma.pipelineEvent.create({
+        data: {
+          kp,
+          from_stage: prev?.pipeline_status ?? null,
+          to_stage: 'BBSF',
+        },
+      });
+
+      return res.json({ success: true, kp, pipeline_status: 'BBSF' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -1491,8 +1506,28 @@ router.post('/bbsf', requireAuth,
       if (Object.keys(sanforData).length > 2) {
         await prisma.bBSFSanforRun.create({ data: sanforData });
       }
-      
-      return res.json({ success: true });
+
+      // Fetch previous stage before updating
+      const prev = await prisma.salesContract.findUnique({
+        where: { kp },
+        select: { pipeline_status: true },
+      });
+
+      // Advance pipeline to INSPECT_FINISH
+      await prisma.salesContract.update({
+        where: { kp },
+        data: { pipeline_status: 'INSPECT_FINISH' },
+      });
+
+      await prisma.pipelineEvent.create({
+        data: {
+          kp,
+          from_stage: prev?.pipeline_status ?? null,
+          to_stage: 'INSPECT_FINISH',
+        },
+      });
+
+      return res.json({ success: true, kp, pipeline_status: 'INSPECT_FINISH' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -2845,13 +2880,13 @@ router.get('/indigo/records',
     const [data, total] = await Promise.all([
       prisma.indigoRun.findMany({
         where,
-        orderBy: { tgl: 'desc' },
+        orderBy: { tanggal: 'desc' },
         skip,
         take: limit,
         select: {
           id: true,
           kp: true,
-          tgl: true,
+          tanggal: true,
           mc: true,
           speed: true,
           bak_celup: true,

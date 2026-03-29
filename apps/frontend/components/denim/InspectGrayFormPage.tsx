@@ -112,7 +112,7 @@ export default function InspectGrayFormPage({
       });
       await authFetch('/denim/inspect-gray', { method: isEditMode ? 'PUT' : 'POST', body: JSON.stringify({ kp, inspector_name: form.inspector_name || null, sj: parseFloat(form.sj) || null, opg: form.opg || null, rolls: payload }) });
       toast.success(isEditMode ? `Inspection updated for KP ${kp}.` : `Inspection complete for KP ${kp}. Order moved to BBSF.`);
-      router.push(isEditMode ? `/denim/admin/orders/${kp}` : '/denim/inbox/inspect-gray');
+      router.push(isEditMode ? `/denim/admin/orders/${kp}` : '/denim/inbox/bbsf');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to save inspection data.';
       toast.error(message);

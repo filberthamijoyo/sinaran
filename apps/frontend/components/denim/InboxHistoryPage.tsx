@@ -9,6 +9,13 @@ import { format } from 'date-fns';
 
 type RecordItem = Record<string, unknown>;
 
+type PaginatedRecords<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
+
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
   try { return format(new Date(iso), 'd MMM yyyy'); }
@@ -80,8 +87,8 @@ function HistoryTable({
     setLoading(true);
     setError(null);
     try {
-      const data = await authFetch<RecordItem[]>(apiEndpoint);
-      setRows(Array.isArray(data) ? data : []);
+      const result = await authFetch<PaginatedRecords<RecordItem>>(apiEndpoint);
+      setRows(Array.isArray(result?.data) ? result.data : []);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load');
     } finally {

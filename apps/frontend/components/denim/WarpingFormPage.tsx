@@ -30,6 +30,7 @@ interface WarpingFormState {
   // ── Auto fields (from SC / computed) ──────────────────────────
   kode_full: string;
   benang: string;
+  lot_lusi: string;
   lot: string;
   sp: string;
   pt: string;
@@ -112,13 +113,13 @@ function Field({ label, children, error }: { label: string; children: React.Reac
   );
 }
 
-function AutoField({ label, value }: { label: string; value: string }) {
+function AutoField({ label, value, error }: { label: string; value: string; error?: string }) {
   return (
-    <div>
+    <div style={error ? { ...READONLY_STYLE, border: '1px solid #DC2626', borderRadius: 8, padding: '9px 12px' } : undefined}>
       <label style={LABEL_STYLE}>{label}</label>
       <div style={{
         backgroundColor: '#F9FAFB',
-        border: '1px solid #F3F4F6',
+        border: error ? 'none' : '1px solid #F3F4F6',
         borderRadius: 8,
         padding: '9px 12px',
         fontSize: 14,
@@ -127,6 +128,7 @@ function AutoField({ label, value }: { label: string; value: string }) {
       }}>
         {value || '—'}
       </div>
+      {error && <p style={{ fontSize: 12, color: '#DC2626', margin: '4px 0 0' }}>{error}</p>}
     </div>
   );
 }
@@ -141,7 +143,7 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState<WarpingFormState>({
-    kode_full: '', benang: '', lot: '', sp: '', pt: '', te: '',
+    kode_full: '', benang: '', lot_lusi: '', lot: '', sp: '', pt: '', te: '',
     tgl: new Date().toISOString().split('T')[0],
     start: '', stop: '', rpm: '', mtr_per_min: '',
     no_mc: '', elongasi: '', strength: '', cv_pct: '',
@@ -154,6 +156,15 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
   // Computed summaries
   const totalPutusan = form.beams.reduce(
     (s, b) => s + (parseInt(b.putusan) || 0), 0
+  );
+  const totalPanjangPlan = form.beams.reduce(
+    (s, b) => s + (parseFloat(b.panjang_plan) || 0), 0
+  );
+  const totalPanjangAktual = form.beams.reduce(
+    (s, b) => s + (parseFloat(b.panjang_aktual) || 0), 0
+  );
+  const totalJumlahEnds = form.beams.reduce(
+    (s, b) => s + (parseInt(b.jumlah_ends) || 0), 0
   );
   const totalBeams = form.beams.filter(b => b.beam_number.trim()).length;
 
@@ -177,6 +188,7 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
           ...f,
           kode_full: (scData?.codename as string) || [(scData?.kons_kode as string), (scData?.kode_number as string), (scData?.kat_kode as string)].filter(Boolean).join(' ') || '',
           benang: (scData?.ne_lusi != null ? String(scData.ne_lusi) : '') as string,
+          lot_lusi: (scData?.lot_lusi as string) || '',
           lot: (scData?.lot_lusi as string) || '',
           sp: (scData?.sp_lusi as string) || '',
           pt: (scData?.j as string) || '',
@@ -254,6 +266,7 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
     if (!form.start.trim())  errs.start  = 'Start Time is required';
     if (!form.stop.trim())   errs.stop   = 'Stop Time is required';
     if (!form.no_mc.trim())  errs.no_mc  = 'Machine No. (NO MC) is required';
+    if (!form.lot_lusi.trim()) errs.lot_lusi = 'Lot Lusi is required';
     const filledBeams = form.beams.filter(b => b.beam_number.trim());
     if (filledBeams.length === 0) errs.beams = 'At least one beam row must have a Beam Number';
 
@@ -292,6 +305,7 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
         total_waktu: form.total_waktu ? parseFloat(form.total_waktu) : null,
         eff_warping: form.eff_warping ? parseFloat(form.eff_warping) : null,
         cn_1: form.cn_1 ? parseFloat(form.cn_1) : null,
+        lot_lusi: form.lot_lusi || null,
         total_beam: filledBeams.length,
         total_putusan: totalPutusan,
         beams: validBeams,
@@ -349,7 +363,13 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               <AutoField label="Kode Full" value={form.kode_full} />
               <AutoField label="Benang (Ne K Lusi)" value={form.benang} />
-              <AutoField label="Lot Lusi" value={form.lot} />
+              <Field label="Lot Lusi">
+                <Input type="text" value={form.lot_lusi}
+                  onChange={e => { setField('lot_lusi', e.target.value); setErrors(p => ({ ...p, lot_lusi: '' })); }}
+                  placeholder="e.g. LOT-2024-001"
+                  style={errors.lot_lusi ? { ...FIELD_STYLE, border: '1px solid #DC2626' } : FIELD_STYLE} />
+                {errors.lot_lusi && <p style={{ fontSize: 12, color: '#DC2626', margin: '4px 0 0' }}>{errors.lot_lusi}</p>}
+              </Field>
               <AutoField label="SP Lusi" value={form.sp} />
               <AutoField label="PT (Panjang Tarikan)" value={form.pt} />
               <AutoField label="TE" value={form.te} />
@@ -388,21 +408,44 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
             title="Beam Table"
             subtitle={`${totalBeams} beam${totalBeams !== 1 ? 's' : ''} filled`}
             action={
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginRight: 8 }}>
-                  <span style={{ fontSize: 12, color: '#6B7280' }}>Total Putusan:</span>
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, fontWeight: 700, color: '#1D4ED8' }}>
-                    {totalPutusan}
-                  </span>
-                </div>
-                <Button type="button" variant="secondary" size="sm" onClick={addBeam}
-                  leftIcon={<Plus size={13} />}>
-                  Add Beam
-                </Button>
-              </div>
+              <Button type="button" variant="secondary" size="sm" onClick={addBeam}
+                leftIcon={<Plus size={13} />}>
+                Add Beam
+              </Button>
             }
             noPadding
           >
+            {/* Summary tiles */}
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              padding: '12px 16px',
+              background: '#FFFFFF',
+              borderBottom: '1px solid #E5E7EB',
+              overflowX: 'auto',
+            }}>
+              {[
+                { label: 'Total Panjang Plan', value: totalPanjangPlan.toFixed(1) },
+                { label: 'Total Panjang Aktual', value: totalPanjangAktual.toFixed(1) },
+                { label: 'Total Jumlah Ends', value: totalJumlahEnds.toLocaleString() },
+                { label: 'Total Putusan', value: totalPutusan.toLocaleString() },
+              ].map(tile => (
+                <div key={tile.label} style={{
+                  backgroundColor: '#F9FAFB',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 8,
+                  padding: '10px 16px',
+                  minWidth: 160,
+                }}>
+                  <div style={{ fontSize: 10, textTransform: 'uppercase', color: '#9CA3AF', letterSpacing: '0.06em', marginBottom: 4 }}>
+                    {tile.label}
+                  </div>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 18, fontWeight: 700, color: '#0F1E2E' }}>
+                    {tile.value}
+                  </div>
+                </div>
+              ))}
+            </div>
             {/* Header row */}
             <div style={{
               display: 'grid',
@@ -469,6 +512,28 @@ export default function WarpingFormPage({ kp }: { kp: string }) {
                 </div>
               </div>
             ))}
+            {/* Totals row */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '40px 1fr 1fr 1fr 1fr 1fr 40px',
+              gap: 12,
+              padding: '8px 16px',
+              backgroundColor: '#F9FAFB',
+              borderTop: '2px solid #E5E7EB',
+              alignItems: 'center',
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontWeight: 600,
+              color: '#0F1E2E',
+              fontSize: 13,
+            }}>
+              <span style={{ textAlign: 'center', color: '#9CA3AF' }} />
+              <span style={{ color: '#6B7280' }}>TOTALS</span>
+              <span>{totalPanjangPlan > 0 ? totalPanjangPlan.toFixed(1) : '—'}</span>
+              <span>{totalPanjangAktual > 0 ? totalPanjangAktual.toFixed(1) : '—'}</span>
+              <span>{totalJumlahEnds > 0 ? totalJumlahEnds.toLocaleString() : '—'}</span>
+              <span>{totalPutusan > 0 ? totalPutusan.toLocaleString() : '—'}</span>
+              <span />
+            </div>
           </SectionCard>
 
           {/* Section 4 — Quality & Machine */}

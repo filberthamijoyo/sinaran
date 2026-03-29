@@ -115,7 +115,7 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
         }),
       });
       toast.success(isEditMode ? `BBSF updated for KP ${kp}.` : `BBSF complete for KP ${kp}. Order moved to Inspect Finish.`);
-      router.push(isEditMode ? `/denim/admin/orders/${kp}` : '/denim/inbox/bbsf');
+      router.push(isEditMode ? `/denim/admin/orders/${kp}` : '/denim/inbox/inspect-finish');
     } catch {
       toast.error('Failed to save BBSF data.');
     } finally {
