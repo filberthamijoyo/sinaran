@@ -2982,6 +2982,101 @@ router.get('/weaving/records',
   }
 });
 
+// GET /api/denim/weaving-summary/:kp
+// Returns machine breakdown and recent logs for a KP's weaving data
+router.get('/weaving-summary/:kp',
+  requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
+  async (req: Request, res: Response) => {
+    try {
+      const { kp } = req.params;
+
+      // Machine breakdown
+      const machinesRaw = await prisma.$queryRaw<Array<{
+        machine: string;
+        record_count: bigint;
+        avg_a_pct: number;
+        avg_p_pct: number;
+        total_meters: number;
+        first_date: Date;
+        last_date: Date;
+      }>>`
+        SELECT
+          COALESCE(machine, 'Unknown') as machine,
+          COUNT(*)::bigint as record_count,
+          ROUND(AVG(a_pct)::numeric, 1)::float as avg_a_pct,
+          ROUND(AVG(p_pct)::numeric, 1)::float as avg_p_pct,
+          ROUND(SUM(meters)::numeric, 0)::float as total_meters,
+          MIN(tanggal) as first_date,
+          MAX(tanggal) as last_date
+        FROM "WeavingRecord"
+        WHERE kp = ${kp}
+        GROUP BY COALESCE(machine, 'Unknown')
+        ORDER BY total_meters DESC
+      `;
+
+      const machines = machinesRaw.map(r => ({
+        machine: r.machine,
+        recordCount: Number(r.record_count),
+        avgA: r.avg_a_pct || 0,
+        avgP: r.avg_p_pct || 0,
+        totalMeters: Number(r.total_meters),
+        firstDate: r.first_date?.toISOString() || null,
+        lastDate: r.last_date?.toISOString() || null,
+      }));
+
+      // Recent 10 datalog records
+      const recentLogs = await prisma.$queryRaw<Array<{
+        tanggal: Date;
+        shift: string;
+        machine: string;
+        meters: Prisma.Decimal;
+        a_pct: Prisma.Decimal;
+        p_pct: Prisma.Decimal;
+      }>>`
+        SELECT tanggal, COALESCE(shift, '') as shift, COALESCE(machine, 'Unknown') as machine,
+               meters, a_pct, p_pct
+        FROM "WeavingRecord"
+        WHERE kp = ${kp}
+        ORDER BY tanggal DESC
+        LIMIT 10
+      `;
+
+      const recentLogsFormatted = recentLogs.map(r => ({
+        tanggal: r.tanggal?.toISOString() || null,
+        shift: r.shift,
+        machine: r.machine,
+        meters: r.meters ? parseFloat(r.meters.toString()) : 0,
+        a: r.a_pct ? parseFloat(r.a_pct.toString()) : null,
+        p: r.p_pct ? parseFloat(r.p_pct.toString()) : null,
+      }));
+
+      // Grand totals
+      const totalsRaw = await prisma.$queryRaw<Array<{ total_meters: Prisma.Decimal; total_a: number; days_active: bigint }>>`
+        SELECT
+          ROUND(SUM(meters)::numeric, 0)::float as total_meters,
+          ROUND(AVG(a_pct)::numeric, 1)::float as total_a,
+          COUNT(DISTINCT DATE(tanggal))::bigint as days_active
+        FROM "WeavingRecord"
+        WHERE kp = ${kp}
+      `;
+      const totals = totalsRaw[0] || { total_meters: 0, total_a: 0, days_active: 0 };
+
+      res.json({
+        machines,
+        recentLogs: recentLogsFormatted,
+        totalMeters: parseFloat(totalsRaw[0]?.total_meters?.toString() || '0'),
+        avgEfficiency: machinesRaw.length > 0
+          ? machinesRaw.reduce((s, r) => s + (r.avg_a_pct || 0), 0) / machinesRaw.length
+          : null,
+        daysActive: Number(totals.days_active || 0),
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // Catch-all error handler — catches anything that escapes a route's try/catch
 // (unexpected sync throws, middleware errors, etc.)
 router.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

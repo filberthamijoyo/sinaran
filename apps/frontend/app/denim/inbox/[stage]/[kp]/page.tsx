@@ -4,7 +4,7 @@ import IndigoFormPage from '@/components/denim/IndigoFormPage'
 import InspectGrayFormPage from '@/components/denim/InspectGrayFormPage'
 import BBSFFormPage from '@/components/denim/BBSFFormPage'
 import InspectFinishFormPage from '@/components/denim/InspectFinishFormPage'
-import WeavingFormPage from '@/components/denim/WeavingFormPage'
+import WeavingDetailPage from '@/components/denim/WeavingDetailPage'
 
 interface Props {
   params: Promise<{ stage: string; kp: string }>
@@ -18,7 +18,7 @@ export default async function StageFormPage({ params }: Props) {
   if (stage === 'inspect-gray')   return <InspectGrayFormPage kp={kp} />
   if (stage === 'bbsf')           return <BBSFFormPage kp={kp} />
   if (stage === 'inspect-finish') return <InspectFinishFormPage kp={kp} />
-  if (stage === 'weaving')        return <WeavingFormPage kp={kp} />
+  if (stage === 'weaving')        return <WeavingDetailPage kp={kp} />
 
   notFound()
 }

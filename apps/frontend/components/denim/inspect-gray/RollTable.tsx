@@ -87,7 +87,7 @@ function DefectInputs({
 }
 
 const ROW_GRID = {
-  gridTemplateColumns: '40px 1fr 1fr 1fr 1fr 1fr 1fr 2fr 40px',
+  gridTemplateColumns: '40px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 2fr 40px',
   gap: '8px',
 } as const;
 
@@ -154,6 +154,7 @@ export default function RollTable({
         <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Width (cm)</p>
         <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Weight (kg)</p>
         <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Grade</p>
+        <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>OPG</p>
         <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>BMC</p>
         <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Defects</p>
         <p />
@@ -213,6 +214,13 @@ export default function RollTable({
                     <option value="C">C</option>
                     <option value="Reject">Reject</option>
                   </select>
+                  <Input
+                    type="text"
+                    value={roll.opg}
+                    onChange={e => setRollField(i, 'opg', e.target.value)}
+                    placeholder="Operator"
+                    style={{ ...inputStyle, height: '34px' }}
+                  />
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 600, color: hasDefects ? 'var(--warning)' : 'var(--text-muted)' }}>
                     {hasDefects ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

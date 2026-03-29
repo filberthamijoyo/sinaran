@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authFetch } from '../../lib/authFetch';
 import { PageShell } from '../ui/erp/PageShell';
@@ -9,6 +9,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Skeleton } from '../ui/skeleton';
 import { toast } from 'sonner';
+import { RotateCcw } from 'lucide-react';
 import RollTable from './inspect-gray/RollTable';
 import SummarySection from './inspect-gray/SummarySection';
 import {

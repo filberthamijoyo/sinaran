@@ -19,6 +19,7 @@ export interface RollRow {
   berat: string;
   grade: string;
   cacat: string;
+  opg: string;
   defects: DefectFields;
   expanded: boolean;
 }
@@ -49,6 +50,7 @@ export function emptyRoll(): RollRow {
     berat: '',
     grade: '',
     cacat: '',
+    opg: '',
     defects: {},
     expanded: false,
   };
