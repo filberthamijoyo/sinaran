@@ -3,8 +3,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageShell } from '@/components/ui/erp/PageShell';
-import { SectionCard } from '@/components/ui/erp/SectionCard';
-import { StatCard } from '@/components/ui/stat-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authFetch } from '@/lib/authFetch';
@@ -538,6 +536,10 @@ export default function JakartaDashboardPage() {
   const stageCounts = data?.stageCounts ?? {};
   const pendingCount = stageCounts['PENDING_APPROVAL'] ?? 0;
 
+  const completedThisMonth = stageCounts['COMPLETE'] ?? 0;
+  const inPipeline = ['WARPING','INDIGO','WEAVING','INSPECT_GRAY','BBSF','INSPECT_FINISH']
+    .reduce((s, k) => s + (stageCounts[k] ?? 0), 0);
+
   return (
     <div style={{ backgroundColor: '#F0F4F8', minHeight: '100vh' }}>
       <PageShell
@@ -554,132 +556,170 @@ export default function JakartaDashboardPage() {
           </Button>
         }
       >
-        {/* ── KPI Row ── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 16,
-          marginBottom: 20,
-        }}>
-          <StatCard
-            variant="dark"
-            label="TOTAL CONTRACTS"
-            value={loading ? '' : (data?.total ?? 0)}
-            loading={loading}
-          />
-          <StatCard
-            variant="light"
-            label="PENDING APPROVAL"
-            value={loading ? '' : pendingCount}
-            loading={loading}
-            trend={pendingCount > 0 ? { value: pendingCount, label: 'need review' } : undefined}
-          />
-          <StatCard
-            variant="light"
-            label="PENDING SACON"
-            value={loading ? '' : (stageCounts['SACON'] ?? 0)}
-            loading={loading}
-          />
-          <StatCard
-            variant="dark"
-            label="COMPLETED THIS MONTH"
-            value={loading ? '' : (data?.recentlyCompleted ?? 0)}
-            loading={loading}
-          />
-        </div>
+        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16, boxSizing: 'border-box' }}>
 
-        {/* ── Two-column panels ── */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '3fr 2fr',
-          gap: 16,
-          marginBottom: 16,
-        }}>
-          {/* Left: Pending Approvals */}
-          <SectionCard
-            title="Pending Approvals"
-            subtitle="Sales contracts awaiting your decision"
-            action={
-              <button
-                onClick={() => router.push('/denim/approvals/pending')}
-                style={{
-                  background: 'none', border: 'none',
-                  fontSize: 13, fontWeight: 500, color: '#1D4ED8',
-                  cursor: 'pointer', fontFamily: 'inherit', padding: 0,
-                }}
-              >
-                Review All →
-              </button>
-            }
-          >
-            {loading ? (
-              <div style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} style={{ height: 40, background: '#F3F4F6', borderRadius: 6 }} />
-                ))}
+          {/* ── Row 1: Hero (2fr) + KPI stack (1fr) ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, minHeight: 220 }}>
+            {/* Dark hero: Total Contracts */}
+            <div style={{
+              backgroundColor: '#0D1B3E',
+              backgroundImage: "url('/denim_bg.jpg')",
+              backgroundSize: 'cover',
+              backgroundBlendMode: 'multiply',
+              borderRadius: 12,
+              padding: '28px 32px',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}>
+              <p style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)', margin: 0 }}>
+                Total Contracts
+              </p>
+              <div>
+                <p style={{ fontSize: 64, fontWeight: 800, color: '#FFFFFF', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '-0.02em', lineHeight: 1, margin: 0 }}>
+                  {loading ? '—' : (data?.total ?? 0).toLocaleString()}
+                </p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '6px 0 0 0' }}>
+                  all time
+                </p>
               </div>
-            ) : error ? (
-              <div style={{ padding: '16px 0' }}>
-                <p style={{ fontSize: 12, color: 'var(--danger-text)' }}>{error}</p>
-                <Button variant="secondary" size="sm" onClick={fetchSummary} style={{ marginTop: 8 }}>Retry</Button>
-              </div>
-            ) : (
-              <PendingApprovalsPanel items={pendingApprovals.slice(0, 5)} onRefresh={fetchSummary} />
-            )}
-          </SectionCard>
+            </div>
 
-          {/* Right: Pending Sacon */}
-          <SectionCard
-            title="Pending Sacon"
-            subtitle="Sacon samples awaiting ACC decision"
-            action={
-              <button
-                onClick={() => router.push('/denim/approvals/sacon')}
-                style={{
-                  background: 'none', border: 'none',
-                  fontSize: 13, fontWeight: 500, color: '#1D4ED8',
-                  cursor: 'pointer', fontFamily: 'inherit', padding: 0,
-                }}
-              >
-                View All →
-              </button>
-            }
-          >
-            {loading ? (
-              <div style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} style={{ height: 40, background: '#F3F4F6', borderRadius: 6 }} />
-                ))}
+            {/* KPI stack: Pending + Sacon */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Pending Approval */}
+              <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px 24px', flex: 1 }}>
+                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, color: '#D97706', margin: 0, marginBottom: 10 }}>
+                  Pending Approval
+                </p>
+                <p style={{ fontSize: 44, fontWeight: 800, color: '#0F1E2E', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, margin: 0 }}>
+                  {loading ? '—' : pendingCount}
+                </p>
+                <p style={{ fontSize: 13, color: '#9CA3AF', margin: '8px 0 0 0' }}>
+                  need review
+                </p>
               </div>
-            ) : (
-              <PendingSaconPanel items={pendingSacons.slice(0, 5)} onRefresh={fetchSummary} />
-            )}
-          </SectionCard>
-        </div>
-
-        {/* ── Pipeline Status ── */}
-        <SectionCard
-          title="Pipeline Status"
-          subtitle="Current order distribution across all stages"
-        >
-          <div style={{ marginTop: 8 }}>
-            <PipelineBars stageCounts={stageCounts} />
+              {/* Sacon Wait */}
+              <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px 24px', flex: 1 }}>
+                <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, color: '#7C3AED', margin: 0, marginBottom: 10 }}>
+                  Sacon Wait
+                </p>
+                <p style={{ fontSize: 44, fontWeight: 800, color: '#0F1E2E', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, margin: 0 }}>
+                  {loading ? '—' : (stageCounts['SACON'] ?? 0)}
+                </p>
+                <p style={{ fontSize: 13, color: '#9CA3AF', margin: '8px 0 0 0' }}>
+                  awaiting ACC
+                </p>
+              </div>
+            </div>
           </div>
-        </SectionCard>
+
+          {/* ── Row 2: 3 stat cards ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {/* Pending Approval */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 10, padding: '16px 20px' }}>
+              <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, color: '#D97706', margin: 0, marginBottom: 8 }}>
+                Pending Approval
+              </p>
+              <p style={{ fontSize: 28, fontWeight: 700, color: '#0F1E2E', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, margin: 0 }}>
+                {loading ? '—' : pendingCount}
+              </p>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: '4px 0 0 0' }}>
+                awaiting Jakarta review
+              </p>
+            </div>
+            {/* Completed */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 10, padding: '16px 20px' }}>
+              <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, color: '#059669', margin: 0, marginBottom: 8 }}>
+                Completed
+              </p>
+              <p style={{ fontSize: 28, fontWeight: 700, color: '#0F1E2E', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, margin: 0 }}>
+                {loading ? '—' : completedThisMonth}
+              </p>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: '4px 0 0 0' }}>
+                orders completed
+              </p>
+            </div>
+            {/* Active Pipeline */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 10, padding: '16px 20px' }}>
+              <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 500, color: '#0891B2', margin: 0, marginBottom: 8 }}>
+                Active Pipeline
+              </p>
+              <p style={{ fontSize: 28, fontWeight: 700, color: '#0F1E2E', fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1, margin: 0 }}>
+                {loading ? '—' : inPipeline}
+              </p>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: '4px 0 0 0' }}>
+                orders in production
+              </p>
+            </div>
+          </div>
+
+          {/* ── Row 3: Pending Approvals mini-table (3fr) + Pipeline bars (2fr) ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, minHeight: 300 }}>
+            {/* Left: Pending Approvals */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid #E5E7EB', background: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0F1E2E', margin: 0 }}>
+                    Pending Approvals
+                  </p>
+                  <p style={{ fontSize: 11, color: '#9CA3AF', margin: 0 }}>
+                    Sales contracts awaiting your decision
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/denim/approvals/pending')}
+                  style={{ background: 'none', border: 'none', fontSize: 13, fontWeight: 500, color: '#1D4ED8', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+                >
+                  Review All →
+                </button>
+              </div>
+              <div style={{ flex: 1, overflow: 'auto' }}>
+                {loading ? (
+                  <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {[0, 1, 2].map(i => (
+                      <div key={i} style={{ height: 40, background: '#F3F4F6', borderRadius: 6 }} />
+                    ))}
+                  </div>
+                ) : error ? (
+                  <div style={{ padding: 16 }}>
+                    <p style={{ fontSize: 12, color: '#DC2626' }}>{error}</p>
+                    <Button variant="secondary" size="sm" onClick={fetchSummary} style={{ marginTop: 8 }}>Retry</Button>
+                  </div>
+                ) : (
+                  <PendingApprovalsPanel items={pendingApprovals.slice(0, 5)} onRefresh={fetchSummary} />
+                )}
+              </div>
+            </div>
+
+            {/* Right: Pipeline Status bars */}
+            <div style={{ backgroundColor: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px 24px' }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#0F1E2E', margin: '0 0 16px 0' }}>
+                Pipeline Status
+              </p>
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {PIPELINE_STAGES.slice(0, 5).map(stage => (
+                    <div key={stage.key} style={{ height: 36, background: '#F3F4F6', borderRadius: 6 }} />
+                  ))}
+                </div>
+              ) : (
+                <PipelineBars stageCounts={stageCounts} />
+              )}
+            </div>
+          </div>
+
+        </div>
 
         <style>{`
           @media (max-width: 1023px) {
-            div[style*="repeat(4, 1fr)"] {
-              grid-template-columns: repeat(2, 1fr) !important;
-            }
+            div[style*="2fr 1fr"] { grid-template-columns: 1fr !important; }
           }
           @media (max-width: 767px) {
-            div[style*="repeat(4, 1fr)"] {
-              grid-template-columns: 1fr !important;
-            }
-            div[style*="3fr 2fr"] {
-              grid-template-columns: 1fr !important;
-            }
+            div[style*="2fr 1fr"] { grid-template-columns: 1fr !important; }
+            div[style*="3fr 2fr"] { grid-template-columns: 1fr !important; }
+            div[style*="repeat(3, 1fr)"] { grid-template-columns: 1fr !important; }
           }
         `}</style>
       </PageShell>

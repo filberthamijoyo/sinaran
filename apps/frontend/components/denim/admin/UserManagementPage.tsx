@@ -7,7 +7,7 @@ import { Input, FormField } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { authFetch } from '@/lib/authFetch';
-import { Plus, Pencil, X } from 'lucide-react';
+import { Plus, Pencil, X, Eye, EyeOff } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────
    Types
@@ -188,6 +188,7 @@ function Slideout({
   const [isResetting, setIsResetting] = useState(false);
   const [resetError, setResetError] = useState('');
   const [resetSuccess, setResetSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Reset state when slideout closes
   useEffect(() => {
@@ -196,6 +197,7 @@ function Slideout({
       setResetPassword('');
       setResetError('');
       setResetSuccess('');
+      setShowPassword(false);
     }
   }, [open]);
 
@@ -263,7 +265,7 @@ function Slideout({
         position: 'fixed',
         right: 0, top: 0,
         height: '100vh',
-        width: 400,
+        width: 420,
         background: T.contentBg,
         borderLeft: `1px solid #E5E7EB`,
         zIndex: 50,
@@ -304,53 +306,79 @@ function Slideout({
           flex: 1, overflowY: 'auto', padding: '24px 20px',
           display: 'flex', flexDirection: 'column', gap: 16,
         }}>
-          <FormField label="Name" required>
-            <Input
-              type="text"
-              placeholder="Full name"
-              value={values.name}
-              onChange={e => onChange('name', e.target.value)}
-            />
-          </FormField>
-
-          <FormField label="Email" required>
-            <Input
-              type="email"
-              placeholder="email@triputra.com"
-              value={values.email}
-              disabled={isEdit}
-              onChange={e => onChange('email', e.target.value)}
-            />
-          </FormField>
-
-          {!isEdit && (
-            <FormField label="Password" required>
+          {/* 2-col grid: Name + Email */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <FormField label="Name" required>
               <Input
-                type="password"
-                placeholder="Set initial password"
-                value={values.password}
-                onChange={e => onChange('password', e.target.value)}
+                type="text"
+                placeholder="Full name"
+                value={values.name}
+                onChange={e => onChange('name', e.target.value)}
               />
             </FormField>
-          )}
+            <FormField label="Email" required>
+              <Input
+                type="email"
+                placeholder="email@triputra.com"
+                value={values.email}
+                disabled={isEdit}
+                onChange={e => onChange('email', e.target.value)}
+              />
+            </FormField>
+          </div>
 
-          <FormField label="Role" required>
-            <select
-              style={selectStyle}
-              value={values.role}
-              onChange={e => {
-                const r = e.target.value as UserRole;
-                onChange('role', r);
-                if (r !== 'factory') onChange('stage', '');
-              }}
-            >
-              <option value="admin">Admin</option>
-              <option value="jakarta">Jakarta HQ</option>
-              <option value="factory">Factory</option>
-            </select>
-          </FormField>
+          {/* 2-col grid: Password + Role */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {!isEdit && (
+              <FormField label="Password" required>
+                <div style={{ position: 'relative' }}>
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Set initial password"
+                    value={values.password}
+                    onChange={e => onChange('password', e.target.value)}
+                    style={{ paddingRight: 40 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(v => !v)}
+                    style={{
+                      position:    'absolute',
+                      right:       12,
+                      top:         '50%',
+                      transform:   'translateY(-50%)',
+                      background:  'none',
+                      border:      'none',
+                      cursor:      'pointer',
+                      color:       T.textMuted,
+                      padding:     0,
+                      display:     'flex',
+                      alignItems:  'center',
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+              </FormField>
+            )}
+            <FormField label="Role" required>
+              <select
+                style={selectStyle}
+                value={values.role}
+                onChange={e => {
+                  const r = e.target.value as UserRole;
+                  onChange('role', r);
+                  if (r !== 'factory') onChange('stage', '');
+                }}
+              >
+                <option value="admin">Admin</option>
+                <option value="jakarta">Jakarta HQ</option>
+                <option value="factory">Factory</option>
+              </select>
+            </FormField>
+          </div>
 
-          {/* Stage — animate in/out */}
+          {/* Stage — animate in/out, full width */}
           <div style={{
             overflow: 'hidden',
             transition: 'max-height 250ms ease, opacity 250ms ease',
@@ -390,12 +418,34 @@ function Slideout({
 
               {showResetPassword && (
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <Input
-                    type="password"
-                    placeholder="New password"
-                    value={resetPassword}
-                    onChange={e => setResetPassword(e.target.value)}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="New password"
+                      value={resetPassword}
+                      onChange={e => setResetPassword(e.target.value)}
+                      style={{ paddingRight: 40 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(v => !v)}
+                      style={{
+                        position:    'absolute',
+                        right:       12,
+                        top:         '50%',
+                        transform:   'translateY(-50%)',
+                        background:  'none',
+                        border:      'none',
+                        cursor:      'pointer',
+                        color:       T.textMuted,
+                        padding:     0,
+                        display:     'flex',
+                        alignItems:  'center',
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -478,9 +528,10 @@ export default function UserManagementPage() {
     setLoading(true);
     setFetchError('');
     try {
-      const data = await authFetch<{ users: User[] }>('/auth/users');
-      setUsers(data.users ?? []);
+      const data = await authFetch<{ items: User[] }>('/auth/users');
+      setUsers(data.items ?? []);
     } catch (err: unknown) {
+      console.error('[UserManagementPage] fetchUsers failed:', err);
       setFetchError(err instanceof Error ? err.message : 'Failed to load users');
     } finally {
       setLoading(false);

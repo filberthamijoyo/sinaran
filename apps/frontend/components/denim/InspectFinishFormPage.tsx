@@ -11,7 +11,6 @@ import { Skeleton } from '../ui/skeleton';
 import { toast } from 'sonner';
 import { RotateCcw } from 'lucide-react';
 import RollTable from './inspect-finish/RollTable';
-import GradeSection from './inspect-finish/GradeSection';
 import {
   InspectFinishFormState,
   InspectFinishSummary,
@@ -332,14 +331,14 @@ export default function InspectFinishFormPage({
 
   const inputBase: React.CSSProperties = {
     height: 36,
-    borderRadius: 'var(--input-radius)',
+    borderRadius: 8,
     borderWidth: '1px',
     borderStyle: 'solid',
-    borderColor: 'var(--border)',
-    background: 'var(--page-bg)',
+    borderColor: '#E5E7EB',
+    background: '#FFFFFF',
     padding: '0 12px',
     fontSize: 14,
-    color: 'var(--text-primary)',
+    color: '#0F1E2E',
     width: '100%',
     fontFamily: 'inherit',
     outline: 'none',
@@ -353,6 +352,7 @@ export default function InspectFinishFormPage({
   };
 
   return (
+    <div style={{ backgroundColor: '#F0F4F8', minHeight: '100vh' }}>
     <PageShell
       title="Inspect Finish Form"
       subtitle={subtitle}
@@ -380,9 +380,9 @@ export default function InspectFinishFormPage({
 
           {/* Section 1 — Inspection Details */}
           <SectionCard title="Inspection Details" subtitle="Shift and operator information">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#374151', marginBottom: 6 }}>
                   Shift
                 </label>
                 <select
@@ -397,7 +397,7 @@ export default function InspectFinishFormPage({
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#374151', marginBottom: 6 }}>
                   Operator
                 </label>
                 <Input
@@ -411,15 +411,44 @@ export default function InspectFinishFormPage({
             </div>
           </SectionCard>
 
-          <RollTable
-            rolls={form.rolls}
-            setRollField={setRollField}
-            setDefectField={setDefectField}
-            toggleExpand={toggleExpand}
-            addRoll={addRoll}
-            removeRoll={removeRoll}
-          />
-          <GradeSection summary={summary} />
+          {/* Roll Table */}
+          <SectionCard title="Roll Data" subtitle="Enter inspected roll measurements" noPadding>
+            <RollTable
+              rolls={form.rolls}
+              setRollField={setRollField}
+              setDefectField={setDefectField}
+              toggleExpand={toggleExpand}
+              addRoll={addRoll}
+              removeRoll={removeRoll}
+            />
+          </SectionCard>
+
+          {/* Grade Breakdown */}
+          <SectionCard title="Grade Breakdown" subtitle="Summary of grades assigned to inspected rolls">
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {[
+                { label: 'Grade A', count: summary.gradeACount, color: '#059669' },
+                { label: 'Grade B', count: summary.gradeBCount, color: '#D97706' },
+                { label: 'Grade C', count: summary.gradeCCount, color: '#D97706' },
+                { label: 'Reject', count: summary.rejectCount, color: '#DC2626' },
+              ].map(tile => (
+                <div key={tile.label} style={{
+                  background: '#F9FAFB',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 8,
+                  padding: '10px 16px',
+                  minWidth: 90,
+                }}>
+                  <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: 4, marginTop: 0, fontWeight: 500 }}>
+                    {tile.label}
+                  </p>
+                  <p style={{ fontSize: 20, fontWeight: 700, color: tile.color, fontFamily: "'IBM Plex Mono', monospace", margin: 0 }}>
+                    {tile.count}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
 
         </div>
 
@@ -427,8 +456,8 @@ export default function InspectFinishFormPage({
         <div style={{
           position: 'sticky',
           bottom: 0,
-          background: 'var(--content-bg)',
-          borderTop: '1px solid var(--border)',
+          background: '#FFFFFF',
+          borderTop: '1px solid #E5E7EB',
           padding: '14px 32px',
           display: 'flex',
           justifyContent: 'flex-end',
@@ -469,5 +498,6 @@ export default function InspectFinishFormPage({
         />
       )}
     </PageShell>
+    </div>
   );
 }

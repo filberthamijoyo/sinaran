@@ -1094,6 +1094,7 @@ model BBSFWashingRun {
   id              Int      @id @default(autoincrement())
   kp              String
   tgl             DateTime
+  line            Int?
   shift           String?
   mc              String?
   jam_proses      String?

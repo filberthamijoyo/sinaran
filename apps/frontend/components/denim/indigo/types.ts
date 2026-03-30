@@ -3,9 +3,6 @@ export interface IndigoFormState {
   tgl: string;
   start: string;
   stop: string;
-  // ── Rope Details ─────────────────────────────────────────────────
-  jumlah_rope: string;
-  panjang_rope: string;
   // ── Process Parameters ────────────────────────────────────────────
   mc: string;
   speed: string;
@@ -141,8 +138,6 @@ export const emptyIndigoForm = (): IndigoFormState => ({
   tgl: new Date().toISOString().split('T')[0],
   start: '',
   stop: '',
-  jumlah_rope: '',
-  panjang_rope: '',
   mc: '',
   speed: '',
   bak_celup: '',

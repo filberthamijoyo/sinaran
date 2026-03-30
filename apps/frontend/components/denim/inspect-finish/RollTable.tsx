@@ -131,9 +131,9 @@ export default function RollTable({
 }: RollTableProps) {
   return (
     <div style={{
-      background: 'var(--content-bg)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--card-radius)',
+      background: '#FFFFFF',
+      border: '1px solid #E5E7EB',
+      borderRadius: 12,
       overflow: 'hidden',
     }}>
       {/* Table header */}
@@ -142,9 +142,10 @@ export default function RollTable({
           display: 'grid',
           ...ROW_GRID,
           padding: '0 16px',
-          background: 'var(--page-bg)',
-          borderBottom: '1px solid var(--border)',
+          background: '#F9FAFB',
+          borderBottom: '1px solid #E5E7EB',
           alignItems: 'center',
+          height: 36,
         }}
       >
         <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', textAlign: 'center' }}>#</p>

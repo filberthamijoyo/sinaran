@@ -860,14 +860,27 @@ export default function SaconInboxPage() {
         >
           Refresh
         </Button>
-          <Button
-            variant="primary"
-            size="sm"
+          <button
             onClick={() => setShowNewOrder(true)}
-            leftIcon={<Plus size={13} />}
+            style={{
+              display:     'inline-flex',
+              alignItems:  'center',
+              gap:         6,
+              height:      32,
+              padding:     '0 14px',
+              background:  '#1D4ED8',
+              color:       '#FFFFFF',
+              border:      'none',
+              borderRadius: 8,
+              fontSize:    13,
+              fontWeight:  600,
+              cursor:      'pointer',
+              fontFamily:  'inherit',
+            }}
           >
-            + New Sales Contract
-          </Button>
+            <Plus size={13} />
+            New Sales Contract
+          </button>
         </>
       }
       noPadding
@@ -879,16 +892,17 @@ export default function SaconInboxPage() {
       }}>
 
         {/* Section header */}
-          <p style={{
-            fontSize:      13,
-            fontWeight:    600,
-            color:         '#0F1E2E',
-            padding:      '12px 0',
-            borderBottom: '1px solid #E5E7EB',
-            marginBottom: 16,
-          }}>
+        <p style={{
+          fontSize:      13,
+          fontWeight:    600,
+          color:         '#0F1E2E',
+          borderBottom:  '1px solid #E5E7EB',
+          paddingBottom: 8,
+          marginBottom:  16,
+          marginTop:     0,
+        }}>
           Awaiting Jakarta Approval
-          </p>
+        </p>
 
         {/* Table */}
         <div style={{

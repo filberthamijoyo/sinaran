@@ -33,7 +33,7 @@ export function SectionCard({
     >
       <div
         style={{
-          padding: '16px 24px',
+          padding: '14px 20px',
           borderBottom: '1px solid #F3F4F6',
           display: 'flex',
           alignItems: 'center',
@@ -69,7 +69,7 @@ export function SectionCard({
 
       {isDimmed ? (
         <div style={{
-          padding: '28px 24px',
+          padding: 20,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -81,7 +81,7 @@ export function SectionCard({
           {children}
         </div>
       ) : (
-        <div style={{ padding: noPadding ? 0 : '20px 24px' }}>{children}</div>
+        <div style={{ padding: noPadding ? 0 : 20 }}>{children}</div>
       )}
     </div>
   );

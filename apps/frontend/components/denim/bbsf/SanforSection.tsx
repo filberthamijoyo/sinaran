@@ -5,9 +5,15 @@ import { SectionCard } from '../../ui/erp/SectionCard';
 import { BBSFFormState } from './types';
 import { Ruler, Gauge } from 'lucide-react';
 
+type FormErrors = Partial<Record<string, string>>;
+
 interface Props {
   form: BBSFFormState;
   setField: (key: keyof BBSFFormState, value: string) => void;
+  tab: 'sanfor1' | 'sanfor2';
+  line: number;
+  errors?: FormErrors;
+  registerRef?: (key: string, el: HTMLElement | null) => void;
 }
 
 const LABEL_STYLE: React.CSSProperties = {
@@ -21,7 +27,9 @@ const LABEL_STYLE: React.CSSProperties = {
 const FIELD_STYLE: React.CSSProperties = {
   height: 36,
   borderRadius: 'var(--input-radius)',
-  border: '1px solid var(--border)',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: '#D0DDE6',
   background: 'var(--page-bg)',
   padding: '0 12px',
   fontSize: 14,
@@ -32,17 +40,52 @@ const FIELD_STYLE: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
+const READONLY_STYLE: React.CSSProperties = {
+  height: 36,
+  borderRadius: 'var(--input-radius)',
+  border: '1px solid #F3F4F6',
+  background: '#F9FAFB',
+  padding: '0 12px',
+  fontSize: 14,
+  color: '#6B7280',
+  fontStyle: 'italic',
+  width: '100%',
+  fontFamily: 'inherit',
+  display: 'flex',
+  alignItems: 'center',
+};
+
 const SELECT_STYLE: React.CSSProperties = {
   ...FIELD_STYLE,
   appearance: 'none',
   cursor: 'pointer',
 };
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label style={LABEL_STYLE}>{label}</label>
+      <label style={LABEL_STYLE}>
+        {label}
+        {required && (
+          <span style={{ color: '#DC2626', marginLeft: 3 }} aria-hidden="true">*</span>
+        )}
+      </label>
       {children}
+      {error && (
+        <p role="alert" style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -58,29 +101,51 @@ function SectionLabel({ icon: Icon, text }: { icon: React.ComponentType<{ size?:
   );
 }
 
-function Sanfor1Section({ form, setField }: Props) {
+const SANFOR_MC: Record<number, { sanfor1: string; sanfor2: string }> = {
+  1: { sanfor1: 'Sanfor 1', sanfor2: 'Sanfor 2' },
+  2: { sanfor1: 'Sanfor 3', sanfor2: 'Sanfor 4' },
+  3: { sanfor1: 'Sanfor 5', sanfor2: '' },
+};
+
+function Sanfor1Section({
+  form,
+  setField,
+  line,
+  errors = {},
+  registerRef,
+}: {
+  form: BBSFFormState;
+  setField: (key: keyof BBSFFormState, value: string) => void;
+  line: number;
+  errors?: FormErrors;
+  registerRef?: (key: string, el: HTMLElement | null) => void;
+}) {
+  const mc = SANFOR_MC[line]?.sanfor1 ?? 'Sanfor';
+
   return (
     <>
-      <SectionCard title="Sanfor 1 — Identity">
+      <SectionCard title={`${mc} — Identity`}>
         <SectionLabel icon={Ruler} text="Identity" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Shift">
+          <Field label="Machine No.">
+            <div style={READONLY_STYLE}>{mc}</div>
+          </Field>
+          <Field label="Shift" required error={errors.sf1_shift}>
             <select
               value={form.sf1_shift}
               onChange={e => setField('sf1_shift', e.target.value)}
-              style={SELECT_STYLE}
+              ref={el => registerRef?.('sf1_shift', el as HTMLElement)}
+              style={errors.sf1_shift ? {
+                ...SELECT_STYLE,
+                borderColor: '#DC2626',
+                boxShadow: '0 0 0 3px rgba(220, 38, 38, 0.10)',
+              } : SELECT_STYLE}
             >
               <option value="">Select...</option>
               <option value="A">A</option>
               <option value="B">B</option>
               <option value="C">C</option>
             </select>
-          </Field>
-          <Field label="Machine No.">
-            <Input type="text" value={form.sf1_mc}
-              onChange={e => setField('sf1_mc', e.target.value)}
-              placeholder="e.g. 1"
-              style={FIELD_STYLE} />
           </Field>
           <Field label="Jam">
             <Input type="text" value={form.sf1_jam}
@@ -91,28 +156,38 @@ function Sanfor1Section({ form, setField }: Props) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Sanfor 1 — Settings">
+      <SectionCard title={`${mc} — Settings`}>
         <SectionLabel icon={Gauge} text="Settings" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {([
-            { key: 'sf1_speed',        label: 'Speed',          placeholder: 'e.g. 39-40' },
-            { key: 'sf1_damping',      label: 'Damping (%)',    placeholder: 'e.g. -8.5' },
-            { key: 'sf1_press',        label: 'Press',           placeholder: 'e.g. 1.3' },
-            { key: 'sf1_tension',      label: 'Tension',         placeholder: 'e.g. 6' },
-            { key: 'sf1_tension_limit',label: 'Tension Limit',  placeholder: 'Limit value' },
-            { key: 'sf1_temperatur',   label: 'Temperature (°C)',placeholder: 'e.g. 80' },
-          ] as const).map(({ key, label, placeholder }) => (
-            <Field key={key} label={label}>
-              <Input type="text" value={form[key as keyof BBSFFormState] as string}
-                onChange={e => setField(key as keyof BBSFFormState, e.target.value)}
-                placeholder={placeholder}
-                style={FIELD_STYLE} />
-            </Field>
-          ))}
+            { key: 'sf1_speed',         label: 'Speed',            placeholder: 'e.g. 39-40',  required: true  },
+            { key: 'sf1_damping',       label: 'Damping (%)',      placeholder: 'e.g. -8.5',   required: false },
+            { key: 'sf1_press',         label: 'Press',            placeholder: 'e.g. 1.3',    required: false },
+            { key: 'sf1_tension',       label: 'Tension',          placeholder: 'e.g. 6',      required: false },
+            { key: 'sf1_tension_limit', label: 'Tension Limit',   placeholder: 'Limit value', required: false },
+            { key: 'sf1_temperatur',    label: 'Temperature (°C)', placeholder: 'e.g. 80',    required: true  },
+          ] as const).map(({ key, label, placeholder, required }) => {
+            const hasError = Boolean(errors[key]);
+            return (
+              <Field key={key} label={label} required={required} error={errors[key]}>
+                <Input type="text" value={form[key as keyof BBSFFormState] as string}
+                  onChange={e => setField(key as keyof BBSFFormState, e.target.value)}
+                  placeholder={placeholder}
+                  ref={el => registerRef?.(key, el)}
+                  error={hasError}
+                  style={hasError ? {
+                    ...FIELD_STYLE,
+                    borderColor: '#DC2626',
+                    boxShadow: '0 0 0 3px rgba(220, 38, 38, 0.10)',
+                  } : FIELD_STYLE}
+                />
+              </Field>
+            );
+          })}
         </div>
       </SectionCard>
 
-      <SectionCard title="Sanfor 1 — Output">
+      <SectionCard title={`${mc} — Output`}>
         <SectionLabel icon={Gauge} text="Output" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Susut (%)">
@@ -124,7 +199,7 @@ function Sanfor1Section({ form, setField }: Props) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Sanfor 1 — Notes">
+      <SectionCard title={`${mc} — Notes`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Permasalahan (Problems)">
             <Input type="text" value={form.sf1_permasalahan}
@@ -144,29 +219,45 @@ function Sanfor1Section({ form, setField }: Props) {
   );
 }
 
-function Sanfor2Section({ form, setField }: Props) {
+function Sanfor2Section({
+  form,
+  setField,
+  line,
+  errors = {},
+  registerRef,
+}: {
+  form: BBSFFormState;
+  setField: (key: keyof BBSFFormState, value: string) => void;
+  line: number;
+  errors?: FormErrors;
+  registerRef?: (key: string, el: HTMLElement | null) => void;
+}) {
+  const mc = SANFOR_MC[line]?.sanfor2 ?? 'Sanfor';
+
   return (
     <>
-      <SectionCard title="Sanfor 2 — Identity">
+      <SectionCard title={`${mc} — Identity`}>
         <SectionLabel icon={Ruler} text="Identity" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Shift">
+          <Field label="Machine No.">
+            <div style={READONLY_STYLE}>{mc}</div>
+          </Field>
+          <Field label="Shift" required error={errors.sf2_shift}>
             <select
               value={form.sf2_shift}
               onChange={e => setField('sf2_shift', e.target.value)}
-              style={SELECT_STYLE}
+              ref={el => registerRef?.('sf2_shift', el as HTMLElement)}
+              style={errors.sf2_shift ? {
+                ...SELECT_STYLE,
+                borderColor: '#DC2626',
+                boxShadow: '0 0 0 3px rgba(220, 38, 38, 0.10)',
+              } : SELECT_STYLE}
             >
               <option value="">Select...</option>
               <option value="A">A</option>
               <option value="B">B</option>
               <option value="C">C</option>
             </select>
-          </Field>
-          <Field label="Machine No.">
-            <Input type="text" value={form.sf2_mc}
-              onChange={e => setField('sf2_mc', e.target.value)}
-              placeholder="e.g. 1"
-              style={FIELD_STYLE} />
           </Field>
           <Field label="Jam">
             <Input type="text" value={form.sf2_jam}
@@ -177,46 +268,57 @@ function Sanfor2Section({ form, setField }: Props) {
         </div>
       </SectionCard>
 
-      <SectionCard title="Sanfor 2 — Settings">
+      <SectionCard title={`${mc} — Settings`}>
         <SectionLabel icon={Gauge} text="Settings" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {([
-            { key: 'sf2_speed',    label: 'Speed',          placeholder: 'e.g. 20-21' },
-            { key: 'sf2_damping',  label: 'Damping (%)',    placeholder: 'e.g. -130' },
-            { key: 'sf2_press',    label: 'Press',          placeholder: 'e.g. 1.2' },
-            { key: 'sf2_tension', label: 'Tension',        placeholder: 'e.g. 5' },
-            { key: 'sf2_temperatur',label: 'Temperature (°C)',placeholder: 'e.g. 70' },
-          ] as const).map(({ key, label, placeholder }) => (
-            <Field key={key} label={label}>
-              <Input type="text" value={form[key as keyof BBSFFormState] as string}
-                onChange={e => setField(key as keyof BBSFFormState, e.target.value)}
-                placeholder={placeholder}
-                style={FIELD_STYLE} />
-            </Field>
-          ))}
+            { key: 'sf2_speed',        label: 'Speed',            placeholder: 'e.g. 20-21', required: true  },
+            { key: 'sf2_damping',      label: 'Damping (%)',      placeholder: 'e.g. -130',  required: false },
+            { key: 'sf2_press',        label: 'Press',            placeholder: 'e.g. 1.2',   required: false },
+            { key: 'sf2_tension',      label: 'Tension',          placeholder: 'e.g. 5',      required: false },
+            { key: 'sf2_temperatur',    label: 'Temperature (°C)', placeholder: 'e.g. 70',  required: true  },
+          ] as const).map(({ key, label, placeholder, required }) => {
+            const hasError = Boolean(errors[key]);
+            return (
+              <Field key={key} label={label} required={required} error={errors[key]}>
+                <Input type="text" value={form[key as keyof BBSFFormState] as string}
+                  onChange={e => setField(key as keyof BBSFFormState, e.target.value)}
+                  placeholder={placeholder}
+                  ref={el => registerRef?.(key, el)}
+                  error={hasError}
+                  style={hasError ? {
+                    ...FIELD_STYLE,
+                    borderColor: '#DC2626',
+                    boxShadow: '0 0 0 3px rgba(220, 38, 38, 0.10)',
+                  } : FIELD_STYLE}
+                />
+              </Field>
+            );
+          })}
         </div>
       </SectionCard>
 
-      <SectionCard title="Sanfor 2 — Output">
+      <SectionCard title={`${mc} — Output`}>
         <SectionLabel icon={Gauge} text="Output" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {([
-            { key: 'sf2_susut',  label: 'Susut (%)',  placeholder: 'e.g. 20-21' },
-            { key: 'sf2_awal',   label: 'Awal',       placeholder: 'Initial' },
-            { key: 'sf2_akhir',  label: 'Akhir',      placeholder: 'Final' },
-            { key: 'sf2_panjang', label: 'Panjang',    placeholder: 'Length' },
+            { key: 'sf2_susut',   label: 'Susut (%)', placeholder: 'e.g. 20-21' },
+            { key: 'sf2_awal',    label: 'Awal',      placeholder: 'Initial' },
+            { key: 'sf2_akhir',   label: 'Akhir',     placeholder: 'Final' },
+            { key: 'sf2_panjang', label: 'Panjang',   placeholder: 'Length' },
           ] as const).map(({ key, label, placeholder }) => (
             <Field key={key} label={label}>
               <Input type="text" value={form[key as keyof BBSFFormState] as string}
                 onChange={e => setField(key as keyof BBSFFormState, e.target.value)}
                 placeholder={placeholder}
-                style={FIELD_STYLE} />
+                style={FIELD_STYLE}
+              />
             </Field>
           ))}
         </div>
       </SectionCard>
 
-      <SectionCard title="Sanfor 2 — Notes">
+      <SectionCard title={`${mc} — Notes`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Permasalahan (Problems)">
             <Input type="text" value={form.sf2_permasalahan}
@@ -236,11 +338,8 @@ function Sanfor2Section({ form, setField }: Props) {
   );
 }
 
-export default function SanforSection({ form, setField }: Props) {
-  return (
-    <>
-      <Sanfor1Section form={form} setField={setField} />
-      <Sanfor2Section form={form} setField={setField} />
-    </>
-  );
+export default function SanforSection({ form, setField, tab, line, errors = {}, registerRef }: Props) {
+  return tab === 'sanfor1'
+    ? <Sanfor1Section form={form} setField={setField} line={line} errors={errors} registerRef={registerRef} />
+    : <Sanfor2Section form={form} setField={setField} line={line} errors={errors} registerRef={registerRef} />;
 }

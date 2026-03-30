@@ -176,8 +176,8 @@ function FormField({ label, error, hint, required, children, style }: FormFieldP
     .join(' ') || undefined;
 
   const childWithAria = React.cloneElement(child, {
-    error: hasError,
-    'aria-describedby': describedBy,
+    ...(hasError ? { error: true } : {}),
+    ...(describedBy ? { 'aria-describedby': describedBy } : {}),
     style: {
       ...child.props.style,
       ...(hasError

@@ -1,9 +1,10 @@
 export type { SCData } from '../../../lib/types';
 
 export interface BBSFFormState {
+  // Line selection
+  line: number | null;
   // Washing
   ws_shift: string;
-  ws_mc: string;
   ws_speed: string;
   ws_jam_proses: string;
   ws_larutan_1: string;
@@ -32,7 +33,6 @@ export interface BBSFFormState {
   ws_pelaksana: string;
   // Sanfor 1
   sf1_shift: string;
-  sf1_mc: string;
   sf1_jam: string;
   sf1_speed: string;
   sf1_damping: string;
@@ -45,7 +45,6 @@ export interface BBSFFormState {
   sf1_pelaksana: string;
   // Sanfor 2
   sf2_shift: string;
-  sf2_mc: string;
   sf2_jam: string;
   sf2_speed: string;
   sf2_damping: string;
@@ -63,6 +62,7 @@ export interface BBSFFormState {
 export type TabType = 'washing' | 'sanfor1' | 'sanfor2';
 
 export interface BbsfWashingRow {
+  line?: number | null;
   shift?: string | null;
   mc?: string | null;
   speed?: number | null;
@@ -109,8 +109,8 @@ export interface PipelineResponse {
 }
 
 export const emptyForm = (): BBSFFormState => ({
+  line: null,
   ws_shift: '',
-  ws_mc: '',
   ws_speed: '',
   ws_jam_proses: '',
   ws_larutan_1: '',
@@ -138,7 +138,6 @@ export const emptyForm = (): BBSFFormState => ({
   ws_permasalahan: '',
   ws_pelaksana: '',
   sf1_shift: '',
-  sf1_mc: '',
   sf1_jam: '',
   sf1_speed: '',
   sf1_damping: '',
@@ -150,7 +149,6 @@ export const emptyForm = (): BBSFFormState => ({
   sf1_permasalahan: '',
   sf1_pelaksana: '',
   sf2_shift: '',
-  sf2_mc: '',
   sf2_jam: '',
   sf2_speed: '',
   sf2_damping: '',

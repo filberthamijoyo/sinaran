@@ -19,7 +19,17 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
   const [sc, setSc] = useState<SCData | null>(null);
   const [loadingSc, setLoadingSc] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  // Chemistry sections collapse state
   const [showChemistry, setShowChemistry] = useState(false);
+  // IndigoBasicFields section collapse state
+  const [sectionRunDetailsOpen, setSectionRunDetailsOpen] = useState(true);   // Section 1 — open
+  const [sectionDyeBathOpen, setSectionDyeBathOpen] = useState(false);         // Section 2 — collapsed
+  const [sectionMachineOpen, setSectionMachineOpen] = useState(false);        // Section 3 — collapsed
+  // IndigoChemFields section collapse state
+  const [sectionSizingOpen, setSectionSizingOpen] = useState(false);           // Section 4 — collapsed
+  const [sectionDyeingOpen, setSectionDyeingOpen] = useState(false);           // Section 5 — collapsed
+  const [sectionMachineParamsOpen, setSectionMachineParamsOpen] = useState(false); // Section 6 — collapsed
+  const [sectionLabOpen, setSectionLabOpen] = useState(true);                  // Section 7 — open
   const [form, setForm] = useState<IndigoFormState>(emptyIndigoForm());
 
   const loadExisting = (w: Record<string, unknown>) => {
@@ -28,8 +38,6 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
       tgl: w.tgl ? new Date(w.tgl as string).toISOString().split('T')[0] : f.tgl,
       start: (w.start as string) || '',
       stop: (w.stop as string) || '',
-      jumlah_rope: (w.jumlah_rope as string)?.toString() || '',
-      panjang_rope: (w.panjang_rope as string)?.toString() || '',
       bak_count: (w.bak_count as string)?.toString() || '',
       indigo_conc: (w.indigo_conc as string)?.toString() || '',
       indigo_bak: (w.indigo_bak as string)?.toString() || '',
@@ -152,6 +160,13 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
       bak_16: (w.bak_16 as string)?.toString() || '',
     }));
     setShowChemistry(true);
+    setSectionRunDetailsOpen(true);
+    setSectionDyeBathOpen(true);
+    setSectionMachineOpen(true);
+    setSectionSizingOpen(true);
+    setSectionDyeingOpen(true);
+    setSectionMachineParamsOpen(true);
+    setSectionLabOpen(true);
   };
 
   const pNum = (v: string | undefined) => v ? parseFloat(v) : null;
@@ -163,8 +178,6 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
     tgl: pStr(form.tgl),
     start: pStr(form.start),
     stop: pStr(form.stop),
-    jumlah_rope: pInt(form.jumlah_rope),
-    panjang_rope: pNum(form.panjang_rope),
     bak_count: pInt(form.bak_count),
     indigo_conc: pNum(form.indigo_conc),
     indigo_bak: pInt(form.indigo_bak),
@@ -361,11 +374,29 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
           <IndigoBasicFields
             form={form}
             setField={setField}
-            showChemistry={showChemistry}
-            setShowChemistry={setShowChemistry}
+            sc={sc}
+            sectionRunDetailsOpen={sectionRunDetailsOpen}
+            sectionDyeBathOpen={sectionDyeBathOpen}
+            sectionMachineOpen={sectionMachineOpen}
+            onToggleRunDetails={() => setSectionRunDetailsOpen(v => !v)}
+            onToggleDyeBath={() => setSectionDyeBathOpen(v => !v)}
+            onToggleMachine={() => setSectionMachineOpen(v => !v)}
           />
 
-          {showChemistry && <IndigoChemFields form={form} setField={setField} />}
+          {showChemistry && (
+            <IndigoChemFields
+              form={form}
+              setField={setField}
+              sectionSizingOpen={sectionSizingOpen}
+              sectionDyeingOpen={sectionDyeingOpen}
+              sectionMachineParamsOpen={sectionMachineParamsOpen}
+              sectionLabOpen={sectionLabOpen}
+              onToggleSizing={() => setSectionSizingOpen(v => !v)}
+              onToggleDyeing={() => setSectionDyeingOpen(v => !v)}
+              onToggleMachineParams={() => setSectionMachineParamsOpen(v => !v)}
+              onToggleLab={() => setSectionLabOpen(v => !v)}
+            />
+          )}
 
         </div>
 
@@ -373,8 +404,10 @@ export default function IndigoFormPage({ kp }: { kp: string }) {
         <div style={{
           position: 'sticky',
           bottom: 0,
-          background: 'var(--content-bg)',
-          borderTop: '1px solid var(--border)',
+          background: '#FFFFFF',
+          borderTopWidth: '1px',
+          borderTopStyle: 'solid',
+          borderTopColor: '#E5E7EB',
           padding: '14px 32px',
           display: 'flex',
           justifyContent: 'flex-end',

@@ -39,12 +39,6 @@ export function WashingForm({ form, setField }: Props) {
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium" style={{ color: '#41474D' }}>Machine No</Label>
-            <Input type="text" value={form.ws_mc}
-              onChange={e => setField('ws_mc', e.target.value)}
-              placeholder="e.g. 1" className="h-9 text-sm" style={inputStyle} />
-          </div>
-          <div className="space-y-1.5">
             <Label className="text-xs font-medium" style={{ color: '#41474D' }}>Jam Proses</Label>
             <Input type="text" value={form.ws_jam_proses}
               onChange={e => setField('ws_jam_proses', e.target.value)}

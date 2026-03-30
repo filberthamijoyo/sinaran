@@ -128,15 +128,25 @@ export default function InboxTable({
             <SkeletonRow borderColor={borderColor} />
           ) : rows.length === 0 ? (
             <tr>
-              <td colSpan={8} style={{ padding: '48px 20px', textAlign: 'center' }}>
-                <div style={{ marginBottom: 12 }}>
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                    <rect x="6" y="14" width="36" height="28" rx="4" stroke="#E5E7EB" strokeWidth="2"/>
-                    <path d="M6 18L24 28L42 18" stroke="#E5E7EB" strokeWidth="2" strokeLinejoin="round"/>
-                    <path d="M18 8L24 14L30 8" stroke="#E5E7EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+              <td colSpan={8}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px' }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: '#ECFDF5',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: 16,
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M5 10L8.5 13.5L15 7" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <p style={{ fontSize: 16, fontWeight: 600, color: '#0F1E2E', margin: '0 0 4px' }}>
+                    All caught up
+                  </p>
+                  <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>
+                    {emptyMessage}
+                  </p>
                 </div>
-                <p style={{ fontSize: 14, color: '#9CA3AF' }}>{emptyMessage}</p>
               </td>
             </tr>
           ) : (

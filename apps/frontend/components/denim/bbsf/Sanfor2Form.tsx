@@ -39,12 +39,6 @@ export function Sanfor2Form({ form, setField }: Props) {
             </select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium" style={{ color: '#41474D' }}>Machine No</Label>
-            <Input type="text" value={form.sf2_mc}
-              onChange={e => setField('sf2_mc', e.target.value)}
-              placeholder="e.g. 1" className="h-9 text-sm" style={inputStyle} />
-          </div>
-          <div className="space-y-1.5">
             <Label className="text-xs font-medium" style={{ color: '#41474D' }}>Jam</Label>
             <Input type="text" value={form.sf2_jam}
               onChange={e => setField('sf2_jam', e.target.value)}

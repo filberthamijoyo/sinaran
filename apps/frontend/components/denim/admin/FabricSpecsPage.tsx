@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { authFetch } from '../../../lib/authFetch';
-import PageHeader from '../../layout/PageHeader';
+import { PageShell } from '../../ui/erp/PageShell';
 import { Button } from '../../ui/button';
 import { FabricSpecsTable } from './fabric-specs/FabricSpecsTable';
 import { FabricSpecsSlideout } from './fabric-specs/FabricSpecsSlideout';
@@ -42,17 +42,36 @@ export default function FabricSpecsPage({ initialData }: Props) {
   }, [fetchSpecs, initialData]);
 
   return (
-    <div>
-      <PageHeader
-        title="Fabric Specs"
-        subtitle={`${rows.length.toLocaleString()} specs`}
-        actions={
-          <Button variant="outline" size="sm" onClick={fetchSpecs} className="h-8 w-8 p-0">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-          </Button>
-        }
-      />
-      <div className="px-4 py-4 sm:px-8 pb-8">
+    <PageShell
+      title="Fabric Specs"
+      subtitle={`${rows.length.toLocaleString()} specs`}
+      actions={
+        <Button
+          onClick={() => { setEditingSpec(null); setPanelOpen(true); }}
+          style={{
+            height: 36,
+            padding: '0 14px',
+            borderRadius: 8,
+            background: '#1D4ED8',
+            border: 'none',
+            color: '#FFFFFF',
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14"/><path d="M12 5v14"/>
+          </svg>
+          New Spec
+        </Button>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         <FabricSpecsTable
           rows={rows}
           loading={loading}
@@ -63,6 +82,7 @@ export default function FabricSpecsPage({ initialData }: Props) {
           onRefresh={fetchSpecs}
           onEdit={spec => { setEditingSpec(spec); setPanelOpen(true); }}
           onNew={() => { setEditingSpec(null); setPanelOpen(true); }}
+          onRowClick={spec => { setEditingSpec(spec); setPanelOpen(true); }}
         />
       </div>
 
@@ -72,6 +92,6 @@ export default function FabricSpecsPage({ initialData }: Props) {
         onClose={() => { setPanelOpen(false); setEditingSpec(null); }}
         onSaved={fetchSpecs}
       />
-    </div>
+    </PageShell>
   );
 }

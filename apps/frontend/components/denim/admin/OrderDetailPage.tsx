@@ -169,14 +169,27 @@ export default function OrderDetailPage({ kp, initialData }: { kp: string; initi
   const subtitle = subtitleParts.length > 0 ? subtitleParts.join(' · ') : undefined;
 
   const actions = (
-    <Button
-      variant="secondary"
-      size="sm"
+    <button
       onClick={() => router.push(`/denim/admin/orders`)}
-      leftIcon={<ArrowLeft size={13} />}
+      style={{
+        display:     'inline-flex',
+        alignItems:  'center',
+        gap:         6,
+        height:      32,
+        padding:     '0 12px',
+        background:  '#FFFFFF',
+        border:      '1px solid #E5E7EB',
+        borderRadius: 'var(--button-radius)',
+        fontSize:    13,
+        fontWeight:  500,
+        color:       '#374151',
+        cursor:      'pointer',
+        fontFamily:  'inherit',
+      }}
     >
+      <ArrowLeft size={13} />
       All Orders
-    </Button>
+    </button>
   );
 
   return (
@@ -193,6 +206,46 @@ export default function OrderDetailPage({ kp, initialData }: { kp: string; initi
           currentStage={sc.pipeline_status}
           activeSection={activeSection}
         />
+
+        {/* ── Status banner ── */}
+        {sc.pipeline_status === 'COMPLETE' && (
+          <div style={{
+            background:   '#ECFDF5',
+            border:       '1px solid #A7F3D0',
+            borderRadius: 8,
+            padding:      '12px 16px',
+            display:      'flex',
+            alignItems:   'center',
+            gap:          10,
+            marginTop:    16,
+          }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8L6.5 11.5L13 5" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#065F46' }}>This order is complete</p>
+          </div>
+        )}
+        {sc.pipeline_status === 'REJECTED' && (
+          <div style={{
+            background:   '#FEF2F2',
+            border:       '1px solid #FECACA',
+            borderRadius: 8,
+            padding:      '12px 16px',
+            display:      'flex',
+            alignItems:   'center',
+            gap:          10,
+            marginTop:    16,
+          }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M4 4L12 12M12 4L4 12" stroke="#DC2626" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#991B1B' }}>This order was rejected</p>
+          </div>
+        )}
 
         {/* ── Historical data warning ── */}
         {sc.pipeline_status === 'COMPLETE' && (!warping || !indigo || !weaving?.length) && (

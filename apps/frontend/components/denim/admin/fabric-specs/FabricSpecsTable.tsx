@@ -1,16 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback, CSSProperties } from 'react';
-import { authFetch } from '../../../../lib/authFetch';
-import PageHeader from '../../../layout/PageHeader';
+import { useState, CSSProperties } from 'react';
 import { Button } from '../../../ui/button';
 import { Input } from '../../../ui/input';
-import { Skeleton } from '../../../ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../ui/select';
-import {
-  Table, TableBody, TableCell, TableHead,
-  TableHeader, TableRow,
-} from '../../../ui/table';
+import { Skeleton } from '../../../ui/skeleton';
 import { Search, Plus, Edit3, Inbox } from 'lucide-react';
 import type { FabricSpec } from './types';
 
@@ -37,26 +31,88 @@ type Props = {
   onRefresh: () => void;
   onEdit: (spec: FabricSpec) => void;
   onNew: () => void;
+  onRowClick?: (spec: FabricSpec) => void;
 };
 
 export function FabricSpecsTable({
-  rows, loading, search, katKode, onSearchChange, onKatKodeChange, onRefresh, onEdit, onNew,
+  rows, loading, search, katKode, onSearchChange, onKatKodeChange, onRefresh, onEdit, onNew, onRowClick,
 }: Props) {
+  // grid: [stripe(3px)] [expand(36px)] [col widths...]
+  const COLS = [
+    { label: 'ITEM / KONS KODE', width: '1fr' },
+    { label: 'CAT', width: '64px' },
+    { label: 'TE', width: '72px' },
+    { label: 'NE LUSI / NE PAKAN', width: '120px' },
+    { label: 'SISIR / PICK', width: '100px' },
+    { label: 'WARNA', width: '100px' },
+    { label: 'USED IN', width: '72px' },
+    { label: '', width: '48px' },
+  ];
+
+  const GRID_COLS = ['3px', '36px', ...COLS.map(c => c.width)];
+
   return (
     <>
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+      {/* ── Search + Filter Bar ── */}
+      <div style={{
+        display: 'flex',
+        gap: 12,
+        alignItems: 'center',
+        marginBottom: 16,
+      }}>
+        {/* Search input */}
+        <div style={{ position: 'relative', flex: 1, maxWidth: 340 }}>
+          <Search
+            size={14}
+            style={{
+              position: 'absolute',
+              left: 10,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#9CA3AF',
+              pointerEvents: 'none',
+            }}
+          />
           <Input
-            placeholder="Search by item, kons_kode, kode..."
+            placeholder="Search by item, kons_kode…"
             value={search}
             onChange={e => onSearchChange(e.target.value)}
-            className="pl-9 h-9"
+            style={{
+              height: 36,
+              paddingLeft: 32,
+              paddingRight: 12,
+              borderRadius: 8,
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: '#E5E7EB',
+              background: '#FFFFFF',
+              fontSize: 13,
+              color: '#0F1E2E',
+              fontFamily: 'inherit',
+              outline: 'none',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
 
+        {/* Category filter */}
         <Select value={katKode} onValueChange={onKatKodeChange}>
-          <SelectTrigger className="w-36 h-9">
+          <SelectTrigger
+            style={{
+              height: 36,
+              borderRadius: 8,
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              borderColor: '#E5E7EB',
+              background: '#FFFFFF',
+              fontSize: 13,
+              color: '#0F1E2E',
+              padding: '0 12px',
+              width: 140,
+              fontFamily: 'inherit',
+            }}
+          >
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -67,93 +123,250 @@ export function FabricSpecsTable({
           </SelectContent>
         </Select>
 
-        <Button onClick={onNew}
-          className="ml-auto h-9 px-4 text-sm bg-[#1D4ED8] text-white border-none rounded-lg">
-          <Plus className="w-4 h-4 mr-1.5" />
+        {/* Refresh */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRefresh}
+          style={{ height: 36, width: 36, padding: 0, borderRadius: 8 }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+            <path d="M8 16H3v5"/>
+          </svg>
+        </Button>
+
+        {/* New Spec button */}
+        <Button
+          onClick={onNew}
+          style={{
+            height: 36,
+            padding: '0 14px',
+            borderRadius: 8,
+            background: '#1D4ED8',
+            border: 'none',
+            color: '#FFFFFF',
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            flexShrink: 0,
+          }}
+        >
+          <Plus size={14} />
           New Spec
         </Button>
       </div>
 
-      <div className="rounded-xl overflow-hidden bg-white border border-[#E5E7EB]">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-b border-[#E5E7EB]">
-              {['Item', 'Category', 'TE', 'Ne Lusi / Ne Pakan', 'Sisir / Pick', 'Warna', 'Used In', ''].map((h, i) => (
-                <TableHead key={i} className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF]">
-                  {h}
-                </TableHead>
+      {/* ── Table ── */}
+      <div style={{
+        background: '#FFFFFF',
+        border: '1px solid #E5E7EB',
+        borderRadius: 12,
+        overflow: 'hidden',
+      }}>
+        {/* Column header */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: GRID_COLS.join(' '),
+          borderBottom: '1px solid rgba(255,255,255,0.12)',
+          background: '#0F1E2E',
+          alignItems: 'center',
+        }}>
+          {/* stripe placeholder */}
+          <div />
+          {/* expand placeholder */}
+          <div />
+          {COLS.map((col, i) => (
+            <div
+              key={i}
+              style={{
+                padding: '10px 12px',
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'rgba(255,255,255,0.55)',
+              }}
+            >
+              {col.label}
+            </div>
+          ))}
+        </div>
+
+        {/* Body */}
+        {loading ? (
+          Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: GRID_COLS.join(' '),
+                borderBottom: '1px solid #F3F4F6',
+                borderLeft: '3px solid transparent',
+                alignItems: 'center',
+                height: 44,
+              }}
+            >
+              <div style={{ borderLeft: i % 5 === 4 ? '3px solid #1D4ED8' : '3px solid transparent' }} />
+              <div />
+              {Array.from({ length: COLS.length }).map((_, j) => (
+                <div key={j} style={{ padding: '0 12px' }}>
+                  <Skeleton style={{ height: 12, width: `${50 + (j * 17) % 40}%`, borderRadius: 4 }} />
+                </div>
               ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 8 }).map((_, j) => (
-                    <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8}>
-                  <div className="flex flex-col items-center justify-center py-16 text-[#6B7280]">
-                    <Inbox className="w-10 h-10 mb-3" />
-                    <p className="text-sm font-medium">No fabric specs found</p>
-                    <p className="text-xs mt-1">Try adjusting your search</p>
+            </div>
+          ))
+        ) : rows.length === 0 ? (
+          <div style={{
+            padding: '48px 16px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <Inbox size={40} style={{ color: '#D1D5DB' }} />
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#6B7280', margin: 0 }}>
+              No fabric specs found
+            </p>
+            <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>
+              Try adjusting your search
+            </p>
+          </div>
+        ) : (
+          rows.map((spec, rowIndex) => {
+            const hasStripe = rowIndex % 5 === 4;
+            return (
+              <div
+                key={spec.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: GRID_COLS.join(' '),
+                  borderBottom: '1px solid #F3F4F6',
+                  borderLeft: hasStripe ? '3px solid #1D4ED8' : '3px solid transparent',
+                  alignItems: 'center',
+                  minHeight: 44,
+                  background: 'transparent',
+                  transition: 'background 100ms',
+                  cursor: 'pointer',
+                }}
+                onClick={() => onRowClick?.(spec)}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = '#F9FAFB';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = 'transparent';
+                }}
+              >
+                {/* stripe placeholder */}
+                <div />
+
+                {/* expand chevron */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#D1D5DB' }}>
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </div>
+
+                {/* Item + Kons Kode */}
+                <div style={{ padding: '0 12px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#0F1E2E', lineHeight: 1.4 }}>
+                    {spec.item || '—'}
                   </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map(spec => (
-                <TableRow key={spec.id}
-                  className="border-b border-[#E5E7EB] last:border-0 hover:bg-[#F9FAFB] transition-colors"
-                >
-                  <TableCell>
-                    <div className="font-medium text-sm text-[#0F1117]">{spec.item}</div>
-                    <div className="text-xs text-[#6B7280]">{spec.kons_kode}</div>
-                  </TableCell>
-                  <TableCell>
-                    <span style={getCategoryColor(spec.kat_kode)} className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold">
-                      {spec.kat_kode || '—'}
+                  <div style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.4 }}>
+                    {spec.kons_kode || '—'}
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div style={{ padding: '0 12px' }}>
+                  <span
+                    style={{
+                      ...getCategoryColor(spec.kat_kode),
+                      display: 'inline-flex',
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {spec.kat_kode || '—'}
+                  </span>
+                </div>
+
+                {/* TE */}
+                <div style={{ padding: '0 12px', fontSize: 13, color: '#6B7280' }}>
+                  {spec.te ?? '—'}
+                </div>
+
+                {/* Ne Lusi / Ne Pakan */}
+                <div style={{ padding: '0 12px', fontSize: 13, color: '#6B7280' }}>
+                  {spec.lusi_ne || '—'} / {spec.pakan_ne || '—'}
+                </div>
+
+                {/* Sisir / Pick */}
+                <div style={{ padding: '0 12px', fontSize: 13, color: '#6B7280' }}>
+                  {spec.sisir || '—'} / {spec.pick ?? '—'}
+                </div>
+
+                {/* Warna */}
+                <div style={{ padding: '0 12px', fontSize: 13, color: '#6B7280' }}>
+                  {spec.warna || '—'}
+                </div>
+
+                {/* Used In */}
+                <div style={{ padding: '0 12px' }}>
+                  {spec.usage_count > 0 ? (
+                    <span style={{
+                      backgroundColor: '#EFF6FF',
+                      color: '#1D4ED8',
+                      borderRadius: 12,
+                      padding: '2px 8px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                    }}>
+                      {spec.usage_count}
                     </span>
-                  </TableCell>
-                  <TableCell className="text-sm text-[#6B7280]">{spec.te ?? '—'}</TableCell>
-                  <TableCell className="text-sm text-[#6B7280]">
-                    {spec.lusi_ne || '—'} / {spec.pakan_ne || '—'}
-                  </TableCell>
-                  <TableCell className="text-sm text-[#6B7280]">
-                    {spec.sisir || '—'} / {spec.pick ?? '—'}
-                  </TableCell>
-                  <TableCell className="text-sm text-[#6B7280]">{spec.warna || '—'}</TableCell>
-                  <TableCell>
-                    {spec.usage_count > 0 ? (
-                      <span style={{
-                        backgroundColor: '#EFF6FF',
-                        color: '#1D4ED8',
-                        borderRadius: 12,
-                        padding: '2px 8px',
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}>
-                        {spec.usage_count}
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: 13, color: '#9CA3AF' }}>0</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm" onClick={() => onEdit(spec)}
-                      className="h-7 px-2 text-[#6B7280]">
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  ) : (
+                    <span style={{ fontSize: 13, color: '#D1D5DB' }}>0</span>
+                  )}
+                </div>
+
+                {/* Edit button */}
+                <div
+                  style={{ padding: '0 8px', display: 'flex', justifyContent: 'center' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEdit(spec)}
+                    style={{ height: 28, padding: '0 6px', borderRadius: 6, color: '#9CA3AF' }}
+                  >
+                    <Edit3 size={13} />
+                  </Button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
+
+      {/* ── Row count footer ── */}
+      {!loading && rows.length > 0 && (
+        <div style={{
+          padding: '10px 4px',
+          fontSize: 12,
+          color: '#9CA3AF',
+        }}>
+          Showing {rows.length} spec{rows.length !== 1 ? 's' : ''}
+        </div>
+      )}
     </>
   );
 }

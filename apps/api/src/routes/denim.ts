@@ -1458,83 +1458,180 @@ router.post('/bbsf', requireAuth,
   requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
     try {
-      const { kp, tgl, ...bbsfData } = req.body;
-      
+      const { kp, tgl, phase, line, ...bbsfData } = req.body as {
+        kp: string;
+        tgl?: string;
+        phase: 'washing' | 'sanfor_tahap1' | 'sanfor_tahap2';
+        line: number;
+        [key: string]: unknown;
+      };
+
+      if (!phase || !line) {
+        return res.status(400).json({ error: 'phase and line are required' });
+      }
+
       const tglDate = tgl ? new Date(tgl) : new Date();
-      
-      // Extract washing and sanfor fields
+
       const washingFields = [
-        'ws_shift', 'ws_mc', 'ws_speed', 'ws_larutan_1', 'ws_temp_1', 'ws_padder_1',
+        'ws_shift', 'ws_speed', 'ws_larutan_1', 'ws_temp_1', 'ws_padder_1',
         'ws_dancing_1', 'ws_larutan_2', 'ws_temp_2', 'ws_padder_2', 'ws_dancing_2',
         'ws_skala_skew', 'ws_tekanan_boiler', 'ws_press_dancing_1', 'ws_press_dancing_2', 'ws_press_dancing_3',
         'ws_temp_zone_1', 'ws_temp_zone_2', 'ws_temp_zone_3', 'ws_temp_zone_4', 'ws_temp_zone_5', 'ws_temp_zone_6',
         'ws_lebar_awal', 'ws_panjang_awal', 'ws_permasalahan', 'ws_pelaksana', 'ws_jam_proses'
       ];
-      
-      const sanforFields = [
-        'sf1_sanfor_type', 'sf1_shift', 'sf1_mc', 'sf1_jam', 'sf1_speed', 'sf1_damping', 'sf1_press',
-        'sf1_tension', 'sf1_tension_limit', 'sf1_temperatur', 'sf1_susut', 'sf1_permasalahan', 'sf1_pelaksana',
-        'sf2_sanfor_type', 'sf2_shift', 'sf2_mc', 'sf2_jam', 'sf2_speed', 'sf2_damping', 'sf2_press',
-        'sf2_tension', 'sf2_temperatur', 'sf2_susut', 'sf2_awal', 'sf2_akhir', 'sf2_panjang',
-        'sf2_permasalahan', 'sf2_pelaksana'
-      ];
-      
-      // Create washing record if any washing fields are present
-      const washingData: any = { kp, tgl: tglDate };
-      for (const field of washingFields) {
-        const value = bbsfData[field];
-        if (value !== undefined && value !== '') {
-          const dbField = field.replace('ws_', '');
-          washingData[dbField] = isNaN(Number(value)) ? value : Number(value);
+
+      // washing speed and sanfor speed are String? in the schema — keep as strings
+      const stringFields = ['ws_speed', 'sf1_speed', 'sf2_speed'];
+
+      const buildRecord = (prefix: string, extra: Record<string, unknown> = {}): Record<string, unknown> => {
+        const out: Record<string, unknown> = { kp, tgl: tglDate, ...extra };
+        for (const field of Object.keys(bbsfData)) {
+          if (field.startsWith(prefix)) {
+            const value = bbsfData[field];
+            if (value !== undefined && value !== '') {
+              if (stringFields.includes(field)) {
+                out[field.replace(prefix, '')] = String(value);
+              } else {
+                out[field.replace(prefix, '')] = isNaN(Number(value)) ? value : Number(value);
+              }
+            }
+          }
         }
-      }
-      
-      if (Object.keys(washingData).length > 2) {
-        await prisma.bBSFWashingRun.create({ data: washingData });
-      }
-      
-      // Create sanfor record if any sanfor fields are present
-      const sanforData: any = { kp, tgl: tglDate };
-      for (const field of sanforFields) {
-        const value = bbsfData[field];
-        if (value !== undefined && value !== '') {
-          const dbField = field.replace(/^sf\d_/, '');
-          sanforData[dbField] = isNaN(Number(value)) ? value : Number(value);
+        return out;
+      };
+
+      if (phase === 'washing') {
+        const washingData = buildRecord('ws_', { mc: `Washing ${line}`, line });
+        if (Object.keys(washingData).length > 3) {
+          await prisma.bBSFWashingRun.create({ data: washingData as any });
         }
+        return res.json({ success: true, kp, nextPhase: 'sanfor_tahap1', line });
+
+      } else if (phase === 'sanfor_tahap1') {
+        const sanforType = `Sanfor ${line === 1 ? 1 : line === 2 ? 3 : 5}`;
+        const sanforData = buildRecord('sf1_', { mc: sanforType, sanfor_type: 'tahap1' });
+        if (Object.keys(sanforData).length > 3) {
+          await prisma.bBSFSanforRun.create({ data: sanforData as any });
+        }
+
+        if (line === 3) {
+          const prev = await prisma.salesContract.findUnique({
+            where: { kp },
+            select: { pipeline_status: true },
+          });
+          await prisma.salesContract.update({
+            where: { kp },
+            data: { pipeline_status: 'INSPECT_FINISH' },
+          });
+          await prisma.pipelineEvent.create({
+            data: { kp, from_stage: prev?.pipeline_status ?? null, to_stage: 'INSPECT_FINISH' },
+          });
+          return res.json({ success: true, kp, nextPhase: 'done', line });
+        }
+
+        return res.json({ success: true, kp, nextPhase: 'sanfor_tahap2', line });
+
+      } else if (phase === 'sanfor_tahap2') {
+        const sanforType = `Sanfor ${line === 1 ? 2 : 4}`;
+        const sanforData = buildRecord('sf2_', { mc: sanforType, sanfor_type: 'tahap2' });
+        if (Object.keys(sanforData).length > 3) {
+          await prisma.bBSFSanforRun.create({ data: sanforData as any });
+        }
+
+        const prev = await prisma.salesContract.findUnique({
+          where: { kp },
+          select: { pipeline_status: true },
+        });
+        await prisma.salesContract.update({
+          where: { kp },
+          data: { pipeline_status: 'INSPECT_FINISH' },
+        });
+        await prisma.pipelineEvent.create({
+          data: { kp, from_stage: prev?.pipeline_status ?? null, to_stage: 'INSPECT_FINISH' },
+        });
+        return res.json({ success: true, kp, nextPhase: 'done', line });
       }
-      
-      if (Object.keys(sanforData).length > 2) {
-        await prisma.bBSFSanforRun.create({ data: sanforData });
-      }
 
-      // Fetch previous stage before updating
-      const prev = await prisma.salesContract.findUnique({
-        where: { kp },
-        select: { pipeline_status: true },
-      });
-
-      // Advance pipeline to INSPECT_FINISH
-      await prisma.salesContract.update({
-        where: { kp },
-        data: { pipeline_status: 'INSPECT_FINISH' },
-      });
-
-      await prisma.pipelineEvent.create({
-        data: {
-          kp,
-          from_stage: prev?.pipeline_status ?? null,
-          to_stage: 'INSPECT_FINISH',
-        },
-      });
-
-      return res.json({ success: true, kp, pipeline_status: 'INSPECT_FINISH' });
+      return res.status(400).json({ error: 'Unknown phase' });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
   }
 );
 
-// POST /api/denim/inspect-finish — create new inspection records
+// PUT /api/denim/bbsf — update existing BBSF records
+router.put('/bbsf', requireAuth,
+  requireRole('admin', 'factory'),
+  async (req: Request, res: Response) => {
+    try {
+      const { kp, tgl, line, ...bbsfData } = req.body as {
+        kp: string;
+        tgl?: string;
+        line?: number;
+        [key: string]: unknown;
+      };
+
+      const tglDate = tgl ? new Date(tgl) : new Date();
+
+      // Delete existing BBSF records for this KP
+      await prisma.bBSFWashingRun.deleteMany({ where: { kp } });
+      await prisma.bBSFSanforRun.deleteMany({ where: { kp } });
+
+      const washingFields = [
+        'ws_shift', 'ws_speed', 'ws_larutan_1', 'ws_temp_1', 'ws_padder_1',
+        'ws_dancing_1', 'ws_larutan_2', 'ws_temp_2', 'ws_padder_2', 'ws_dancing_2',
+        'ws_skala_skew', 'ws_tekanan_boiler', 'ws_press_dancing_1', 'ws_press_dancing_2', 'ws_press_dancing_3',
+        'ws_temp_zone_1', 'ws_temp_zone_2', 'ws_temp_zone_3', 'ws_temp_zone_4', 'ws_temp_zone_5', 'ws_temp_zone_6',
+        'ws_lebar_awal', 'ws_panjang_awal', 'ws_permasalahan', 'ws_pelaksana', 'ws_jam_proses'
+      ];
+
+      const washingData: any = { kp, tgl: tglDate };
+      if (line) washingData.line = line;
+      for (const field of washingFields) {
+        const value = bbsfData[field];
+        if (value !== undefined && value !== '') {
+          const dbField = field.replace('ws_', '');
+          if (field === 'ws_speed') {
+            washingData[dbField] = String(value);
+          } else {
+            washingData[dbField] = isNaN(Number(value)) ? value : Number(value);
+          }
+        }
+      }
+      if (Object.keys(washingData).length > 2) {
+        await prisma.bBSFWashingRun.create({ data: washingData });
+      }
+
+      const sanforFields = [
+        'sf1_shift', 'sf1_jam', 'sf1_speed', 'sf1_damping', 'sf1_press',
+        'sf1_tension', 'sf1_tension_limit', 'sf1_temperatur', 'sf1_susut', 'sf1_permasalahan', 'sf1_pelaksana',
+        'sf2_shift', 'sf2_jam', 'sf2_speed', 'sf2_damping', 'sf2_press',
+        'sf2_tension', 'sf2_temperatur', 'sf2_susut', 'sf2_awal', 'sf2_akhir', 'sf2_panjang',
+        'sf2_permasalahan', 'sf2_pelaksana'
+      ];
+
+      const sanforData: any = { kp, tgl: tglDate };
+      for (const field of sanforFields) {
+        const value = bbsfData[field];
+        if (value !== undefined && value !== '') {
+          const dbField = field.replace(/^sf\d_/, '');
+          if (field === 'sf1_speed' || field === 'sf2_speed') {
+            sanforData[dbField] = String(value);
+          } else {
+            sanforData[dbField] = isNaN(Number(value)) ? value : Number(value);
+          }
+        }
+      }
+      if (Object.keys(sanforData).length > 2) {
+        await prisma.bBSFSanforRun.create({ data: sanforData });
+      }
+
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
 router.post('/inspect-finish', requireAuth,
   requireRole('admin', 'factory'),
   async (req: Request, res: Response) => {
@@ -2860,6 +2957,51 @@ router.get('/warping/records',
   }
 });
 
+// GET /api/denim/warping-runs
+// Returns warping runs enriched with codename + submitted_at (history view)
+router.get('/warping-runs',
+  requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
+  async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.warpingRun.findMany({
+        orderBy: { tgl: 'desc' },
+        skip,
+        take: limit,
+        select: { kp: true, tgl: true, no_mc: true, total_putusan: true },
+      }),
+      prisma.warpingRun.count(),
+    ]);
+
+    const kps = data.map(r => r.kp);
+    const scs = await prisma.salesContract.findMany({
+      where: { kp: { in: kps } },
+      select: { kp: true, codename: true },
+    });
+    const scMap = new Map(scs.map(s => [s.kp, s.codename]));
+
+    res.json({
+      data: data.map(r => ({
+        kp: r.kp,
+        tanggal: r.tgl,
+        codename: scMap.get(r.kp) ?? null,
+        submitted_at: r.tgl?.toISOString() ?? null,
+        submitted_by: null,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/denim/indigo/records
 // Returns paginated indigo runs with filtering
 router.get('/indigo/records',
@@ -2902,6 +3044,186 @@ router.get('/indigo/records',
 
     res.json({
       data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/denim/indigo-runs
+// Returns indigo runs enriched with codename + submitted_at (history view)
+router.get('/indigo-runs',
+  requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
+  async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.indigoRun.findMany({
+        orderBy: { tanggal: 'desc' },
+        skip,
+        take: limit,
+        select: { kp: true, tanggal: true, mc: true },
+      }),
+      prisma.indigoRun.count(),
+    ]);
+
+    const kps = data.map(r => r.kp);
+    const scs = await prisma.salesContract.findMany({
+      where: { kp: { in: kps } },
+      select: { kp: true, codename: true },
+    });
+    const scMap = new Map(scs.map(s => [s.kp, s.codename]));
+
+    res.json({
+      data: data.map(r => ({
+        kp: r.kp,
+        tanggal: r.tanggal,
+        codename: scMap.get(r.kp) ?? null,
+        submitted_at: r.tanggal?.toISOString() ?? null,
+        submitted_by: null,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/denim/inspect-gray-records
+// Returns all Inspect Gray records enriched with codename + submitted_at (history view)
+router.get('/inspect-gray-records',
+  requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
+  async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.inspectGrayRecord.findMany({
+        orderBy: { tg: 'desc' },
+        skip,
+        take: limit,
+        select: { kp: true, tg: true, mc: true, inspector_name: true },
+      }),
+      prisma.inspectGrayRecord.count(),
+    ]);
+
+    const kps = [...new Set(data.map(r => r.kp))];
+    const scs = await prisma.salesContract.findMany({
+      where: { kp: { in: kps } },
+      select: { kp: true, codename: true },
+    });
+    const scMap = new Map(scs.map(s => [s.kp, s.codename]));
+
+    res.json({
+      data: data.map(r => ({
+        kp: r.kp,
+        tanggal: r.tg,
+        codename: scMap.get(r.kp) ?? null,
+        submitted_at: r.tg?.toISOString() ?? null,
+        submitted_by: r.inspector_name ?? null,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/denim/bbsf-washing-runs
+// Returns all BBSF Washing runs enriched with codename + submitted_at (history view)
+router.get('/bbsf-washing-runs',
+  requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
+  async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.bBSFWashingRun.findMany({
+        orderBy: { tgl: 'desc' },
+        skip,
+        take: limit,
+        select: { kp: true, tgl: true, mc: true, pelaksana: true },
+      }),
+      prisma.bBSFWashingRun.count(),
+    ]);
+
+    const kps = [...new Set(data.map(r => r.kp))];
+    const scs = await prisma.salesContract.findMany({
+      where: { kp: { in: kps } },
+      select: { kp: true, codename: true },
+    });
+    const scMap = new Map(scs.map(s => [s.kp, s.codename]));
+
+    res.json({
+      data: data.map(r => ({
+        kp: r.kp,
+        tanggal: r.tgl,
+        codename: scMap.get(r.kp) ?? null,
+        submitted_at: r.tgl?.toISOString() ?? null,
+        submitted_by: r.pelaksana ?? null,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/denim/inspect-finish-records
+// Returns all Inspect Finish records enriched with codename + submitted_at (history view)
+router.get('/inspect-finish-records',
+  requireAuth,
+  requireRole('admin', 'factory', 'jakarta'),
+  async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.inspectFinishRecord.findMany({
+        orderBy: { tgl: 'desc' },
+        skip,
+        take: limit,
+        select: { kp: true, tgl: true, operator: true },
+      }),
+      prisma.inspectFinishRecord.count(),
+    ]);
+
+    const kps = [...new Set(data.map(r => r.kp))];
+    const scs = await prisma.salesContract.findMany({
+      where: { kp: { in: kps } },
+      select: { kp: true, codename: true },
+    });
+    const scMap = new Map(scs.map(s => [s.kp, s.codename]));
+
+    res.json({
+      data: data.map(r => ({
+        kp: r.kp,
+        tanggal: r.tgl,
+        codename: scMap.get(r.kp) ?? null,
+        submitted_at: r.tgl?.toISOString() ?? null,
+        submitted_by: r.operator ?? null,
+      })),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -3025,7 +3347,7 @@ router.get('/weaving-summary/:kp',
         lastDate: r.last_date?.toISOString() || null,
       }));
 
-      // Recent 10 datalog records
+      // All datalog records for this KP
       const recentLogs = await prisma.$queryRaw<Array<{
         tanggal: Date;
         shift: string;
@@ -3038,8 +3360,7 @@ router.get('/weaving-summary/:kp',
                meters, a_pct, p_pct
         FROM "WeavingRecord"
         WHERE kp = ${kp}
-        ORDER BY tanggal DESC
-        LIMIT 10
+        ORDER BY tanggal DESC, machine ASC
       `;
 
       const recentLogsFormatted = recentLogs.map(r => ({

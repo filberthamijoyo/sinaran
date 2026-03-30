@@ -5,9 +5,14 @@ import { SectionCard } from '../../ui/erp/SectionCard';
 import { BBSFFormState } from './types';
 import { Droplet, Thermometer, Gauge, Ruler } from 'lucide-react';
 
+type FormErrors = Partial<Record<string, string>>;
+
 interface Props {
   form: BBSFFormState;
   setField: (key: keyof BBSFFormState, value: string) => void;
+  line: number;
+  errors?: FormErrors;
+  registerRef?: (key: string, el: HTMLElement | null) => void;
 }
 
 const LABEL_STYLE: React.CSSProperties = {
@@ -21,7 +26,9 @@ const LABEL_STYLE: React.CSSProperties = {
 const FIELD_STYLE: React.CSSProperties = {
   height: 36,
   borderRadius: 'var(--input-radius)',
-  border: '1px solid var(--border)',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: '#D0DDE6',
   background: 'var(--page-bg)',
   padding: '0 12px',
   fontSize: 14,
@@ -32,22 +39,63 @@ const FIELD_STYLE: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
+const READONLY_STYLE: React.CSSProperties = {
+  height: 36,
+  borderRadius: 'var(--input-radius)',
+  border: '1px solid #F3F4F6',
+  background: '#F9FAFB',
+  padding: '0 12px',
+  fontSize: 14,
+  color: '#6B7280',
+  fontStyle: 'italic',
+  width: '100%',
+  fontFamily: 'inherit',
+  display: 'flex',
+  alignItems: 'center',
+};
+
 const SELECT_STYLE: React.CSSProperties = {
   ...FIELD_STYLE,
   appearance: 'none',
   cursor: 'pointer',
 };
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <label style={LABEL_STYLE}>{label}</label>
+      <label style={LABEL_STYLE}>
+        {label}
+        {required && (
+          <span style={{ color: '#DC2626', marginLeft: 3 }} aria-hidden="true">*</span>
+        )}
+      </label>
       {children}
+      {error && (
+        <p role="alert" style={{ fontSize: 12, color: '#DC2626', marginTop: 4 }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
-function SectionLabel({ icon: Icon, text }: { icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>; text: string }) {
+function SectionLabel({
+  icon: Icon,
+  text,
+}: {
+  icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>;
+  text: string;
+}) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
       <Icon size={13} style={{ color: 'var(--text-muted)' }} />
@@ -58,18 +106,61 @@ function SectionLabel({ icon: Icon, text }: { icon: React.ComponentType<{ size?:
   );
 }
 
-export default function WashingSection({ form, setField }: Props) {
+function InputWithError({
+  fieldKey,
+  value,
+  onChange,
+  placeholder,
+  errors,
+  registerRef,
+}: {
+  fieldKey: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  errors: FormErrors;
+  registerRef?: (key: string, el: HTMLElement | null) => void;
+}) {
+  const hasError = Boolean(errors[fieldKey]);
+  return (
+    <Input
+      type="text"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      ref={el => registerRef?.(fieldKey, el)}
+      error={hasError}
+      style={hasError ? {
+        ...FIELD_STYLE,
+        borderColor: '#DC2626',
+        boxShadow: '0 0 0 3px rgba(220, 38, 38, 0.10)',
+      } : FIELD_STYLE}
+    />
+  );
+}
+
+export default function WashingSection({ form, setField, line, errors = {}, registerRef }: Props) {
+  const machineLabel = `Washing ${line}`;
+
   return (
     <>
       {/* Identity */}
-      <SectionCard title="Washing — Identity">
+      <SectionCard title={`Washing ${line} — Identity`}>
         <SectionLabel icon={Ruler} text="Identity" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Shift">
+          <Field label="Machine No.">
+            <div style={READONLY_STYLE}>{machineLabel}</div>
+          </Field>
+          <Field label="Shift" required error={errors.ws_shift}>
             <select
               value={form.ws_shift}
               onChange={e => setField('ws_shift', e.target.value)}
-              style={SELECT_STYLE}
+              ref={el => registerRef?.('ws_shift', el as HTMLElement)}
+              style={errors.ws_shift ? {
+                ...SELECT_STYLE,
+                borderColor: '#DC2626',
+                boxShadow: '0 0 0 3px rgba(220, 38, 38, 0.10)',
+              } : SELECT_STYLE}
             >
               <option value="">Select...</option>
               <option value="A">A</option>
@@ -77,17 +168,15 @@ export default function WashingSection({ form, setField }: Props) {
               <option value="C">C</option>
             </select>
           </Field>
-          <Field label="Machine No.">
-            <Input type="text" value={form.ws_mc}
-              onChange={e => setField('ws_mc', e.target.value)}
-              placeholder="e.g. 1"
-              style={FIELD_STYLE} />
-          </Field>
-          <Field label="Speed">
-            <Input type="text" value={form.ws_speed}
-              onChange={e => setField('ws_speed', e.target.value)}
+          <Field label="Speed" required error={errors.ws_speed}>
+            <InputWithError
+              fieldKey="ws_speed"
+              value={form.ws_speed}
+              onChange={v => setField('ws_speed', v)}
               placeholder="e.g. 37"
-              style={FIELD_STYLE} />
+              errors={errors}
+              registerRef={registerRef}
+            />
           </Field>
           <Field label="Tekanan Boiler">
             <Input type="text" value={form.ws_tekanan_boiler}
@@ -99,7 +188,7 @@ export default function WashingSection({ form, setField }: Props) {
       </SectionCard>
 
       {/* Chemical Bath 1 */}
-      <SectionCard title="Washing — Chemical Bath 1">
+      <SectionCard title={`Washing ${line} — Chemical Bath 1`}>
         <SectionLabel icon={Droplet} text="Chemical Bath 1" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Larutan">
@@ -108,11 +197,15 @@ export default function WashingSection({ form, setField }: Props) {
               placeholder="Solution type"
               style={FIELD_STYLE} />
           </Field>
-          <Field label="Temperature">
-            <Input type="text" value={form.ws_temp_1}
-              onChange={e => setField('ws_temp_1', e.target.value)}
+          <Field label="Temperature" required error={errors.ws_temp_1}>
+            <InputWithError
+              fieldKey="ws_temp_1"
+              value={form.ws_temp_1}
+              onChange={v => setField('ws_temp_1', v)}
               placeholder="e.g. 95"
-              style={FIELD_STYLE} />
+              errors={errors}
+              registerRef={registerRef}
+            />
           </Field>
           <Field label="Press Padder (kg/cm²)">
             <Input type="text" value={form.ws_padder_1}
@@ -130,7 +223,7 @@ export default function WashingSection({ form, setField }: Props) {
       </SectionCard>
 
       {/* Chemical Bath 2 */}
-      <SectionCard title="Washing — Chemical Bath 2">
+      <SectionCard title={`Washing ${line} — Chemical Bath 2`}>
         <SectionLabel icon={Droplet} text="Chemical Bath 2" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Larutan">
@@ -161,7 +254,7 @@ export default function WashingSection({ form, setField }: Props) {
       </SectionCard>
 
       {/* Machine Settings */}
-      <SectionCard title="Washing — Machine Settings">
+      <SectionCard title={`Washing ${line} — Machine Settings`}>
         <SectionLabel icon={Gauge} text="Machine Settings" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Skew">
@@ -174,7 +267,7 @@ export default function WashingSection({ form, setField }: Props) {
       </SectionCard>
 
       {/* Temperature Zones */}
-      <SectionCard title="Washing — Temperature Zones">
+      <SectionCard title={`Washing ${line} — Temperature Zones`}>
         <SectionLabel icon={Thermometer} text="Temperature Zones (1–6)" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
           {[1, 2, 3, 4, 5, 6].map(i => (
@@ -191,7 +284,7 @@ export default function WashingSection({ form, setField }: Props) {
       </SectionCard>
 
       {/* Measurements */}
-      <SectionCard title="Washing — Measurements">
+      <SectionCard title={`Washing ${line} — Measurements`}>
         <SectionLabel icon={Ruler} text="Measurements" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Lebar Awal (cm)">
@@ -210,7 +303,7 @@ export default function WashingSection({ form, setField }: Props) {
       </SectionCard>
 
       {/* Problems & Operator */}
-      <SectionCard title="Washing — Notes">
+      <SectionCard title={`Washing ${line} — Notes`}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Permasalahan (Problems)">
             <Input type="text" value={form.ws_permasalahan}
