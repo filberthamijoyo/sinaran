@@ -1502,17 +1502,17 @@ router.post('/bbsf', requireAuth,
 
       if (phase === 'washing') {
         const washingData = buildRecord('ws_', { mc: `Washing ${line}`, line });
-        if (Object.keys(washingData).length > 3) {
-          await prisma.bBSFWashingRun.create({ data: washingData as any });
-        }
-        return res.json({ success: true, kp, nextPhase: 'sanfor_tahap1', line });
+        const record = Object.keys(washingData).length > 3
+          ? await prisma.bBSFWashingRun.create({ data: washingData as any })
+          : null;
+        return res.json({ success: true, kp, nextPhase: 'sanfor_tahap1', line, id: record?.id ?? null });
 
       } else if (phase === 'sanfor_tahap1') {
         const sanforType = `Sanfor ${line === 1 ? 1 : line === 2 ? 3 : 5}`;
         const sanforData = buildRecord('sf1_', { mc: sanforType, sanfor_type: 'tahap1' });
-        if (Object.keys(sanforData).length > 3) {
-          await prisma.bBSFSanforRun.create({ data: sanforData as any });
-        }
+        const record = Object.keys(sanforData).length > 3
+          ? await prisma.bBSFSanforRun.create({ data: sanforData as any })
+          : null;
 
         if (line === 3) {
           const prev = await prisma.salesContract.findUnique({
@@ -1526,17 +1526,17 @@ router.post('/bbsf', requireAuth,
           await prisma.pipelineEvent.create({
             data: { kp, from_stage: prev?.pipeline_status ?? null, to_stage: 'INSPECT_FINISH' },
           });
-          return res.json({ success: true, kp, nextPhase: 'done', line });
+          return res.json({ success: true, kp, nextPhase: 'done', line, id: record?.id ?? null });
         }
 
-        return res.json({ success: true, kp, nextPhase: 'sanfor_tahap2', line });
+        return res.json({ success: true, kp, nextPhase: 'sanfor_tahap2', line, id: record?.id ?? null });
 
       } else if (phase === 'sanfor_tahap2') {
         const sanforType = `Sanfor ${line === 1 ? 2 : 4}`;
         const sanforData = buildRecord('sf2_', { mc: sanforType, sanfor_type: 'tahap2' });
-        if (Object.keys(sanforData).length > 3) {
-          await prisma.bBSFSanforRun.create({ data: sanforData as any });
-        }
+        const record = Object.keys(sanforData).length > 3
+          ? await prisma.bBSFSanforRun.create({ data: sanforData as any })
+          : null;
 
         const prev = await prisma.salesContract.findUnique({
           where: { kp },
@@ -1549,7 +1549,7 @@ router.post('/bbsf', requireAuth,
         await prisma.pipelineEvent.create({
           data: { kp, from_stage: prev?.pipeline_status ?? null, to_stage: 'INSPECT_FINISH' },
         });
-        return res.json({ success: true, kp, nextPhase: 'done', line });
+        return res.json({ success: true, kp, nextPhase: 'done', line, id: record?.id ?? null });
       }
 
       return res.status(400).json({ error: 'Unknown phase' });
@@ -1627,6 +1627,78 @@ router.put('/bbsf', requireAuth,
       }
 
       return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// PUT /api/denim/bbsf/:kp/:phase — update a single phase's record
+router.put('/bbsf/:kp/:phase', requireAuth,
+  requireRole('admin', 'factory'),
+  async (req: Request, res: Response) => {
+    try {
+      const { kp } = req.params as { kp: string };
+      const { phase } = req.params as { phase: string };
+      const { tgl, line, ...bbsfData } = req.body as {
+        tgl?: string;
+        line?: number;
+        [key: string]: unknown;
+      };
+
+      if (!kp || !phase) {
+        return res.status(400).json({ error: 'kp and phase are required' });
+      }
+
+      const tglDate = tgl ? new Date(tgl) : new Date();
+      const stringFields = ['ws_speed', 'sf1_speed', 'sf2_speed'];
+
+      const buildRecord = (prefix: string, extra: Record<string, unknown> = {}): Record<string, unknown> => {
+        const out: Record<string, unknown> = { kp, tgl: tglDate, ...extra };
+        for (const field of Object.keys(bbsfData)) {
+          if (field.startsWith(prefix)) {
+            const value = bbsfData[field];
+            if (value !== undefined && value !== '') {
+              if (stringFields.includes(field)) {
+                out[field.replace(prefix, '')] = String(value);
+              } else {
+                out[field.replace(prefix, '')] = isNaN(Number(value)) ? value : Number(value);
+              }
+            }
+          }
+        }
+        return out;
+      };
+
+      if (phase === 'washing') {
+        await prisma.bBSFWashingRun.deleteMany({ where: { kp } });
+        const washingData = buildRecord('ws_', { mc: `Washing ${line ?? 1}`, line });
+        if (Object.keys(washingData).length > 3) {
+          await prisma.bBSFWashingRun.create({ data: washingData as any });
+        }
+        return res.json({ success: true });
+
+      } else if (phase === 'sanfor_tahap1') {
+        await prisma.bBSFSanforRun.deleteMany({ where: { kp, sanfor_type: 'tahap1' } });
+        const sanforType = `Sanfor ${line === 1 ? 1 : line === 2 ? 3 : 5}`;
+        const sanforData = buildRecord('sf1_', { mc: sanforType, sanfor_type: 'tahap1' });
+        if (Object.keys(sanforData).length > 3) {
+          await prisma.bBSFSanforRun.create({ data: sanforData as any });
+        }
+        return res.json({ success: true });
+
+      } else if (phase === 'sanfor_tahap2') {
+        await prisma.bBSFSanforRun.deleteMany({ where: { kp, sanfor_type: 'tahap2' } });
+        const sanforType = `Sanfor ${line === 1 ? 2 : 4}`;
+        const sanforData = buildRecord('sf2_', { mc: sanforType, sanfor_type: 'tahap2' });
+        if (Object.keys(sanforData).length > 3) {
+          await prisma.bBSFSanforRun.create({ data: sanforData as any });
+        }
+        return res.json({ success: true });
+
+      } else {
+        return res.status(400).json({ error: 'Unknown phase' });
+      }
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }

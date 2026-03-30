@@ -21,11 +21,10 @@ const LINES: {
   name: string;
   flow: string;
   badge?: string;
-  badgeColor?: string;
 }[] = [
   { line: 1, name: 'LINE 1', flow: 'Washing 1 → Sanfor 1 → Sanfor 2' },
   { line: 2, name: 'LINE 2', flow: 'Washing 2 → Sanfor 3 → Sanfor 4' },
-  { line: 3, name: 'LINE 3', flow: 'Washing 3 → Sanfor 5 → Inspect Finish', badge: 'No Sanfor 2', badgeColor: '#D97706' },
+  { line: 3, name: 'LINE 3', flow: 'Washing 3 → Sanfor 5 → Inspect Finish', badge: 'No Sanfor 2' },
 ];
 
 const TAB_LABELS: Record<LineNumber, { id: TabType; label: string }[]> = {
@@ -379,39 +378,24 @@ function ConfirmFinalModal({ kp, line, form, submitting, onBack, onConfirm }: {
           ['Temp 1 (°C)', form.ws_temp_1],
           ['Temp 2 (°C)', form.ws_temp_2],
           ['Larutan 1', form.ws_larutan_1],
-          ['Larutan 2', form.ws_larutan_2],
           ['Padder 1', form.ws_padder_1],
-          ['Padder 2', form.ws_padder_2],
           ['Tekanan Boiler', form.ws_tekanan_boiler],
-          ['Lebar Awal (cm)', form.ws_lebar_awal],
-          ['Panjang Awal (m)', form.ws_panjang_awal],
           ['Pelaksana', form.ws_pelaksana],
         ])}
 
         {section('Sanfor Tahap 1', sf1Mc, [
           ['Shift', form.sf1_shift],
           ['Speed', form.sf1_speed],
-          ['Damping (%)', form.sf1_damping],
-          ['Press', form.sf1_press],
-          ['Tension', form.sf1_tension],
           ['Temperature (°C)', form.sf1_temperatur],
           ['Susut (%)', form.sf1_susut],
-          ['Jam', form.sf1_jam],
           ['Pelaksana', form.sf1_pelaksana],
         ])}
 
         {!isLine3 && section('Sanfor Tahap 2', sf2Mc, [
           ['Shift', form.sf2_shift],
           ['Speed', form.sf2_speed],
-          ['Damping (%)', form.sf2_damping],
-          ['Press', form.sf2_press],
-          ['Tension', form.sf2_tension],
           ['Temperature (°C)', form.sf2_temperatur],
           ['Susut (%)', form.sf2_susut],
-          ['Jam', form.sf2_jam],
-          ['Awal', form.sf2_awal],
-          ['Akhir', form.sf2_akhir],
-          ['Panjang', form.sf2_panjang],
           ['Pelaksana', form.sf2_pelaksana],
         ])}
 
@@ -451,9 +435,11 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
   const [submitting, setSubmitting] = useState(false);
   const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
-  // Phase completion tracking
+  // Phase completion + saved record IDs
   const [washingDone, setWashingDone] = useState(false);
   const [sanfor1Done, setSanfor1Done] = useState(false);
+  const [washingRunId, setWashingRunId] = useState<number | null>(null);
+  const [sanfor1RunId, setSanfor1RunId] = useState<number | null>(null);
 
   // Validation errors per section
   const [washingErrors, setWashingErrors] = useState<FormErrors>({});
@@ -463,6 +449,9 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
   // Modal states
   const [showStepConfirm, setShowStepConfirm] = useState(false);
   const [showFinalConfirm, setShowFinalConfirm] = useState(false);
+
+  // Hovered tab (for done-tab hover effect)
+  const [hoveredTabId, setHoveredTabId] = useState<TabType | null>(null);
 
   // Line & tab
   const [selectedLine, setSelectedLine] = useState<LineNumber | null>(isEditMode ? 1 : null);
@@ -496,6 +485,55 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
     }
   };
 
+  // ── API helpers ──────────────────────────────────────────────────────────────
+  // Backend uses 'sanfor_tahap1' / 'sanfor_tahap2'; frontend TabType uses 'sanfor1' / 'sanfor2'
+  const toApiPhase = (phase: TabType): string =>
+    phase === 'sanfor1' ? 'sanfor_tahap1' : phase === 'sanfor2' ? 'sanfor_tahap2' : phase;
+
+  // POST a single phase — returns { id, nextPhase }
+  const submitPhase = async (phase: TabType): Promise<{ id?: number; nextPhase: string }> => {
+    const { line: _formLine, ...formFields } = form;
+    const result = await authFetch<{ id?: number; nextPhase: string }>('/denim/bbsf', {
+      method: 'POST',
+      body: JSON.stringify({
+        kp,
+        tgl: new Date().toISOString(),
+        phase: toApiPhase(phase),
+        line: selectedLine!,
+        ...formFields,
+      }),
+    });
+    return result;
+  };
+
+  // PUT a single phase (for updating already-saved phases)
+  const updatePhase = async (phase: TabType) => {
+    const { line: _formLine, ...formFields } = form;
+    await authFetch(`/denim/bbsf/${kp}/${toApiPhase(phase)}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        kp,
+        tgl: new Date().toISOString(),
+        line: selectedLine!,
+        ...formFields,
+      }),
+    });
+  };
+
+  // PUT all phases (full edit mode)
+  const submitAllPhases = async () => {
+    const { line: _formLine, ...formFields } = form;
+    await authFetch('/denim/bbsf', {
+      method: 'PUT',
+      body: JSON.stringify({
+        kp,
+        tgl: new Date().toISOString(),
+        line: selectedLine,
+        ...formFields,
+      }),
+    });
+  };
+
   const saveDraft = useCallback(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -524,6 +562,8 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
     setDraftSavedAt(null);
     setWashingDone(false);
     setSanfor1Done(false);
+    setWashingRunId(null);
+    setSanfor1RunId(null);
     clearErrors();
     setForm(emptyForm());
     toast.info('Draft discarded');
@@ -596,22 +636,30 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
             ws_permasalahan: w.permasalahan || '',
             ws_pelaksana: w.pelaksana || '',
           }));
+          setWashingRunId(w.id ?? null);
+          setWashingDone(true);
         }
         if (data?.bbsfSanfor?.[0]) {
           const s = data.bbsfSanfor[0];
+          const isTahap1 = s.sanfor_type === 'tahap1';
+          const prefix = isTahap1 ? 'sf1' : 'sf2';
           setForm(f => ({ ...f,
-            sf1_shift: s.shift || '',
-            sf1_jam: s.jam?.toString() || '',
-            sf1_speed: s.speed?.toString() || '',
-            sf1_damping: s.damping?.toString() || '',
-            sf1_press: s.press?.toString() || '',
-            sf1_tension: s.tension?.toString() || '',
-            sf1_tension_limit: s.tension_limit?.toString() || '',
-            sf1_temperatur: s.temperatur?.toString() || '',
-            sf1_susut: s.susut?.toString() || '',
-            sf1_permasalahan: s.permasalahan || '',
-            sf1_pelaksana: s.pelaksana || '',
+            [`${prefix}_shift`]: s.shift || '',
+            [`${prefix}_jam`]: s.jam?.toString() || '',
+            [`${prefix}_speed`]: s.speed?.toString() || '',
+            [`${prefix}_damping`]: s.damping?.toString() || '',
+            [`${prefix}_press`]: s.press?.toString() || '',
+            [`${prefix}_tension`]: s.tension?.toString() || '',
+            [`${prefix}_tension_limit`]: s.tension_limit?.toString() || '',
+            [`${prefix}_temperatur`]: s.temperatur?.toString() || '',
+            [`${prefix}_susut`]: s.susut?.toString() || '',
+            [`${prefix}_permasalahan`]: s.permasalahan || '',
+            [`${prefix}_pelaksana`]: s.pelaksana || '',
           }));
+          if (isTahap1) {
+            setSanfor1RunId(s.id ?? null);
+            setSanfor1Done(true);
+          }
         }
       } catch {
         console.error('Failed to load existing data');
@@ -622,40 +670,9 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
 
   const setField = (key: keyof BBSFFormState, value: string) => {
     setForm(f => ({ ...f, [key]: value }));
-    // Clear error for this field on change
     if (washingErrors[key]) setWashingErrors(e => ({ ...e, [key]: undefined }));
     if (sanfor1Errors[key]) setSanfor1Errors(e => ({ ...e, [key]: undefined }));
     if (sanfor2Errors[key]) setSanfor2Errors(e => ({ ...e, [key]: undefined }));
-  };
-
-  // ── Submit a single phase to the API ───────────────────────────────────────
-  const submitPhase = async (phase: TabType) => {
-    const { line: _formLine, ...formFields } = form;
-    const result = await authFetch<{ nextPhase: string }>('/denim/bbsf', {
-      method: 'POST',
-      body: JSON.stringify({
-        kp,
-        tgl: new Date().toISOString(),
-        phase,
-        line: selectedLine!,
-        ...formFields,
-      }),
-    });
-    return result.nextPhase;
-  };
-
-  // ── Save all phases (edit mode) ────────────────────────────────────────────
-  const submitAllPhases = async () => {
-    const { line: _formLine, ...formFields } = form;
-    await authFetch('/denim/bbsf', {
-      method: 'PUT',
-      body: JSON.stringify({
-        kp,
-        tgl: new Date().toISOString(),
-        line: selectedLine,
-        ...formFields,
-      }),
-    });
   };
 
   // ── Footer button click ────────────────────────────────────────────────────
@@ -674,6 +691,7 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
       return;
     }
 
+    // ── WASHING ────────────────────────────────────────────────────────────
     if (activeTab === 'washing') {
       const errors = validateWashing(form);
       if (Object.keys(errors).length > 0) {
@@ -681,61 +699,80 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
         scrollToFirstError(errors);
         return;
       }
-      setShowStepConfirm(true);
-
-    } else if (activeTab === 'sanfor1') {
-      if (selectedLine === 3) {
-        // Line 3: sanfor1 IS the final phase → show final confirmation
-        const errors = validateSanfor('sanfor1', form);
-        if (Object.keys(errors).length > 0) {
-          setSanfor1Errors(errors);
-          scrollToFirstError(errors);
-          return;
-        }
-        setShowFinalConfirm(true);
+      if (washingDone) {
+        // Re-submitting — PUT washing only
+        setSubmitting(true);
+        updatePhase('washing')
+          .then(() => toast.success('Washing updated.'))
+          .catch(() => toast.error('Failed to update Washing.'))
+          .finally(() => setSubmitting(false));
       } else {
-        // Line 1 or 2: sanfor1 is intermediate → show step modal
-        const errors = validateSanfor('sanfor1', form);
-        if (Object.keys(errors).length > 0) {
-          setSanfor1Errors(errors);
-          scrollToFirstError(errors);
-          return;
-        }
         setShowStepConfirm(true);
       }
+      return;
+    }
 
-    } else {
-      // activeTab === 'sanfor2' (lines 1+2 only)
-      const wErrors = validateWashing(form);
-      const sf1Errors = validateSanfor('sanfor1', form);
-      const sf2Errors = validateSanfor('sanfor2', form);
-      const allErrors = { ...wErrors, ...sf1Errors, ...sf2Errors };
-      if (Object.keys(allErrors).length > 0) {
-        // Show the most relevant errors (prefer sanfor2, then sanfor1, then washing)
-        if (Object.keys(sf2Errors).length > 0) setSanfor2Errors(sf2Errors);
-        else if (Object.keys(sf1Errors).length > 0) setSanfor1Errors(sf1Errors);
-        else setWashingErrors(wErrors);
-        scrollToFirstError(allErrors);
+    // ── SANFOR 1 ────────────────────────────────────────────────────────────
+    if (activeTab === 'sanfor1') {
+      const errors = validateSanfor('sanfor1', form);
+      if (Object.keys(errors).length > 0) {
+        setSanfor1Errors(errors);
+        scrollToFirstError(errors);
         return;
       }
-      setShowFinalConfirm(true);
+      if (selectedLine === 3) {
+        // Line 3: sanfor1 IS the final phase → show final modal
+        setShowFinalConfirm(true);
+      } else {
+        // Line 1 or 2: sanfor1 is intermediate
+        if (sanfor1Done) {
+          // Re-submitting — PUT sanfor1 only
+          setSubmitting(true);
+          updatePhase('sanfor1')
+            .then(() => toast.success('Sanfor 1 updated.'))
+            .catch(() => toast.error('Failed to update Sanfor 1.'))
+            .finally(() => setSubmitting(false));
+        } else {
+          setShowStepConfirm(true);
+        }
+      }
+      return;
     }
+
+    // ── SANFOR 2 (lines 1+2 only) ───────────────────────────────────────────
+    // activeTab === 'sanfor2'
+    const wErrors = validateWashing(form);
+    const sf1ErrorsVal = validateSanfor('sanfor1', form);
+    const sf2ErrorsVal = validateSanfor('sanfor2', form);
+    const allErrors = { ...wErrors, ...sf1ErrorsVal, ...sf2ErrorsVal };
+    if (Object.keys(allErrors).length > 0) {
+      if (Object.keys(sf2ErrorsVal).length > 0) setSanfor2Errors(sf2ErrorsVal);
+      else if (Object.keys(sf1ErrorsVal).length > 0) setSanfor1Errors(sf1ErrorsVal);
+      else setWashingErrors(wErrors);
+      scrollToFirstError(allErrors);
+      return;
+    }
+    setShowFinalConfirm(true);
   };
 
   // ── Confirm step (washing / non-final sanfor) ───────────────────────────────
   const handleConfirmStep = async () => {
     setSubmitting(true);
     try {
-      await submitPhase(activeTab);
+      const { id, nextPhase: _next } = await submitPhase(activeTab);
+
       setShowStepConfirm(false);
 
       if (activeTab === 'washing') {
         setWashingDone(true);
+        if (id) setWashingRunId(id);
         clearErrors();
         setActiveTab('sanfor1');
         toast.success('Washing saved. Moving to Sanfor Tahap 1.');
+
       } else if (activeTab === 'sanfor1') {
         setSanfor1Done(true);
+        if (id) setSanfor1RunId(id ?? null);
         clearErrors();
         setActiveTab('sanfor2');
         toast.success('Sanfor Tahap 1 saved. Moving to Sanfor Tahap 2.');
@@ -751,10 +788,12 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
   const handleConfirmFinal = async () => {
     setSubmitting(true);
     try {
+      // Washing and sanfor1 already saved — update them if they have IDs
       await Promise.all([
-        submitPhase('washing'),
-        submitPhase('sanfor1'),
-        ...(selectedLine !== 3 ? [submitPhase('sanfor2')] : []),
+        washingDone || washingRunId ? updatePhase('washing') : submitPhase('washing'),
+        sanfor1Done || sanfor1RunId ? updatePhase('sanfor1') : submitPhase('sanfor1'),
+        // sanfor2 is always new at this stage
+        submitPhase('sanfor2'),
       ]);
 
       localStorage.removeItem(draftKey);
@@ -810,6 +849,22 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
       clearErrors();
       toast.success('Draft restored');
     }
+  };
+
+  // ── Footer button label ───────────────────────────────────────────────────
+  const getFooterLabel = (): string => {
+    if (isEditMode) return 'Save Changes';
+    if (activeTab === 'washing') {
+      return washingDone ? 'Update Washing' : 'Submit Washing →';
+    }
+    if (activeTab === 'sanfor1') {
+      if (selectedLine === 3) {
+        return sanfor1Done ? 'Update & Move to Inspect Finish' : 'Submit & Move to Inspect Finish';
+      }
+      return sanfor1Done ? 'Update Sanfor 1' : 'Submit Sanfor Tahap 1 →';
+    }
+    // sanfor2
+    return 'Submit & Move to Inspect Finish';
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -904,34 +959,48 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
             const locked = isTabLocked(tab.id);
             const done = isTabDone(tab.id);
             const isActive = activeTab === tab.id;
+            const isHovered = hoveredTabId === tab.id;
             return (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabClick(tab.id)}
                 disabled={locked}
+                onMouseEnter={() => setHoveredTabId(tab.id)}
+                onMouseLeave={() => setHoveredTabId(null)}
                 style={{
                   padding: '6px 16px',
                   borderRadius: 6,
-                  border: 'none',
+                  border: isActive ? 'none' : done ? '1px solid #A7F3D0' : 'none',
                   cursor: locked ? 'not-allowed' : 'pointer',
                   fontSize: 13,
                   fontWeight: done && !isActive ? 600 : 500,
                   fontFamily: 'inherit',
                   transition: 'all 150ms ease',
-                  background: isActive ? '#1D4ED8' : locked ? 'transparent' : done ? '#ECFDF5' : 'transparent',
+                  background: isActive ? '#1D4ED8'
+                    : locked ? 'transparent'
+                    : done && isHovered ? '#D1FAE5'
+                    : done ? '#ECFDF5'
+                    : 'transparent',
                   color: isActive ? '#FFFFFF' : locked ? '#D1D5DB' : done ? '#059669' : '#6B7280',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 4,
                 }}
               >
-                {locked ? '🔒 ' : done ? '✓ ' : ''}
+                {locked ? '🔒 ' : done ? '✓ Saved ' : ''}
                 {tab.label}
               </button>
             );
           })}
         </div>
+
+        {/* Breadcrumb hint */}
+        {washingDone && !isEditMode && (
+          <p style={{ fontSize: 11, color: '#9CA3AF', margin: 0 }}>
+            ← Click any completed tab to edit it
+          </p>
+        )}
 
         {/* Tab content */}
         <div>
@@ -1003,9 +1072,7 @@ export default function BBSFFormPage({ kp, editMode = false }: { kp: string; edi
           loading={submitting}
           onClick={handleFooterSubmit}
         >
-          {isEditMode ? 'Save Changes'
-            : activeTab === 'washing' ? 'Submit Washing'
-            : 'Submit All & Move to Inspect Finish'}
+          {getFooterLabel()}
         </Button>
       </div>
 

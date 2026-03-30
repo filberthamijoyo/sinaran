@@ -62,6 +62,7 @@ export interface BBSFFormState {
 export type TabType = 'washing' | 'sanfor1' | 'sanfor2';
 
 export interface BbsfWashingRow {
+  id?: number;
   line?: number | null;
   shift?: string | null;
   mc?: string | null;
@@ -89,8 +90,10 @@ export interface BbsfWashingRow {
 }
 
 export interface BbsfSanforRow {
+  id?: number;
   shift?: string | null;
   mc?: string | null;
+  sanfor_type?: string;
   jam?: number | null;
   speed?: number | null;
   damping?: number | null;
@@ -99,6 +102,9 @@ export interface BbsfSanforRow {
   tension_limit?: number | null;
   temperatur?: number | null;
   susut?: number | null;
+  awal?: number | null;
+  akhir?: number | null;
+  panjang?: number | null;
   permasalahan?: string | null;
   pelaksana?: string | null;
 }
